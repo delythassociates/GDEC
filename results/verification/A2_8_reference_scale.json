@@ -1,0 +1,60 @@
+[
+  {
+    "id": "A2.8_reference_study_reproduction",
+    "computed": {
+      "computed_qois": {
+        "16x4": -0.0014275033997611878,
+        "32x8": -0.001786472195292505,
+        "64x16": -0.0018791431716114182,
+        "128x32": -0.0019017824927009426
+      },
+      "relative_differences": {
+        "16x4": 2.7188915540287938e-11,
+        "32x8": 4.195469505828862e-12,
+        "64x16": 6.076262273082589e-12,
+        "128x32": 4.956430992382632e-13
+      },
+      "max_relative_difference": 2.7188915540287938e-11
+    },
+    "threshold": {
+      "relative_tolerance": 1e-08
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Reproduction of 4-level cantilever reference study."
+  },
+  {
+    "id": "A2.8_celik_richardson_gci",
+    "computed": {
+      "order_p": 2.033286874947495,
+      "f_extrapolated": -0.00190910116678253,
+      "approximate_relative_error_ea": 0.011904264124262945,
+      "extrapolated_relative_error": 0.003833570588018807,
+      "gci_fine_pct": 0.48104042593084123,
+      "gci_coarse_pct": 1.9690734414637094
+    },
+    "threshold": {
+      "order_p_rel_tol": 0.001,
+      "f_ext_rel_tol": 1e-06,
+      "gci_rel_tol": 0.001
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Independent Celik / Richardson / GCI discretization uncertainty analysis."
+  },
+  {
+    "id": "A2.8_scale_invariance",
+    "computed": {
+      "si_qoi_m": -0.0013941747700804677,
+      "dimensionless_qoi": -0.0006970873850398144,
+      "reconstructed_qoi_m": -0.0013941747700796287,
+      "relative_difference": 6.017578707301246e-13
+    },
+    "threshold": {
+      "relative_tolerance": 1e-09
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "SI vs dimensionless formulation scale invariance test."
+  }
+]
