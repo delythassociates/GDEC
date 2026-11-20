@@ -1,0 +1,104 @@
+[
+  {
+    "id": "A2.1a_plane_stress",
+    "computed": {
+      "relative_interior_displacement_error": 4.065758146820642e-16,
+      "relative_element_stress_error": 2.5212198873109455e-15,
+      "max_interior_displacement_abs_error_m": 1.3010426069826053e-18,
+      "max_stress_abs_error_Pa": 6.258487701416016e-07,
+      "assumption": "plane_stress",
+      "mesh_metrics": {
+        "node_count": 36,
+        "element_count": 50,
+        "dof_count": 72,
+        "min_angle_deg": 35.51172114324175,
+        "max_angle_deg": 104.41713565763077,
+        "max_aspect_ratio": 1.7204533743416996,
+        "max_diameter_h": 0.31659138263860925,
+        "min_element_area": 0.015428527794956393,
+        "max_element_area": 0.024250116244010123,
+        "all_areas_positive": true,
+        "n": 5,
+        "refinement_level_n": 5,
+        "type": "perturbed",
+        "random_seed": 12345,
+        "interior_node_count": 16,
+        "boundary_nodes_unchanged": true,
+        "accepted": true
+      }
+    },
+    "threshold": {
+      "interior_nodal_displacement_rel_tol": 1e-10,
+      "stress_constitutive_rel_tol": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Linear displacement patch test (plane_stress) on 5x5 perturbed mesh with h_loc perturbation."
+  },
+  {
+    "id": "A2.1a_plane_strain",
+    "computed": {
+      "relative_interior_displacement_error": 3.388131789017202e-16,
+      "relative_element_stress_error": 1.6490192944283662e-15,
+      "max_interior_displacement_abs_error_m": 1.0842021724855044e-18,
+      "max_stress_abs_error_Pa": 5.960464477539062e-07,
+      "assumption": "plane_strain",
+      "mesh_metrics": {
+        "node_count": 36,
+        "element_count": 50,
+        "dof_count": 72,
+        "min_angle_deg": 35.51172114324175,
+        "max_angle_deg": 104.41713565763077,
+        "max_aspect_ratio": 1.7204533743416996,
+        "max_diameter_h": 0.31659138263860925,
+        "min_element_area": 0.015428527794956393,
+        "max_element_area": 0.024250116244010123,
+        "all_areas_positive": true,
+        "n": 5,
+        "refinement_level_n": 5,
+        "type": "perturbed",
+        "random_seed": 12345,
+        "interior_node_count": 16,
+        "boundary_nodes_unchanged": true,
+        "accepted": true
+      }
+    },
+    "threshold": {
+      "interior_nodal_displacement_rel_tol": 1e-10,
+      "stress_constitutive_rel_tol": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Linear displacement patch test (plane_strain) on 5x5 perturbed mesh with h_loc perturbation."
+  },
+  {
+    "id": "A2.1b_plane_stress",
+    "computed": {
+      "relative_displacement_error_Linf": 2.5477162866633252e-15,
+      "max_absolute_error_m": 3.639594695233322e-23,
+      "assumption": "plane_stress",
+      "applied_traction_Pa": 1000.0
+    },
+    "threshold": {
+      "relative_error_tol": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Production solve uniform tension test (plane_stress) on unit square."
+  },
+  {
+    "id": "A2.1b_plane_strain",
+    "computed": {
+      "relative_displacement_error_Linf": 3.5088572724166135e-15,
+      "max_absolute_error_m": 4.4667753077863494e-23,
+      "assumption": "plane_strain",
+      "applied_traction_Pa": 1000.0
+    },
+    "threshold": {
+      "relative_error_tol": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Production solve uniform tension test (plane_strain) on unit square."
+  }
+]

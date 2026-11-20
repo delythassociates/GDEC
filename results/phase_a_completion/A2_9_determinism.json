@@ -1,0 +1,101 @@
+[
+  {
+    "id": "A2.9_determinism_uniform",
+    "computed": {
+      "strategy": "uniform",
+      "dofs_run1": [
+        200,
+        702,
+        2618,
+        10098,
+        39650
+      ],
+      "dofs_run2": [
+        200,
+        702,
+        2618,
+        10098,
+        39650
+      ],
+      "dof_identical": true,
+      "max_qoi_relative_difference": 0.0,
+      "goal_aware_prefix_match": true
+    },
+    "threshold": {
+      "dof_sequence_equality": "exact",
+      "qoi_relative_tolerance": 1e-08,
+      "expected_prefix": null
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Deterministic execution repeatability for uniform strategy."
+  },
+  {
+    "id": "A2.9_determinism_recovery",
+    "computed": {
+      "strategy": "recovery",
+      "dofs_run1": [
+        200,
+        400,
+        882,
+        1788,
+        3918
+      ],
+      "dofs_run2": [
+        200,
+        400,
+        882,
+        1788,
+        3918
+      ],
+      "dof_identical": true,
+      "max_qoi_relative_difference": 0.0,
+      "goal_aware_prefix_match": true
+    },
+    "threshold": {
+      "dof_sequence_equality": "exact",
+      "qoi_relative_tolerance": 1e-08,
+      "expected_prefix": null
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Deterministic execution repeatability for recovery strategy."
+  },
+  {
+    "id": "A2.9_determinism_goal_aware",
+    "computed": {
+      "strategy": "goal_aware",
+      "dofs_run1": [
+        200,
+        418,
+        894,
+        1908,
+        4034
+      ],
+      "dofs_run2": [
+        200,
+        418,
+        894,
+        1908,
+        4034
+      ],
+      "dof_identical": true,
+      "max_qoi_relative_difference": 0.0,
+      "goal_aware_prefix_match": true
+    },
+    "threshold": {
+      "dof_sequence_equality": "exact",
+      "qoi_relative_tolerance": 1e-08,
+      "expected_prefix": [
+        200,
+        418,
+        894,
+        1908,
+        4034
+      ]
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Deterministic execution repeatability for goal_aware strategy."
+  }
+]

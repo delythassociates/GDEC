@@ -1,0 +1,142 @@
+[
+  {
+    "id": "A2.2_symmetry_plane_stress",
+    "computed": {
+      "frobenius_asymmetry_ratio": 0.0,
+      "frobenius_diff": 0.0,
+      "frobenius_K": 16.130255090311987,
+      "assumption": "plane_stress"
+    },
+    "threshold": {
+      "stiffness_symmetry_frobenius_rel_tol": 1e-12
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Stiffness matrix symmetry check (plane_stress) on A0-4 mesh."
+  },
+  {
+    "id": "A2.2_rigid_modes_plane_stress",
+    "computed": {
+      "smallest_four_eigenvalues": [
+        -4.779990527700709e-16,
+        -4.327104708025196e-16,
+        6.102589224195682e-17,
+        0.18829288133229644
+      ],
+      "largest_eigenvalue": 7.6270971168272625,
+      "null_eigenvalues_count": 3,
+      "fourth_to_largest_ratio": 0.02468735856488254,
+      "expected_ratio_order": "~2e-2",
+      "assumption": "plane_stress"
+    },
+    "threshold": {
+      "null_space_dimension": 3,
+      "null_space_eigenvalue_max_rel_tol": 1e-10,
+      "fourth_eigenvalue_ratio_min": 0.0001
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Rigid body eigenvalue spectrum check (plane_stress) on unconstrained stiffness."
+  },
+  {
+    "id": "A2.2_null_projection_plane_stress",
+    "computed": {
+      "translation_x_projection_residual": 2.415775361872046e-15,
+      "translation_y_projection_residual": 2.3777201070088437e-15,
+      "rotation_projection_residual": 2.0647795530490398e-15,
+      "max_projection_residual": 2.415775361872046e-15,
+      "assumption": "plane_stress"
+    },
+    "threshold": {
+      "rigid_body_null_projection_residual_rel_tol": 1e-08
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Null space projection residual of analytical rigid body modes (plane_stress)."
+  },
+  {
+    "id": "A2.2_symmetry_plane_strain",
+    "computed": {
+      "frobenius_asymmetry_ratio": 0.0,
+      "frobenius_diff": 0.0,
+      "frobenius_K": 19.305357488140555,
+      "assumption": "plane_strain"
+    },
+    "threshold": {
+      "stiffness_symmetry_frobenius_rel_tol": 1e-12
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Stiffness matrix symmetry check (plane_strain) on A0-4 mesh."
+  },
+  {
+    "id": "A2.2_rigid_modes_plane_strain",
+    "computed": {
+      "smallest_four_eigenvalues": [
+        -4.302541339815511e-16,
+        -4.8584669333693175e-17,
+        9.262128723860479e-16,
+        0.20002921168068782
+      ],
+      "largest_eigenvalue": 9.322571417164635,
+      "null_eigenvalues_count": 3,
+      "fourth_to_largest_ratio": 0.021456441868859897,
+      "expected_ratio_order": "~2e-2",
+      "assumption": "plane_strain"
+    },
+    "threshold": {
+      "null_space_dimension": 3,
+      "null_space_eigenvalue_max_rel_tol": 1e-10,
+      "fourth_eigenvalue_ratio_min": 0.0001
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Rigid body eigenvalue spectrum check (plane_strain) on unconstrained stiffness."
+  },
+  {
+    "id": "A2.2_null_projection_plane_strain",
+    "computed": {
+      "translation_x_projection_residual": 3.520310101710033e-15,
+      "translation_y_projection_residual": 1.7682789540366583e-15,
+      "rotation_projection_residual": 3.1496992293782124e-15,
+      "max_projection_residual": 3.520310101710033e-15,
+      "assumption": "plane_strain"
+    },
+    "threshold": {
+      "rigid_body_null_projection_residual_rel_tol": 1e-08
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Null space projection residual of analytical rigid body modes (plane_strain)."
+  },
+  {
+    "id": "A2.2_cantilever_residual",
+    "computed": {
+      "relative_free_dof_residual": 8.33159128502487e-13,
+      "residual_norm_N": 3.8967450093993375e-09,
+      "load_norm_N": 4677.071733467426
+    },
+    "threshold": {
+      "cantilever_residual_rel_tol": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Cantilever free-DOF equation equilibrium residual ||Ku - f|| / ||f||."
+  },
+  {
+    "id": "A2.2_reaction_equilibrium",
+    "computed": {
+      "total_reaction_force_x_N": 29678.207599806734,
+      "total_reaction_force_y_N": 4339.70619018555,
+      "net_force_balance_x_N": -2.1100277081131935e-10,
+      "net_force_balance_y_N": -2.8576323529705405e-09,
+      "relative_reaction_equilibrium_error": 2.865411808804103e-13
+    },
+    "threshold": {
+      "cantilever_reaction_equilibrium_rel_tol": 1e-08
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Static force equilibrium between applied surface traction and boundary reaction forces."
+  }
+]
