@@ -88,7 +88,10 @@ class _TreeToAST(Transformer):
         named_args: dict[str, Expression] = {}
         for item in items:
             if isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str):
-                named_args[item[0]] = item[1]
+                name, value = item
+                if name in named_args:
+                    raise ValueError(f"Duplicate named argument '{name}'")
+                named_args[name] = value
             elif isinstance(item, Expression):
                 pos_args.append(item)
         return pos_args, named_args
