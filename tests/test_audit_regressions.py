@@ -175,3 +175,13 @@ def test_max_dofs_rejects_duplicate_positional_and_named_value():
     result = GDECCompiler().compile_source(source)
     assert result.success is False
     assert "either positional or named" in result.diagnostics[0].message
+
+
+def test_cost_aware_rejects_numeric_truthy_values():
+    source = _cantilever_source().replace(
+        "adaptivity = goal_aware",
+        "adaptivity = goal_aware(cost_aware=1)",
+    )
+    result = GDECCompiler().compile_source(source)
+    assert result.success is False
+    assert "cost_aware' must be the literal true or false" in result.diagnostics[0].message
