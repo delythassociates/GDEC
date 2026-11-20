@@ -200,23 +200,24 @@ class BenchmarkRunner:
                 if t_ratio is not None:
                     time_advantages.append(t_ratio)
 
-        # Determine if hypothesis is supported
-        mean_dof_adv = float(np.mean(dof_advantages)) if dof_advantages else 1.0
-        mean_time_adv = float(np.mean(time_advantages)) if time_advantages else 1.0
+        # Evaluate DOF and wall-clock efficiency as separate hypotheses.
+        # A DOF-only win must not be reported as an end-to-end computational-cost win.
+        mean_dof_adv = float(np.mean(dof_advantages)) if dof_advantages else None
+        mean_time_adv = float(np.mean(time_advantages)) if time_advantages else None
+        dof_supported = mean_dof_adv is not None and mean_dof_adv > 1.05
+        time_supported = mean_time_adv is not None and mean_time_adv > 1.05
+        supported = dof_supported and time_supported
 
-        supported = mean_dof_adv > 1.05
-        if supported:
-            reasons.insert(
-                0,
-                f"Hypothesis SUPPORTED on equal-accuracy basis: Goal-Aware achieved specified QoI accuracy with an average of {mean_dof_adv:.2f}x fewer DOFs than Uniform."
-            )
-        else:
-            reasons.insert(
-                0,
-                "Hypothesis NOT FULLY SUPPORTED: Goal-Aware did not demonstrate a consistent DOF or wall-clock advantage over baselines at matched accuracy."
-            )
+        reasons.insert(
+            0,
+            "Combined efficiency hypothesis SUPPORTED: goal-aware refinement demonstrated both DOF and wall-clock advantages at matched reference-relative accuracy."
+            if supported
+            else "Combined efficiency hypothesis NOT SUPPORTED: both DOF and wall-clock advantages at matched reference-relative accuracy were not demonstrated."
+        )
 
         eval_data["hypothesis_supported"] = supported
+        eval_data["dof_efficiency_supported"] = dof_supported
+        eval_data["wall_clock_efficiency_supported"] = time_supported
         eval_data["reasons"] = reasons
         eval_data["mean_dof_advantage_vs_uniform"] = mean_dof_adv
         eval_data["mean_time_advantage_vs_uniform"] = mean_time_adv
