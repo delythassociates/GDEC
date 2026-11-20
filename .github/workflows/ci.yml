@@ -1,0 +1,59 @@
+name: GDEC CI & Verification Matrix
+
+on:
+  push:
+    branches: [ main, phase-a/**, remediation/** ]
+    tags: [ 'v*', 'prereg-*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Verify (Python ${{ matrix.python-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip build wheel
+          pip install -e ".[test,app]"
+
+      - name: Code quality (Ruff)
+        run: |
+          ruff check src tests
+
+      - name: Type checking (Mypy)
+        run: |
+          mypy src/gdec
+
+      - name: Unit and Integration Tests (pytest)
+        run: |
+          pytest tests -v --durations=10
+
+      - name: CLI smoke tests
+        run: |
+          gdec hardware
+          gdec validate examples/cantilever.gdc
+          gdec compile examples/cantilever.gdc
+
+      - name: Build wheel distribution
+        run: |
+          python -m build --wheel
+
+      - name: Wheel package verification
+        run: |
+          python -c "import zipfile, glob; zf = zipfile.ZipFile(glob.glob('dist/*.whl')[0]); assert any(f.endswith('.lark') for f in zf.namelist()), 'Grammar file missing from wheel'"
