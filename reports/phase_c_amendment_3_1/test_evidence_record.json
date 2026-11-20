@@ -1,0 +1,38 @@
+{
+  "test_provenance_schema_version": "1.0",
+  "amendment": "phase-c-amendment-3.1",
+  "implementation_commit": "81cc8e2da7f7fdd70c063c7dafc84350c093046e",
+  "tested_commit": "81cc8e2da7f7fdd70c063c7dafc84350c093046e",
+  "test_execution_timestamp": "2026-11-21T03:29:12+05:30",
+  "test_command": ".venv\\Scripts\\python.exe -m pytest -v --durations=10 -m \"not confirmatory\"",
+  "test_filter": "not confirmatory",
+  "exit_code": 0,
+  "environment": {
+    "os": "Windows (win32)",
+    "python_version": "3.13.14",
+    "pytest_version": "9.2.0",
+    "pluggy_version": "1.7.0",
+    "numpy_version": "2.2.3",
+    "scipy_version": "1.15.2",
+    "skfem_version": "10.0.2",
+    "sympy_version": "1.13.3"
+  },
+  "results_summary": {
+    "total_collected": 187,
+    "tests_passed": 187,
+    "tests_failed": 0,
+    "tests_skipped": 0,
+    "tests_xfailed": 0,
+    "duration_seconds": 41.43,
+    "pass_rate_percentage": 100.0
+  },
+  "fem_core_integrity": {
+    "target_directory": "src/gdec/fem/",
+    "foundation_reference_commit": "01260409a0e11d8dcf97729ea25a61f20e2a4772",
+    "diff_line_count": 0,
+    "immutable_preserved": true
+  },
+  "raw_log_file": "results/phase_c_amendment_3_1/raw_test_output.txt",
+  "raw_log_bytes": 38318,
+  "provenance_verified": true
+}

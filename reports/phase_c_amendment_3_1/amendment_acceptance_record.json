@@ -1,0 +1,66 @@
+{
+  "amendment_acceptance_record_version": "1.0",
+  "amendment_id": "phase-c-amendment-3.1",
+  "baseline": {
+    "repository": "delythassociates/GDEC",
+    "base_tag": "prereg-c-amendment-3",
+    "base_commit": "4173ab500aacc94c3d168413e32c11aa9375b517",
+    "foundation_commit": "01260409a0e11d8dcf97729ea25a61f20e2a4772",
+    "target_branch": "phase-c/amendment-3.1",
+    "target_immutable_tag": "prereg-c-amendment-3.1"
+  },
+  "provenance": {
+    "implementation_commit": "81cc8e2da7f7fdd70c063c7dafc84350c093046e",
+    "tested_commit": "81cc8e2da7f7fdd70c063c7dafc84350c093046e",
+    "test_evidence_record": "reports/phase_c_amendment_3_1/test_evidence_record.json",
+    "raw_test_log": "results/phase_c_amendment_3_1/raw_test_output.txt"
+  },
+  "audit_findings_remediation": {
+    "AM31-01": {
+      "title": "Mesh hierarchy verification accepted fabricated boolean claims",
+      "severity": "CRITICAL",
+      "status": "REMEDIATED_AND_VERIFIED",
+      "resolution": "Implemented verify_mesh_refinement_topology() checking element count ratio, node inheritance, edge midpoint provenance, centroid geometric containment, and h_max ratio. Supported independent_conforming with nestedness_proven=False; refused unknown methods."
+    },
+    "AM31-02": {
+      "title": "Characteristic mesh size substituted area-average for frozen h_max",
+      "severity": "HIGH",
+      "status": "REMEDIATED_AND_VERIFIED",
+      "resolution": "Restored Phase A frozen definition h_max = max_K diam(K). Characteristic h and refinement ratios strictly use h_max. Area-based size retained solely as auxiliary diagnostic characteristic_h_avg."
+    },
+    "AM31-03": {
+      "title": "Quadrature failure mode substituted sensitivity difference for bound",
+      "severity": "HIGH",
+      "status": "REMEDIATED_AND_VERIFIED",
+      "resolution": "Eliminated delta_22_26 fallback. Implemented strict fail-closed assess_quadrature_convergence() refusing evaluation when rho >= 1, sensitivities do not strictly decrease, or inputs are non-finite."
+    },
+    "AM31-04": {
+      "title": "Self-referential test provenance (evidence preceded tested commit)",
+      "severity": "HIGH",
+      "status": "REMEDIATED_AND_VERIFIED",
+      "resolution": "Enforced two-stage commit protocol. Stage A committed implementation (81cc8e2da7f7fdd70c063c7dafc84350c093046e); Stage B executed tests against Stage A and committed evidence."
+    },
+    "AM31-05": {
+      "title": "Mathematical verification conflated QoI concordance with full BVP audit",
+      "severity": "MEDIUM",
+      "status": "REMEDIATED_AND_VERIFIED",
+      "resolution": "Audited all 40 Tier 1 BVPs symbolically and numerically. Verified Navier-Cauchy equilibrium div(sigma) + f == 0, Hooke's law, Dirichlet boundary traces, and QoI quadrature concordance."
+    },
+    "AM31-06": {
+      "title": "Mutable evidence dataclass allowed post-hoc falsification",
+      "severity": "LOW",
+      "status": "REMEDIATED_AND_VERIFIED",
+      "resolution": "Decorated MeshLevelEvidence with @dataclass(frozen=True). Verified FrozenInstanceError on attempted mutation."
+    }
+  },
+  "verification_gate_results": {
+    "fem_core_immutability": "PASSED (0 diff lines)",
+    "ruff_linter": "PASSED (0 errors)",
+    "mypy_type_check": "PASSED (0 issues)",
+    "adversarial_tests_16_case": "PASSED (16/16, 100.0%)",
+    "non_confirmatory_suite": "PASSED (187/187, 100.0%)",
+    "confirmatory_runs_frozen": "VERIFIED (0 confirmatory sweeps executed)"
+  },
+  "overall_verdict": "ACCEPTED",
+  "formal_declaration": "AMENDMENT READY FOR INDEPENDENT REVIEW"
+}
