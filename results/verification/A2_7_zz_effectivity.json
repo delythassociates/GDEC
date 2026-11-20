@@ -1,0 +1,70 @@
+[
+  {
+    "id": "A2.7_zz_effectivity_n64",
+    "computed": {
+      "n": 64,
+      "dofs": 8450,
+      "elements": 8192,
+      "exact_energy_norm_error": 0.04658882541245716,
+      "zz_recovered_energy_error": 0.033455790605654734,
+      "effectivity_index_I_eff": 0.7181076215050735
+    },
+    "threshold": {
+      "min_effectivity": 0.7,
+      "max_effectivity": 1.3
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "ZZ energy norm effectivity index on n=64 structured mesh."
+  },
+  {
+    "id": "A2.7_zz_effectivity_n128",
+    "computed": {
+      "n": 128,
+      "dofs": 33282,
+      "elements": 32768,
+      "exact_energy_norm_error": 0.02329763089936446,
+      "zz_recovered_energy_error": 0.016548883668465155,
+      "effectivity_index_I_eff": 0.7103247424576803
+    },
+    "threshold": {
+      "min_effectivity": 0.7,
+      "max_effectivity": 1.3
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "ZZ energy norm effectivity index on n=128 structured mesh."
+  },
+  {
+    "id": "A2.7_goal_regression_uniform_cantilever",
+    "computed": {
+      "mesh_case": "uniform_cantilever",
+      "elements": 64,
+      "max_abs_difference": 4.683753385137379e-16,
+      "relative_difference": 1.0760872455677868e-15,
+      "k_factor": -10000.0
+    },
+    "threshold": {
+      "relative_tolerance": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Goal indicator algebraic identity regression for uniform_cantilever."
+  },
+  {
+    "id": "A2.7_goal_regression_adapted_cantilever",
+    "computed": {
+      "mesh_case": "adapted_cantilever",
+      "elements": 91,
+      "max_abs_difference": 4.475586568020162e-16,
+      "relative_difference": 5.791689835609488e-16,
+      "k_factor": -10000.0
+    },
+    "threshold": {
+      "relative_tolerance": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Goal indicator algebraic identity regression for adapted_cantilever."
+  }
+]
