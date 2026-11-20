@@ -110,6 +110,18 @@ The README advertises 42 passing tests and benchmark outcomes. Those are reposit
 **Impact:** A conservative or inaccurate predictor may terminate refinement even when the candidate would fit. The transactional exact check is valuable, but its potential is partly underused.  
 **Required action:** Use the cost model to rank/select a subset of marked elements or to trigger a safe candidate construction; let exact candidate DOFs be the authoritative commit gate. Preserve memory/time safeguards for candidate generation.
 
+### GDEC-AUD-013 — Equal-accuracy timing excludes mesh-refinement work
+**Severity:** High research validity  
+**Evidence:** The benchmark runner accumulates `IterationRecord.total_iteration_time_sec`. The runtime finalizes that interval before it performs the next mesh refinement; refinement duration is stored separately in `refinement_time_sec`.  
+**Impact:** Time-to-target can omit the cost of generating the mesh on which the next QoI is measured, overstating goal-aware wall-clock efficiency.  
+**Required action:** Include the preceding refinement duration in elapsed time at each QoI observation, and reconcile cumulative observation times with total runtime wall time.
+
+### GDEC-AUD-014 — Cost model, marking policy and estimator cost metadata disagree
+**Severity:** Medium resource-planning reliability  
+**Evidence:** `docs/cost_model.md` reports approximately 1.8–2.4 DOFs per marked element; `CostModel` clamps predictions to 3.5–9.0; `MeshAdaptor.mark_elements` uses 6 DOFs per marked element; estimators expose 3 or 4 in per-element metadata.  
+**Impact:** Different runtime layers reason about different refinement costs, making planning and budget efficiency hard to interpret.  
+**Required action:** Establish one cost-estimation contract, record predicted-versus-observed residuals, and keep exact candidate DOFs as the authoritative budget gate.
+
 ### GDEC-AUD-010 — Documentation and implementation drift
 **Severity:** Medium maintainability  
 **Evidence:** Several source diagnostics and hardware strings still mention v0.1/v0.2.1 while package and README identify v0.2.2. Compiler design documentation says AST has end-line/end-column tracking, while the inspected `SourceLocation` stores only line and column. The independent review guide asks whether AST nodes are immutable, while inspected dataclasses are not frozen.  
