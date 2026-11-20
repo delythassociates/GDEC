@@ -1,0 +1,39 @@
+{
+  "test_execution_record": {
+    "timestamp_iso": "2026-11-21T04:41:45Z",
+    "commit_sha": "ceb5d5ebd66998e3f066ab8a835c023e98aa6469",
+    "branch": "phase-c/amendment-3.2",
+    "exact_command": ".venv\\Scripts\\python.exe -m pytest -v --durations=10 -m \"not confirmatory\"",
+    "marker_filter": "not confirmatory",
+    "raw_output_file": "results/phase_c_amendment_3_2/raw_test_output.txt",
+    "raw_output_sha256": "30f2e2119673929e819d6616d7aa6c419179a0f4c2f46e0027a9214f47c3e8e7",
+    "environment": {
+      "python_version": "3.13.14",
+      "platform": "win32",
+      "pytest_version": "9.2.0",
+      "pluggy_version": "1.7.0",
+      "dependencies": {
+        "numpy": "2.2.3",
+        "scipy": "1.15.2",
+        "scikit-fem": "10.0.2",
+        "sympy": "1.13.3",
+        "ruff": "0.8.2",
+        "mypy": "1.13.0"
+      }
+    },
+    "results_summary": {
+      "collected": 218,
+      "passed": 218,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "errors": 0,
+      "duration_seconds": 56.01
+    },
+    "reconciliation_notes": {
+      "amendment_3_final_committed": "171 tests passed",
+      "amendment_3_1_final_committed": "187 tests passed (+16 tests)",
+      "amendment_3_2_final_committed": "218 tests passed (+31 tests in test_phase_c_amendment_3_2_reproductions.py & test_phase_c_amendment_3_2.py)"
+    }
+  }
+}

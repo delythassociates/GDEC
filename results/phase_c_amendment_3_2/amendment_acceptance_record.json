@@ -1,0 +1,143 @@
+{
+  "amendment_id": "phase-c-amendment-3.2",
+  "baseline_commit": "1adf18e1156a9956f9024088cdd1882ff60fb120",
+  "tested_commit": "ceb5d5ebd66998e3f066ab8a835c023e98aa6469",
+  "target_branch": "phase-c/amendment-3.2",
+  "immutable_tag": "prereg-c-amendment-3.2",
+  "audit_timestamp_iso": "2026-11-21T04:41:45Z",
+  "overall_status": "READY_FOR_INDEPENDENT_REVIEW",
+  "acceptance_criteria": [
+    {
+      "id": "AM32-AC-01",
+      "requirement": "Domain Identity verified (dimensions, bounding boxes, area equality, boundary nodes)",
+      "status": "PASS",
+      "evidence": "validate_mesh_pair_topology checks bounding box tolerance 1e-7 and area conservation 1e-7; verified across M0-M3."
+    },
+    {
+      "id": "AM32-AC-02",
+      "requirement": "Element non-degeneracy verified (positive area > 1e-14, unique elements)",
+      "status": "PASS",
+      "evidence": "Tested and passed across all meshes; degenerate zero-area triangles rejected fail-closed."
+    },
+    {
+      "id": "AM32-AC-03",
+      "requirement": "Global connectivity & conformity verified (edge multiplicity <= 2, zero hanging nodes)",
+      "status": "PASS",
+      "evidence": "Edge multiplicity checked and hanging nodes on all interior edges tested via perpendicular distance."
+    },
+    {
+      "id": "AM32-AC-04",
+      "requirement": "Child element containment verified (all 3 vertices inside parent via barycentric coordinates)",
+      "status": "PASS",
+      "evidence": "Barycentric coordinate testing across all 3 vertices implemented with cKDTree candidate filtering."
+    },
+    {
+      "id": "AM32-AC-05",
+      "requirement": "Parent element partition verified (exactly 4 child triangles with area conservation)",
+      "status": "PASS",
+      "evidence": "Parent coverage verifies exactly 4 child elements per parent and sum(child area) == parent area."
+    },
+    {
+      "id": "AM32-AC-06",
+      "requirement": "Edge midpoint provenance verified (every child node is parent node or edge midpoint)",
+      "status": "PASS",
+      "evidence": "Verified across M0-M3 sequence; non-midpoint perturbed nodes rejected."
+    },
+    {
+      "id": "AM32-AC-07",
+      "requirement": "Bisection refinement verified with provenance signature; UNVERIFIED without",
+      "status": "PASS",
+      "evidence": "validate_mesh_pair_topology marks NESTED_VERIFIED with signature and UNVERIFIED without."
+    },
+    {
+      "id": "AM32-AC-08",
+      "requirement": "Non-nested conforming pair classified as CONFORMING_NON_NESTED_VERIFIED",
+      "status": "PASS",
+      "evidence": "Verified on independent conforming meshes; sets nestedness_proven=False and conforming_proven=True."
+    },
+    {
+      "id": "AM32-AC-09",
+      "requirement": "Fabricated metadata flags strictly rejected without mesh objects or topological proof",
+      "status": "PASS",
+      "evidence": "validate_mesh_hierarchy rejects metadata lacking topological verification hash and proof keys."
+    },
+    {
+      "id": "AM32-AC-10",
+      "requirement": "Actual manifest mathematical expressions parsed without hardcoding or bypass",
+      "status": "PASS",
+      "evidence": "verify_tier1_bvps.py parses string expressions for ux, uy, fx, fy, c11, c12, c33 directly from manifest."
+    },
+    {
+      "id": "AM32-AC-11",
+      "requirement": "Elasticity tensor isotropy C11 - C12 - 2*C33 == 0 independently verified",
+      "status": "PASS",
+      "evidence": "Verified across all 40 configurations; max relative residual 0.00e+00."
+    },
+    {
+      "id": "AM32-AC-12",
+      "requirement": "Constitutive assumption verified against material properties E, nu",
+      "status": "PASS",
+      "evidence": "Plane stress and plane strain formulas verified against E, nu for all 40 configurations."
+    },
+    {
+      "id": "AM32-AC-13",
+      "requirement": "Static equilibrium -div(sigma) == f verified against manifest body forces",
+      "status": "PASS",
+      "evidence": "Derived body forces match manifest body forces to < 1e-10 relative error across [0,1]^2."
+    },
+    {
+      "id": "AM32-AC-14",
+      "requirement": "Boundary displacement traces and corner compatibility verified on all 4 edges",
+      "status": "PASS",
+      "evidence": "Audited at corners (0,0), (1,0), (1,1), (0,1); all traces continuous and compatible."
+    },
+    {
+      "id": "AM32-AC-15",
+      "requirement": "BVP status distinguishes FULL_BVP_VERIFIED, QOI_ONLY_VERIFIED, INVALID, etc.",
+      "status": "PASS",
+      "evidence": "All 40 Tier 1 configurations achieve FULL_BVP_VERIFIED status in tier1_bvp_verification_record.json."
+    },
+    {
+      "id": "AM32-AC-16",
+      "requirement": "Deep immutability enforced for MeshLevelEvidence and refinement_evidence",
+      "status": "PASS",
+      "evidence": "MappingProxyType and defensive copying prevent in-place mutation; raises TypeError."
+    },
+    {
+      "id": "AM32-AC-17",
+      "requirement": "Deterministic canonical serialization and stable SHA-256 hash invariant to key order",
+      "status": "PASS",
+      "evidence": "to_canonical_dict and canonical_hash verified in adversarial tests with key permutations."
+    },
+    {
+      "id": "AM32-AC-18",
+      "requirement": "Single source of truth: reports generated directly from JSON records",
+      "status": "PASS",
+      "evidence": "generate_reports.py generates all reports directly from machine-readable JSON records."
+    },
+    {
+      "id": "AM32-AC-19",
+      "requirement": "Zero-difference plateau requires documented machine precision floor across preceding differences",
+      "status": "PASS",
+      "evidence": "assess_quadrature_convergence rejects unjustified zero plateaus as INCOMPLETE_UNJUSTIFIED_ZERO_DIFFERENCE."
+    },
+    {
+      "id": "AM32-AC-20",
+      "requirement": "Residual quadrature tail error contributes <= 1.0% of spatial error",
+      "status": "PASS",
+      "evidence": "Case B M3 quadrature tail ratio is 0.1049%, well within the 1.0% threshold."
+    },
+    {
+      "id": "AM32-AC-21",
+      "requirement": "All non-confirmatory regression tests pass (218/218 passed)",
+      "status": "PASS",
+      "evidence": "218 passed in 56.01s with 0 failures; raw output recorded in raw_test_output.txt."
+    },
+    {
+      "id": "AM32-AC-22",
+      "requirement": "Codebase clean: Ruff linter and Mypy pass with 0 errors",
+      "status": "PASS",
+      "evidence": "Ruff check all checks passed; Mypy success 0 issues in source files."
+    }
+  ]
+}
