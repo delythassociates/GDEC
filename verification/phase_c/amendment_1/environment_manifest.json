@@ -1,0 +1,28 @@
+{
+  "phase": "Phase C Amendment 1",
+  "generated_at": "2026-11-20T18:33:00Z",
+  "git": {
+    "branch": "phase-c/amendment-1",
+    "base_commit": "02b5f072311fe2ce831e47ef384844dd417981e8",
+    "base_tag": "prereg-c",
+    "target_tag": "prereg-c-amendment-1",
+    "foundation_commit": "01260409a0e11d8dcf97729ea25a61f20e2a4772"
+  },
+  "platform": {
+    "system": "Windows",
+    "release": "11",
+    "version": "10.0.26300",
+    "machine": "AMD64"
+  },
+  "python": {
+    "version": "3.13.14",
+    "implementation": "CPython"
+  },
+  "dependencies": {
+    "numpy": "2.2.3",
+    "scipy": "1.15.2",
+    "scikit-fem": "10.0.2",
+    "sympy": "1.13.3",
+    "pytest": "9.2.0"
+  }
+}

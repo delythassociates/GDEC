@@ -1,0 +1,1602 @@
+[
+  {
+    "case_id": "T3_01",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 1,
+    "description": "Point stress evaluation at 90-degree re-entrant notch vertex (0, 0)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "point_stress"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_02",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 2,
+    "description": "Point stress evaluation at sharp crack tip in edge-cracked panel",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "point_stress"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_03",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 3,
+    "description": "Von Mises point stress evaluation at 60-degree corner apex",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "point_stress"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_04",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 4,
+    "description": "Hoop point stress sigma_theta at 45-degree wedge tip",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "point_stress"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_05",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 5,
+    "description": "Principal tensile point stress sigma_1 at internal slit endpoint",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "point_stress"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_06",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 6,
+    "description": "Normal point stress sigma_xx at sharp V-notch root",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "point_stress"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_07",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 7,
+    "description": "Shear point stress sigma_xy at re-entrant corner singularity",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "point_stress"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_08",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 8,
+    "description": "Hydrostatic point stress at re-entrant corner in plane strain",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "point_stress"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_09",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 1,
+    "description": "Unregularized point displacement u_x at interior coordinates",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_10",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 2,
+    "description": "Unregularized point displacement u_y at boundary vertex",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_11",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 3,
+    "description": "Patch-average stress functional sigma_xx on interior box sub-domain",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_12",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 4,
+    "description": "Patch-average von Mises stress functional on sub-element region",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_13",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 5,
+    "description": "Maximum boundary normal stress functional along top edge",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_14",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 6,
+    "description": "Stress intensity factor K_I direct nodal point evaluation",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_15",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 7,
+    "description": "Domain J-integral without regularized test function formulation",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_16",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 8,
+    "description": "Point strain tensor component epsilon_xy at interior node",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_17",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 1,
+    "description": "Mesh coordinates array containing NaN values",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": false,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_18",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 2,
+    "description": "Mesh coordinates array containing infinite Inf values",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": false,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_19",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 3,
+    "description": "Empty mesh element connectivity table (0 elements)",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": false,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_20",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 4,
+    "description": "Degenerate element topology referencing out-of-bounds node index",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": false,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_21",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 5,
+    "description": "Inverted element orientation with negative Jacobian determinant",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": false,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_22",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 6,
+    "description": "Self-intersecting outer boundary polygon loop",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": false,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_23",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 7,
+    "description": "Disconnected floating vertices with zero element connections",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": false,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_24",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 8,
+    "description": "Zero-thickness degenerate 1D element in 2D mesh",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": false,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_25",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 1,
+    "description": "Needle triangle with minimum interior angle 4.2 deg (< 10 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 4.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_26",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 2,
+    "description": "Cap triangle with obtuse angle 168 deg and min angle 5.5 deg",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 4.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_27",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 3,
+    "description": "Collinear degenerate triangle with zero interior area",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 4.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_28",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 4,
+    "description": "Perturbed boundary vertex creating sliver element with min angle 2.1 deg",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 4.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_29",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 5,
+    "description": "Excessive element aspect ratio (AR = 120 > 50 threshold)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 4.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_30",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 6,
+    "description": "High-skew distorted triangle with min angle 7.8 deg",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 4.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_31",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 7,
+    "description": "Highly compressed boundary layer element with min angle 5.0 deg",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 4.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_32",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 8,
+    "description": "Crushed re-entrant corner triangle with min angle 1.5 deg",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 4.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_33",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 1,
+    "description": "Unconstrained domain with zero Dirichlet boundary conditions (rigid body mode)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-06,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_34",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 2,
+    "description": "Nearly incompressible material nu=0.4999999 causing severe volumetric locking",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-06,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_35",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 3,
+    "description": "Duplicate Dirichlet constraints causing singular condensed operator",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-06,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_36",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 4,
+    "description": "Linear solver relative residual exceeding tolerance (1.5e-6 > 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-06,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_37",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 5,
+    "description": "Extreme stiffness contrast E1/E2 = 1e9 causing ill-conditioned system",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-06,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_38",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 6,
+    "description": "Solver iteration limit reached without meeting convergence tolerance",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-06,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_39",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 7,
+    "description": "Inconsistent pure Neumann loading violating self-equilibrium",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-06,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_40",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 8,
+    "description": "Zero-stiffness sub-block causing rank-deficient global matrix",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-06,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_41",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 1,
+    "description": "Single coarse grid level M0 requesting GCI uncertainty estimation",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_42",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 2,
+    "description": "Two-level grid sequence (M0, M1) requesting three-level GCI contract",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_43",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 3,
+    "description": "Sequence with non-nested unrelated mesh pairs",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_44",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 4,
+    "description": "Sequence missing intermediate nested level (M0 and M2 with r=4)",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_45",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 5,
+    "description": "Adaptive refinement sequence with spatially non-uniform refinement ratio",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_46",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 6,
+    "description": "Single-mesh Richardson extrapolation request without nested levels",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_47",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 7,
+    "description": "Two-mesh sequence with non-constant refinement ratio (r1=1.5, r2=2.2)",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_48",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 8,
+    "description": "Truncated grid sequence terminated after single refinement",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_49",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 1,
+    "description": "Mesh differences |d01|=4.2e-14 m and |d12|=1.1e-14 m below 1e-13 m floor",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 1e-15
+    }
+  },
+  {
+    "case_id": "T3_50",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 2,
+    "description": "Identical values on successive meshes yielding exact machine zero d01=0.0",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 1e-15
+    }
+  },
+  {
+    "case_id": "T3_51",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 3,
+    "description": "Sub-floor difference on smooth boundary average (d12 = 8.5e-15 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 1e-15
+    }
+  },
+  {
+    "case_id": "T3_52",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 4,
+    "description": "Rigid body displacement test producing numerical roundoff differences only",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 1e-15
+    }
+  },
+  {
+    "case_id": "T3_53",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 5,
+    "description": "Zero body force and zero traction homogeneous zero solution",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 1e-15
+    }
+  },
+  {
+    "case_id": "T3_54",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 6,
+    "description": "Hyper-refined mesh levels where discretization error is drowned by roundoff",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 1e-15
+    }
+  },
+  {
+    "case_id": "T3_55",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 7,
+    "description": "Linear polynomial solution exactly captured by P1 elements (d01 = 0)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 1e-15
+    }
+  },
+  {
+    "case_id": "T3_56",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 8,
+    "description": "Uniform strain state with identical QoI values across all levels",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 1e-15
+    }
+  },
+  {
+    "case_id": "T3_57",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 1,
+    "description": "Super-asymptotic observed order p_obs = 4.8 > 3.5 plausibility cap",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_58",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 2,
+    "description": "Sub-asymptotic observed order p_obs = 0.28 < 0.5 plausibility floor",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_59",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 3,
+    "description": "Observed order p_obs = 0.15 polluted by adjacent singular notch",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_60",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 4,
+    "description": "Extreme apparent order p_obs = 6.2 from accidental error cancellation",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_61",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 5,
+    "description": "Sub-asymptotic order p_obs = 0.42 caused by non-smooth boundary traction",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_62",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 6,
+    "description": "Apparent order p_obs = 3.9 from pre-asymptotic coarse grid cancellation",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_63",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 7,
+    "description": "Sub-asymptotic order p_obs = 0.31 from discontinuous body force",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_64",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 8,
+    "description": "Observed order p_obs = 5.1 from symmetric mode cancellation",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_65",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 1,
+    "description": "Diverging mesh sequence (|d01| < |d12|, convergence ratio q = 0.65 < 1)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_66",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 2,
+    "description": "Oscillating sequence with alternating error signs (d01 > 0, d12 < 0)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_67",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 3,
+    "description": "Stagnant mesh sequence with zero error reduction (|d01| = |d12|, q = 1.0)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_68",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 4,
+    "description": "Non-monotonic four-grid sequence (d12 * d23 < 0 across M1, M2, M3)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_69",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 5,
+    "description": "Four-grid order drift failure (|p_012 - p_123| = 1.25 > 0.50)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_70",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 6,
+    "description": "Pre-asymptotic mesh regime with reversing error trajectory",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_71",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 7,
+    "description": "Under-resolved boundary layer causing non-monotonic convergence",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_72",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 8,
+    "description": "Four-grid order jump from local singularity (p012=1.95, p123=0.90)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_73",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 1,
+    "description": "Reference solution numerical uncertainty delta_ref = 0.12% > 0.05% gate",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_74",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 2,
+    "description": "Reference solution with unverified quadrature error (delta_ref = 0.08%)",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_75",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 3,
+    "description": "Reference solve terminated with relative residual 5e-5 > 1e-10",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_76",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 4,
+    "description": "Reference solution from non-nested grid without Richardson verification",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_77",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 5,
+    "description": "Reference solution uncertainty interval overlapping target tolerance",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_78",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 6,
+    "description": "Truncated analytical series reference with estimated truncation error 0.15%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_79",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 7,
+    "description": "Reference solution with uncharacterized boundary approximation error",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  },
+  {
+    "case_id": "T3_80",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 8,
+    "description": "Disputed external benchmark reference without mathematical error bound",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "qoi_spec": {
+        "type": "displacement"
+      },
+      "geometry_valid": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "difference_scale": 0.0001
+    }
+  }
+]

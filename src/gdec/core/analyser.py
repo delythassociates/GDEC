@@ -18,21 +18,29 @@ import skfem as fem
 class RefusalCode(str, Enum):
     ILL_POSED_QOI = "ill_posed_qoi"
     UNSUPPORTED_QOI = "unsupported_qoi"
+    INVALID_GEOMETRY = "invalid_geometry"
+    MESH_QUALITY_FAILURE = "mesh_quality_failure"
+    SOLVER_NOT_CONVERGED = "solver_not_converged"
     UNVERIFIED_INSUFFICIENT_LEVELS = "unverified_insufficient_levels"
+    UNVERIFIED_DIFFERENCE_BELOW_NUMERICAL_FLOOR = "unverified_difference_below_numerical_floor"
     UNVERIFIED_ORDER = "unverified_order"
     UNVERIFIED_NON_ASYMPTOTIC = "unverified_non_asymptotic"
-    UNVERIFIED_DIFFERENCE_BELOW_NUMERICAL_FLOOR = "unverified_difference_below_numerical_floor"
-    MESH_QUALITY_FAILURE = "mesh_quality_failure"
-    BUDGET_EXHAUSTED = "budget_exhausted"
-    SOLVER_NOT_CONVERGED = "solver_not_converged"
     REFERENCE_UNCERTAIN = "reference_uncertain"
+    BUDGET_EXHAUSTED = "budget_exhausted"
 
 
 @dataclass
 class AccuracyTarget:
     target_type: str  # "relative" or "absolute"
     tolerance: float  # e.g. 0.01 (1.0%)
-    qoi_scale: float = 1.0  # Scale S_J for relative comparison
+    qoi_scale: Optional[float] = None  # Scale S_J for relative comparison
+
+    def __post_init__(self) -> None:
+        if self.target_type == "relative":
+            if self.qoi_scale is None or self.qoi_scale <= 0.0 or not np.isfinite(self.qoi_scale):
+                raise ValueError(
+                    f"Explicit positive finite qoi_scale is strictly required for relative accuracy targets (got {self.qoi_scale})."
+                )
 
 
 @dataclass
@@ -89,6 +97,7 @@ class ProblemAnalyser:
     def check_mesh_quality(self, mesh: fem.MeshTri) -> Tuple[bool, float]:
         """
         Calculates the minimum interior angle across all triangles in the mesh.
+        Strictly detects degenerate/zero-area elements before law-of-cosines evaluation.
         Returns (is_valid, min_angle_degrees).
         """
         p = mesh.p
@@ -97,33 +106,97 @@ class ProblemAnalyser:
         v1 = p[:, t[1]]
         v2 = p[:, t[2]]
 
+        # Area check: det( [v1-v0, v2-v0] )
+        det = (v1[0] - v0[0]) * (v2[1] - v0[1]) - (v2[0] - v0[0]) * (v1[1] - v0[1])
+        areas = 0.5 * np.abs(det)
+        if np.any(areas <= 1e-14):
+            return False, 0.0
+
         # Edge lengths
         a = np.linalg.norm(v1 - v2, axis=0)
         b = np.linalg.norm(v2 - v0, axis=0)
         c = np.linalg.norm(v0 - v1, axis=0)
 
-        # Law of cosines for all three interior angles
-        # Clamp arguments to [-1, 1] to avoid float precision domain errors
-        cos_alpha = np.clip((b**2 + c**2 - a**2) / (2.0 * np.maximum(b * c, 1e-14)), -1.0, 1.0)
-        cos_beta = np.clip((a**2 + c**2 - b**2) / (2.0 * np.maximum(a * c, 1e-14)), -1.0, 1.0)
-        cos_gamma = np.clip((a**2 + b**2 - c**2) / (2.0 * np.maximum(a * b, 1e-14)), -1.0, 1.0)
+        if np.any(a <= 1e-14) or np.any(b <= 1e-14) or np.any(c <= 1e-14):
+            return False, 0.0
 
-        min_angles_rad = np.minimum(np.arccos(cos_alpha), np.minimum(np.arccos(cos_beta), np.arccos(cos_gamma)))
+        # Law of cosines for all three interior angles
+        cos_alpha = np.clip((b**2 + c**2 - a**2) / (2.0 * b * c), -1.0, 1.0)
+        cos_beta = np.clip((a**2 + c**2 - b**2) / (2.0 * a * c), -1.0, 1.0)
+        cos_gamma = np.clip((a**2 + b**2 - c**2) / (2.0 * a * b), -1.0, 1.0)
+
+        min_angles_rad = np.minimum(
+            np.arccos(cos_alpha), np.minimum(np.arccos(cos_beta), np.arccos(cos_gamma))
+        )
         min_angle_deg = float(np.min(np.degrees(min_angles_rad)))
 
         is_valid = bool(min_angle_deg >= self.min_angle_threshold_deg)
         return is_valid, min_angle_deg
 
-    def check_qoi_support(self, qoi_spec: Dict[str, Any]) -> Tuple[bool, Optional[RefusalCode], str]:
+    def validate_geometry(
+        self, geometry: Any
+    ) -> Tuple[bool, Optional[RefusalCode], str]:
+        """
+        Validates geometry definition and coordinates before meshing or execution.
+        """
+        if isinstance(geometry, fem.MeshTri):
+            if not np.all(np.isfinite(geometry.p)):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Geometry coordinates contain NaN or Inf values.",
+                )
+            if geometry.t.shape[0] != 3 or geometry.t.shape[1] == 0:
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Mesh has invalid or empty element topology.",
+                )
+            valid_angle, min_angle = self.check_mesh_quality(geometry)
+            if not valid_angle:
+                return (
+                    False,
+                    RefusalCode.MESH_QUALITY_FAILURE,
+                    f"Mesh minimum angle ({min_angle:.1f} deg) violates threshold ({self.min_angle_threshold_deg:.1f} deg).",
+                )
+            return True, None, "Valid geometry and mesh quality."
+
+        if isinstance(geometry, bool):
+            if not geometry:
+                return False, RefusalCode.INVALID_GEOMETRY, "Invalid geometric domain specification."
+            return True, None, "Valid geometry."
+
+        return True, None, "Geometry valid."
+
+    def validate_sequence(
+        self, levels: List[float]
+    ) -> Tuple[bool, Optional[RefusalCode], str]:
+        """
+        Validates whether sufficient mesh levels are provided for GCI estimation.
+        """
+        if len(levels) < 3:
+            return (
+                False,
+                RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                f"Grid sequence has {len(levels)} levels; at least 3 nested grid levels required for verification.",
+            )
+        return True, None, "Sufficient grid levels available."
+
+    def check_qoi_support(
+        self, qoi_spec: Dict[str, Any]
+    ) -> Tuple[bool, Optional[RefusalCode], str]:
         """
         Validates whether the requested QoI is mathematically supported in the current H^1 setting.
+        Strictly refuses patch_average_stress as unsupported.
         """
         qtype = qoi_spec.get("type", "").lower()
         location = qoi_spec.get("location")
         is_singular_point = qoi_spec.get("is_singular_point", False)
 
         if qtype == "point_stress":
-            if is_singular_point or (location is not None and np.allclose(location, [0.0, 0.0])):
+            if is_singular_point or (
+                location is not None and np.allclose(location, [0.0, 0.0])
+            ):
                 return (
                     False,
                     RefusalCode.ILL_POSED_QOI,
@@ -132,7 +205,7 @@ class ProblemAnalyser:
             return (
                 False,
                 RefusalCode.UNSUPPORTED_QOI,
-                "Point stress evaluation is currently unsupported. Use a regularized patch average.",
+                "Point stress evaluation is currently unsupported. Use a regularized patch average displacement functional.",
             )
 
         if qtype == "point_displacement":
@@ -142,14 +215,26 @@ class ProblemAnalyser:
                 "Unregularized point displacement is unsupported in 2D H^1 setting. Use a boundary or patch average.",
             )
 
-        if qtype in ["boundary_average_displacement", "patch_average_displacement", "boundary_average", "patch_average"]:
+        if qtype in [
+            "boundary_average_displacement",
+            "patch_average_displacement",
+            "boundary_average",
+            "patch_average",
+        ]:
             return True, None, "Supported displacement functional."
 
         if qtype in ["patch_average_stress", "patch_stress"]:
-            # Exploratory support only
-            return True, None, "Exploratory patch stress functional."
+            return (
+                False,
+                RefusalCode.UNSUPPORTED_QOI,
+                "Patch-average stress is currently unsupported in H^1 setting. Only displacement functionals are supported.",
+            )
 
-        return False, RefusalCode.UNSUPPORTED_QOI, f"Functional type '{qtype}' is not supported by GDEC."
+        return (
+            False,
+            RefusalCode.UNSUPPORTED_QOI,
+            f"Functional type '{qtype}' is not supported by GDEC.",
+        )
 
     def evaluate_contract(
         self,
@@ -162,13 +247,20 @@ class ProblemAnalyser:
         solver_relative_residual: Optional[float] = None,
         qoi_spec: Optional[Dict[str, Any]] = None,
         budget_exhausted: bool = False,
+        require_m3_stability: bool = False,
+        geometry_valid: bool = True,
+        mesh_levels: Optional[int] = None,
     ) -> ContractResult:
         """
         Evaluates the verification contract for computed QoIs on nested levels M0, M1, M2.
         Enforces deterministic refusal priority.
         """
         qoi_meta = qoi_spec or {"type": "displacement", "units": "m"}
-        base_qoi = {"kind": qoi_meta.get("type", "displacement"), "value": float(J0), "units": qoi_meta.get("units", "m")}
+        base_qoi = {
+            "kind": qoi_meta.get("type", "displacement"),
+            "value": float(J0),
+            "units": qoi_meta.get("units", "m"),
+        }
         limitations = [
             "Estimated spatial discretisation uncertainty only (Grid Convergence Index)",
             "Model-form uncertainty is not included",
@@ -179,16 +271,34 @@ class ProblemAnalyser:
         if qoi_spec is not None:
             supported, refusal_code, reason = self.check_qoi_support(qoi_spec)
             if not supported and refusal_code is not None:
+                priority = 1 if refusal_code == RefusalCode.ILL_POSED_QOI else 2
                 return ContractResult(
                     issued=False,
                     status=refusal_code.value,
                     qoi=base_qoi,
-                    refusal={"code": refusal_code.value, "reason": reason, "priority": 1},
+                    refusal={"code": refusal_code.value, "reason": reason, "priority": priority},
                     limitations=limitations,
                 )
 
+        # Priority 3: Geometry validity
+        if not geometry_valid:
+            return ContractResult(
+                issued=False,
+                status=RefusalCode.INVALID_GEOMETRY.value,
+                qoi=base_qoi,
+                refusal={
+                    "code": RefusalCode.INVALID_GEOMETRY.value,
+                    "reason": "Geometry definition or coordinate bounds are invalid.",
+                    "priority": 3,
+                },
+                limitations=limitations,
+            )
+
         # Priority 4: Mesh quality
-        if mesh_min_angle_deg is not None and mesh_min_angle_deg < self.min_angle_threshold_deg:
+        if (
+            mesh_min_angle_deg is not None
+            and mesh_min_angle_deg < self.min_angle_threshold_deg
+        ):
             return ContractResult(
                 issued=False,
                 status=RefusalCode.MESH_QUALITY_FAILURE.value,
@@ -202,7 +312,10 @@ class ProblemAnalyser:
             )
 
         # Priority 5: Solver convergence
-        if solver_relative_residual is not None and solver_relative_residual > self.solver_residual_tol:
+        if (
+            solver_relative_residual is not None
+            and solver_relative_residual > self.solver_residual_tol
+        ):
             return ContractResult(
                 issued=False,
                 status=RefusalCode.SOLVER_NOT_CONVERGED.value,
@@ -211,6 +324,20 @@ class ProblemAnalyser:
                     "code": RefusalCode.SOLVER_NOT_CONVERGED.value,
                     "reason": f"Linear solver relative residual ({solver_relative_residual:.3e}) exceeds tolerance ({self.solver_residual_tol:.3e}).",
                     "priority": 5,
+                },
+                limitations=limitations,
+            )
+
+        # Priority 6: Sequence length (minimum 3 levels)
+        if mesh_levels is not None and mesh_levels < 3:
+            return ContractResult(
+                issued=False,
+                status=RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value,
+                qoi=base_qoi,
+                refusal={
+                    "code": RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value,
+                    "reason": f"Mesh levels ({mesh_levels}) insufficient for verification (minimum 3 required).",
+                    "priority": 6,
                 },
                 limitations=limitations,
             )
@@ -233,7 +360,7 @@ class ProblemAnalyser:
                 limitations=limitations,
             )
 
-        # Priority 8 & 9: Monotonicity and Asymptotic range plausibility
+        # Priority 9: Monotonicity and Asymptotic range plausibility
         if (d01 * d12 <= 0.0) or (abs(d01) <= abs(d12)):
             return ContractResult(
                 issued=False,
@@ -251,7 +378,7 @@ class ProblemAnalyser:
         q = abs(d01) / abs(d12)
         p_obs = float(np.log(q) / np.log(2.0))
 
-        # Check observed order plausibility window [0.5, 3.5]
+        # Priority 8: Observed order plausibility window [0.5, 3.5]
         if not (self.order_window[0] <= p_obs <= self.order_window[1]):
             return ContractResult(
                 issued=False,
@@ -266,42 +393,79 @@ class ProblemAnalyser:
             )
 
         # Four-grid M3 asymptotic stability validation (if M3 available)
-        m3_stable = None
-        p_123 = None
+        m3_stable: Optional[bool] = None
+        p_123: Optional[float] = None
+        delta_p: Optional[float] = None
+        four_grid_status: str = "not_evaluated"
+
         if J3 is not None:
             d23 = J2 - J3
             if (d12 * d23 > 0.0) and (abs(d12) > abs(d23)):
                 q_123 = abs(d12) / abs(d23)
                 p_123 = float(np.log(q_123) / np.log(2.0))
+                delta_p = float(abs(p_obs - p_123))
                 # Stability criterion: |p_012 - p_123| <= 0.50
-                m3_stable = bool(abs(p_obs - p_123) <= 0.50)
+                m3_stable = bool(delta_p <= 0.50)
+                four_grid_status = (
+                    "four_grid_stability_passed"
+                    if m3_stable
+                    else "four_grid_stability_failed"
+                )
+            else:
+                m3_stable = False
+                four_grid_status = "four_grid_non_monotonic"
+
+            # AM1-01 & AM1-10: If require_m3_stability is enabled and M3 fails, refuse
+            if require_m3_stability and not m3_stable:
+                return ContractResult(
+                    issued=False,
+                    status=RefusalCode.UNVERIFIED_NON_ASYMPTOTIC.value,
+                    qoi=base_qoi,
+                    refusal={
+                        "code": RefusalCode.UNVERIFIED_NON_ASYMPTOTIC.value,
+                        "reason": f"Four-grid stability check failed (p_012={p_obs:.2f}, p_123={p_123 if p_123 is not None else 'N/A'}, delta_p={delta_p if delta_p is not None else 'N/A'}, status={four_grid_status}).",
+                        "priority": 9,
+                    },
+                    limitations=limitations,
+                )
 
         # Order cap and coarse-grid uncertainty calculation
         p_used = float(min(p_obs, self.p_cap))
         factor = (2.0**p_used) / (2.0**p_used - 1.0)
         U0 = float(self.Fs * abs(d01) * factor)
 
-        # Accuracy target check
+        # Accuracy target check (AM1-11 & AM1-12)
         accuracy_meta = None
         if target is not None:
             if target.target_type == "absolute":
-                target_met = bool(U0 <= target.tolerance)
                 metric_val = U0
             else:  # relative
-                scale = target.qoi_scale if target.qoi_scale > 0 else max(abs(J0), 1e-12)
-                rel_u = U0 / scale
-                target_met = bool(rel_u <= target.tolerance)
-                metric_val = rel_u
+                if (
+                    target.qoi_scale is None
+                    or target.qoi_scale <= 0.0
+                    or not np.isfinite(target.qoi_scale)
+                ):
+                    raise ValueError(
+                        f"Explicit positive finite qoi_scale is strictly required for relative accuracy targets (got {target.qoi_scale})."
+                    )
+                metric_val = U0 / target.qoi_scale
+
+            target_met = bool(metric_val <= target.tolerance)
+            estimated_target_met = target_met and not budget_exhausted
+            accuracy_status = (
+                "estimated_target_met"
+                if estimated_target_met
+                else "estimated_target_not_met"
+            )
 
             accuracy_meta = {
                 "target_type": target.target_type,
                 "requested_tolerance": target.tolerance,
                 "evaluated_uncertainty_metric": float(metric_val),
-                "estimated_target_met": target_met and not budget_exhausted,
-                "status": "estimated_target_met" if target_met else "estimated_target_not_met",
+                "estimated_target_met": estimated_target_met,
+                "status": accuracy_status,
+                "budget_exhausted": budget_exhausted,
             }
-            if budget_exhausted and not target_met:
-                accuracy_meta["budget_exhausted"] = True
 
         uncertainty_meta = {
             "issued": True,
@@ -320,13 +484,22 @@ class ProblemAnalyser:
             "order_plausibility": "passed",
             "observed_order": p_obs,
             "order_window": list(self.order_window),
+            "four_grid_status": four_grid_status,
             "m3_stability": m3_stable,
             "p_obs_123": p_123,
+            "delta_p": delta_p,
         }
+
+        # Contract status: distinguish 4-grid verified from standard 3-grid verified
+        contract_status = (
+            "four_grid_verified_contract_issued"
+            if (J3 is not None and m3_stable is True)
+            else "verified_contract_issued"
+        )
 
         return ContractResult(
             issued=True,
-            status="verified_contract_issued",
+            status=contract_status,
             qoi=base_qoi,
             uncertainty=uncertainty_meta,
             accuracy=accuracy_meta,

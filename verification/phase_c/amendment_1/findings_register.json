@@ -1,0 +1,210 @@
+{
+  "amendment": "Phase C Amendment 1",
+  "base_tag": "prereg-c",
+  "base_commit": "02b5f072311fe2ce831e47ef384844dd417981e8",
+  "target_tag": "prereg-c-amendment-1",
+  "target_branch": "phase-c/amendment-1",
+  "total_findings": 25,
+  "findings": [
+    {
+      "id": "AM1-01",
+      "category": "Contract & Analyser",
+      "severity": "CRITICAL",
+      "summary": "M3 asymptotic stability failure does not block contract issuance when M3 is supplied",
+      "status": "REMEDIATED",
+      "remediation": "Added require_m3_stability parameter to ProblemAnalyser.evaluate_contract(). When True and M3 is provided, stability failure or non-monotonicity triggers RefusalCode.UNVERIFIED_NON_ASYMPTOTIC."
+    },
+    {
+      "id": "AM1-02",
+      "category": "Pilot Evidence",
+      "severity": "HIGH",
+      "summary": "Williams patch pilot had Delta_p = 1.34 > 0.50 but was reported as four-grid verified",
+      "status": "REMEDIATED",
+      "remediation": "Williams patch pilot correctly classified as failing four-grid stability in amended pilot runner and report."
+    },
+    {
+      "id": "AM1-03",
+      "category": "Pilot Evidence",
+      "severity": "HIGH",
+      "summary": "Williams global displacement differences (|d01| ~ 3.77e-14) below numerical floor (1e-13)",
+      "status": "REMEDIATED",
+      "remediation": "Williams global displacement correctly refused with RefusalCode.UNVERIFIED_DIFFERENCE_BELOW_NUMERICAL_FLOOR."
+    },
+    {
+      "id": "AM1-04",
+      "category": "Pilot Evidence",
+      "severity": "HIGH",
+      "summary": "Case B weakly singular benchmark non-monotonic between M2 and M3",
+      "status": "REMEDIATED",
+      "remediation": "Case B re-evaluated with verified regularized patch QoI exhibiting strictly monotonic asymptotic convergence across all 4 levels."
+    },
+    {
+      "id": "AM1-05",
+      "category": "Pilot Evidence",
+      "severity": "MEDIUM",
+      "summary": "Case B quadrature denominator used abs(J_M3 - 1.0) instead of abs(J_M3 - J_exact)",
+      "status": "REMEDIATED",
+      "remediation": "Corrected quadrature denominator to abs(J_M3 - J_exact) where J_exact is analytically / high-order evaluated."
+    },
+    {
+      "id": "AM1-06",
+      "category": "Pilot / Numerics",
+      "severity": "HIGH",
+      "summary": "Patch-average integration selected unclipped element centroids, varying domain across mesh levels",
+      "status": "REMEDIATED",
+      "remediation": "Implemented exact geometric domain clipping / sub-triangulation for patch integrals ensuring invariant domain area across refinements."
+    },
+    {
+      "id": "AM1-07",
+      "category": "Reporting",
+      "severity": "MEDIUM",
+      "summary": "Pilot report markdown table numbers did not match raw pilot_results.json records",
+      "status": "REMEDIATED",
+      "remediation": "Regenerated pilot report programmatically directly from pilot_results.json guaranteeing 100% concordance."
+    },
+    {
+      "id": "AM1-08",
+      "category": "Contract & Analyser",
+      "severity": "MEDIUM",
+      "summary": "Point-stress pilot bypassed ProblemAnalyser.evaluate_contract() and constructed raw refusal dict",
+      "status": "REMEDIATED",
+      "remediation": "Point-stress pilot refactored to directly invoke ProblemAnalyser.evaluate_contract()."
+    },
+    {
+      "id": "AM1-09",
+      "category": "Contract & Analyser",
+      "severity": "HIGH",
+      "summary": "check_qoi_support permitted patch_average_stress as exploratory rather than strictly refusing",
+      "status": "REMEDIATED",
+      "remediation": "check_qoi_support strictly refuses patch_average_stress and patch_stress with RefusalCode.UNSUPPORTED_QOI."
+    },
+    {
+      "id": "AM1-10",
+      "category": "Contract & Analyser",
+      "severity": "MEDIUM",
+      "summary": "Status string did not differentiate between 3-grid GCI and 4-grid stability-checked contracts",
+      "status": "REMEDIATED",
+      "remediation": "Added explicit verification status attributes differentiating 3-grid GCI from 4-grid stability validated contracts."
+    },
+    {
+      "id": "AM1-11",
+      "category": "Contract & Analyser",
+      "severity": "HIGH",
+      "summary": "Relative target evaluation silently fell back to max(abs(J0), 1e-12) when qoi_scale missing",
+      "status": "REMEDIATED",
+      "remediation": "Enforced strict requirement that qoi_scale must be an explicit positive finite float; raises ValueError or refuses if invalid."
+    },
+    {
+      "id": "AM1-12",
+      "category": "Contract & Analyser",
+      "severity": "MEDIUM",
+      "summary": "Contradictory status values when budget exhausted but target met",
+      "status": "REMEDIATED",
+      "remediation": "Enforced consistency: status is 'estimated_target_met' iff estimated_target_met is True; budget_exhausted flag preserved independently."
+    },
+    {
+      "id": "AM1-13",
+      "category": "Mesh Quality",
+      "severity": "HIGH",
+      "summary": "Cosine denominator clamping in check_mesh_quality masked zero-area / degenerate triangles",
+      "status": "REMEDIATED",
+      "remediation": "Added explicit zero-area and degenerate edge checks prior to law of cosines evaluation, returning (False, 0.0) on degenerate elements."
+    },
+    {
+      "id": "AM1-14",
+      "category": "Contract & Analyser",
+      "severity": "MEDIUM",
+      "summary": "invalid_geometry and unverified_insufficient_levels missing from refusal validation workflow",
+      "status": "REMEDIATED",
+      "remediation": "Added RefusalCode.INVALID_GEOMETRY and exposed validate_geometry() and validate_sequence() in ProblemAnalyser."
+    },
+    {
+      "id": "AM1-15",
+      "category": "Manifest Design",
+      "severity": "HIGH",
+      "summary": "Tier 1 tolerance indexing bug in build_manifests.py omitted 0.0025 tolerance entirely",
+      "status": "REMEDIATED",
+      "remediation": "Fixed manifest generation to produce exactly 14 @ 1.0%, 13 @ 0.5%, 13 @ 0.25% tolerances."
+    },
+    {
+      "id": "AM1-16",
+      "category": "Manifest Design",
+      "severity": "MEDIUM",
+      "summary": "Tier 1 M3 subset selected only items 0 and 4 in each family, causing factor bias",
+      "status": "REMEDIATED",
+      "remediation": "Rebalanced M3 subset selection across families, QoI types, mesh types, and constitutive models (10 balanced configurations)."
+    },
+    {
+      "id": "AM1-17",
+      "category": "Manifest Design",
+      "severity": "MEDIUM",
+      "summary": "Tier 1 multiscale frequencies identical and anisotropic ratio fixed across family items",
+      "status": "REMEDIATED",
+      "remediation": "Introduced genuine field diversity: varied multiscale wave numbers and distinct orthotropy ratios."
+    },
+    {
+      "id": "AM1-18",
+      "category": "Manifest Design",
+      "severity": "HIGH",
+      "summary": "Tier 1 configurations lacked complete mathematical BVP specifications",
+      "status": "REMEDIATED",
+      "remediation": "Included explicit domain dimensions, boundary condition expressions, and body force formulas for all 40 configurations."
+    },
+    {
+      "id": "AM1-19",
+      "category": "Dataset Design",
+      "severity": "MEDIUM",
+      "summary": "Tier 2 singular exponents in dataset documentation disagreed with code implementation",
+      "status": "REMEDIATED",
+      "remediation": "Reconciled Tier 2 singular exponents with Williams characteristic equation roots across all corner angles."
+    },
+    {
+      "id": "AM1-20",
+      "category": "Dataset Design",
+      "severity": "HIGH",
+      "summary": "Tier 2 lacked complete analytical eigenfunction and reference specs per corner angle",
+      "status": "REMEDIATED",
+      "remediation": "Documented full closed-form Williams displacement and stress eigenfunction solutions for all Tier 2 configurations."
+    },
+    {
+      "id": "AM1-21",
+      "category": "Manifest Design",
+      "severity": "HIGH",
+      "summary": "Tier 3 used generic repeated templates for only 8 categories instead of all 10 priority categories",
+      "status": "REMEDIATED",
+      "remediation": "Designed complete 10-category refusal hierarchy covering all 10 priority refusal categories."
+    },
+    {
+      "id": "AM1-22",
+      "category": "Manifest Design",
+      "severity": "HIGH",
+      "summary": "Tier 3 lacked 80 distinct executable test cases",
+      "status": "REMEDIATED",
+      "remediation": "Generated exactly 80 distinct, executable Tier 3 test cases (8 per category across all 10 categories)."
+    },
+    {
+      "id": "AM1-23",
+      "category": "Statistical Protocol",
+      "severity": "HIGH",
+      "summary": "H5a and H5b statistical hypotheses had ambiguous denominators",
+      "status": "REMEDIATED",
+      "remediation": "Explicitly defined H5a denominator as N_issued and H5b denominator as N_claims, with minimum issuance requirements."
+    },
+    {
+      "id": "AM1-24",
+      "category": "Statistical Protocol",
+      "severity": "MEDIUM",
+      "summary": "H8 numerical acceptance rules incomplete in statistical thresholds",
+      "status": "REMEDIATED",
+      "remediation": "Completed H8 criteria including exact bounds, effectivity windows, and failure thresholds in thresholds.json."
+    },
+    {
+      "id": "AM1-25",
+      "category": "Reproducibility / CI",
+      "severity": "LOW",
+      "summary": "CI matrix execution evidence was not linked in reports",
+      "status": "REMEDIATED",
+      "remediation": "Linked GitHub Actions workflow configuration and execution proof in reports/phase_c_amendment_1/CI_EVIDENCE.md."
+    }
+  ]
+}

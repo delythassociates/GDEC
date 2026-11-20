@@ -190,3 +190,109 @@ def test_four_grid_m3_stability_validation():
     assert res.issued is True
     assert res.verification["m3_stability"] is True
     assert np.isclose(res.verification["p_obs_123"], 2.0, atol=1e-6)
+
+
+def test_refusal_patch_average_stress_unsupported():
+    """AM1-09: patch_average_stress must be strictly refused with UNSUPPORTED_QOI."""
+    analyser = ProblemAnalyser()
+    qoi_spec = {"type": "patch_average_stress", "patch": [0.4, 0.6, 0.4, 0.6]}
+    res = analyser.evaluate_contract(10.0, 9.0, 8.5, qoi_spec=qoi_spec)
+
+    assert res.issued is False
+    assert res.status == RefusalCode.UNSUPPORTED_QOI.value
+    assert res.refusal["code"] == RefusalCode.UNSUPPORTED_QOI.value
+
+
+def test_refusal_invalid_geometry():
+    """AM1-14: invalid geometry flag or non-finite coords must refuse with INVALID_GEOMETRY."""
+    analyser = ProblemAnalyser()
+    res = analyser.evaluate_contract(1.04, 1.01, 1.0025, geometry_valid=False)
+
+    assert res.issued is False
+    assert res.status == RefusalCode.INVALID_GEOMETRY.value
+    assert res.refusal["priority"] == 3
+
+
+def test_refusal_insufficient_levels():
+    """AM1-14: insufficient mesh levels (< 3) must refuse with UNVERIFIED_INSUFFICIENT_LEVELS."""
+    analyser = ProblemAnalyser()
+    res = analyser.evaluate_contract(1.04, 1.01, 1.0025, mesh_levels=2)
+
+    assert res.issued is False
+    assert res.status == RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value
+    assert res.refusal["priority"] == 6
+
+
+def test_mesh_quality_zero_area_degenerate():
+    """AM1-13: zero-area collinear triangle must return (False, 0.0) without division error."""
+    analyser = ProblemAnalyser()
+    # Vertices on a straight line: (0,0), (1,0), (2,0) -> zero area
+    p_zero = np.array([[0.0, 1.0, 2.0], [0.0, 0.0, 0.0]])
+    t_zero = np.array([[0], [1], [2]])
+    m_zero = fem.MeshTri(p_zero, t_zero)
+
+    is_valid, min_angle = analyser.check_mesh_quality(m_zero)
+    assert is_valid is False
+    assert min_angle == 0.0
+
+
+def test_accuracy_target_requires_explicit_positive_scale():
+    """AM1-11: AccuracyTarget must raise ValueError if relative target has missing/non-positive scale."""
+    with pytest.raises(ValueError, match="Explicit positive finite qoi_scale is strictly required"):
+        AccuracyTarget(target_type="relative", tolerance=0.01, qoi_scale=0.0)
+
+    with pytest.raises(ValueError, match="Explicit positive finite qoi_scale is strictly required"):
+        AccuracyTarget(target_type="relative", tolerance=0.01, qoi_scale=-1.0)
+
+
+def test_budget_exhaustion_accuracy_status_consistency():
+    """AM1-12: If budget is exhausted, status is 'estimated_target_not_met' and estimated_target_met is False."""
+    analyser = ProblemAnalyser()
+    # U0 = 0.05, tolerance = 0.10 -> U0 <= tolerance, but budget_exhausted=True
+    target = AccuracyTarget(target_type="relative", tolerance=0.10, qoi_scale=1.0)
+    res = analyser.evaluate_contract(1.04, 1.01, 1.0025, target=target, budget_exhausted=True)
+
+    assert res.issued is True
+    assert res.accuracy is not None
+    assert res.accuracy["estimated_target_met"] is False
+    assert res.accuracy["status"] == "estimated_target_not_met"
+    assert res.accuracy["budget_exhausted"] is True
+
+
+def test_m3_stability_refusal_when_required():
+    """AM1-01: When require_m3_stability=True, M3 stability failure triggers refusal."""
+    analyser = ProblemAnalyser()
+    # J0, J1, J2 have p_012 = 2.0 (q = 4.0)
+    # J3 has p_123 = 1.0 (d23 = 0.00375 -> q123 = 2.0 -> p_123 = 1.0)
+    # |p_012 - p_123| = 1.0 > 0.50
+    J0 = 1.04
+    J1 = 1.01
+    J2 = 1.0025
+    J3 = 1.0025 - 0.00375  # d23 = 0.00375 -> d12/d23 = 0.0075 / 0.00375 = 2.0 -> p123 = 1.0
+
+    # With require_m3_stability=True -> Refusal
+    res_strict = analyser.evaluate_contract(J0, J1, J2, J3=J3, require_m3_stability=True)
+    assert res_strict.issued is False
+    assert res_strict.status == RefusalCode.UNVERIFIED_NON_ASYMPTOTIC.value
+    assert res_strict.refusal["code"] == RefusalCode.UNVERIFIED_NON_ASYMPTOTIC.value
+
+    # With require_m3_stability=False -> Issued with stability flag noted
+    res_lax = analyser.evaluate_contract(J0, J1, J2, J3=J3, require_m3_stability=False)
+    assert res_lax.issued is True
+    assert res_lax.status == "verified_contract_issued"
+    assert res_lax.verification["four_grid_status"] == "four_grid_stability_failed"
+    assert res_lax.verification["m3_stability"] is False
+
+
+def test_four_grid_verified_contract_status():
+    """AM1-10: When M3 is stable, status is 'four_grid_verified_contract_issued'."""
+    analyser = ProblemAnalyser()
+    J0 = 1.04
+    J1 = 1.01
+    J2 = 1.0025
+    J3 = 1.000625
+    res = analyser.evaluate_contract(J0, J1, J2, J3=J3)
+
+    assert res.issued is True
+    assert res.status == "four_grid_verified_contract_issued"
+    assert res.verification["four_grid_status"] == "four_grid_stability_passed"

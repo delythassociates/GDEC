@@ -1,0 +1,284 @@
+[
+  {
+    "config_id": "T2_01",
+    "name": "Williams L-Shape Mode-I Corner Notch (Plane Strain)",
+    "corner_angle_deg": 270.0,
+    "corner_angle_rad": "1.5 * pi",
+    "singular_exponent_lambda": 0.544483736782464,
+    "stress_singularity_exponent": -0.455516263217536,
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.3
+    },
+    "domain": "L-shaped [-1, 1]^2 \\ ([0, 1] x [-1, 0])",
+    "boundary_conditions": {
+      "notch_facets": "theta = 0 and theta = 1.5*pi traction-free (Neumann)",
+      "exterior_facets": "exact Williams displacement trace (Dirichlet)"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        -0.75,
+        -0.25,
+        0.25,
+        0.75
+      ],
+      "scale": 1e-11
+    },
+    "quadrature_requirement": "Order 18 Gauss-Legendre quadrature with error <= 0.01 * finest error"
+  },
+  {
+    "config_id": "T2_02",
+    "name": "Williams L-Shape Mode-I Corner Notch (Plane Stress)",
+    "corner_angle_deg": 270.0,
+    "corner_angle_rad": "1.5 * pi",
+    "singular_exponent_lambda": 0.544483736782464,
+    "stress_singularity_exponent": -0.455516263217536,
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.3
+    },
+    "domain": "L-shaped [-1, 1]^2 \\ ([0, 1] x [-1, 0])",
+    "boundary_conditions": {
+      "notch_facets": "traction-free notch surfaces",
+      "exterior_facets": "exact displacement trace"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        -0.75,
+        -0.25,
+        0.25,
+        0.75
+      ],
+      "scale": 1e-11
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  },
+  {
+    "config_id": "T2_03",
+    "name": "Williams Re-entrant Wedge Mode-I 300 deg",
+    "corner_angle_deg": 300.0,
+    "corner_angle_rad": "5 * pi / 3",
+    "singular_exponent_lambda": 0.512221405106197,
+    "stress_singularity_exponent": -0.487778594893803,
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 120000000000.0,
+      "nu": 0.28
+    },
+    "domain": "Wedge domain with 60 deg opening notch",
+    "boundary_conditions": {
+      "notch_facets": "traction-free",
+      "exterior": "exact trace"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        -0.8,
+        -0.3,
+        0.3,
+        0.8
+      ],
+      "scale": 1e-11
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  },
+  {
+    "config_id": "T2_04",
+    "name": "Williams Re-entrant Wedge Mode-I 315 deg",
+    "corner_angle_deg": 315.0,
+    "corner_angle_rad": "7 * pi / 4",
+    "singular_exponent_lambda": 0.504990924760086,
+    "stress_singularity_exponent": -0.495009075239914,
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 120000000000.0,
+      "nu": 0.28
+    },
+    "domain": "Wedge domain with 45 deg opening notch",
+    "boundary_conditions": {
+      "notch_facets": "traction-free",
+      "exterior": "exact trace"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        -0.8,
+        -0.3,
+        0.3,
+        0.8
+      ],
+      "scale": 1e-11
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  },
+  {
+    "config_id": "T2_05",
+    "name": "Williams Slit Crack Mode-I 360 deg (Plane Strain)",
+    "corner_angle_deg": 360.0,
+    "corner_angle_rad": "2 * pi",
+    "singular_exponent_lambda": 0.5,
+    "stress_singularity_exponent": -0.5,
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 150000000000.0,
+      "nu": 0.25
+    },
+    "domain": "Edge-cracked plate [-1, 1] x [-1, 1] with crack on y=0, x in [-1, 0]",
+    "boundary_conditions": {
+      "crack_lips": "traction-free",
+      "exterior": "exact trace"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        0.2,
+        0.7,
+        0.2,
+        0.7
+      ],
+      "scale": 1e-11
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  },
+  {
+    "config_id": "T2_06",
+    "name": "Williams Slit Crack Mode-I 360 deg (Plane Stress)",
+    "corner_angle_deg": 360.0,
+    "corner_angle_rad": "2 * pi",
+    "singular_exponent_lambda": 0.5,
+    "stress_singularity_exponent": -0.5,
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 150000000000.0,
+      "nu": 0.25
+    },
+    "domain": "Edge-cracked plate [-1, 1] x [-1, 1] with crack on y=0, x in [-1, 0]",
+    "boundary_conditions": {
+      "crack_lips": "traction-free",
+      "exterior": "exact trace"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        0.2,
+        0.7,
+        0.2,
+        0.7
+      ],
+      "scale": 1e-11
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  },
+  {
+    "config_id": "T2_07",
+    "name": "Manufactured Weakly-Singular Field alpha=1.20",
+    "alpha": 1.2,
+    "stress_singularity_exponent": -0.8,
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.25
+    },
+    "domain": "Unit square [0, 1]^2",
+    "bvp_specification": {
+      "displacement": "ux = x^1.20, uy = y^1.20",
+      "body_force": "fx = -c11 * 1.2 * 0.2 * x^(-0.8), fy = -c11 * 1.2 * 0.2 * y^(-0.8)"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        0.2,
+        0.6,
+        0.2,
+        0.6
+      ],
+      "scale": 0.25
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  },
+  {
+    "config_id": "T2_08",
+    "name": "Manufactured Weakly-Singular Field alpha=1.30",
+    "alpha": 1.3,
+    "stress_singularity_exponent": -0.7,
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.25
+    },
+    "domain": "Unit square [0, 1]^2",
+    "bvp_specification": {
+      "displacement": "ux = x^1.30, uy = y^1.30",
+      "body_force": "fx = -c11 * 1.3 * 0.3 * x^(-0.7), fy = -c11 * 1.3 * 0.3 * y^(-0.7)"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        0.2,
+        0.6,
+        0.2,
+        0.6
+      ],
+      "scale": 0.27
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  },
+  {
+    "config_id": "T2_09",
+    "name": "Manufactured Weakly-Singular Field alpha=1.40",
+    "alpha": 1.4,
+    "stress_singularity_exponent": -0.6,
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.25
+    },
+    "domain": "Unit square [0, 1]^2",
+    "bvp_specification": {
+      "displacement": "ux = x^1.40, uy = y^1.40",
+      "body_force": "fx = -c11 * 1.4 * 0.4 * x^(-0.6), fy = -c11 * 1.4 * 0.4 * y^(-0.6)"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        0.2,
+        0.6,
+        0.2,
+        0.6
+      ],
+      "scale": 0.28
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  },
+  {
+    "config_id": "T2_10",
+    "name": "Manufactured Weakly-Singular Field alpha=1.60",
+    "alpha": 1.6,
+    "stress_singularity_exponent": -0.4,
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.3
+    },
+    "domain": "Unit square [0, 1]^2",
+    "bvp_specification": {
+      "displacement": "ux = x^1.60, uy = y^1.60",
+      "body_force": "fx = -c11 * 1.6 * 0.6 * x^(-0.4), fy = -c11 * 1.6 * 0.6 * y^(-0.4)"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "patch": [
+        0.2,
+        0.6,
+        0.2,
+        0.6
+      ],
+      "scale": 0.31
+    },
+    "quadrature_requirement": "Order 18 quadrature"
+  }
+]

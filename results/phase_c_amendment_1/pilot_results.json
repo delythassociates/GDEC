@@ -1,0 +1,257 @@
+{
+  "pilot_meta": {
+    "title": "Phase C Amendment 1 Pilot Benchmark Reconciliation",
+    "timestamp": "2026-11-20T18:25:04Z",
+    "python_version": "3.13.14 (tags/v3.13.14:fd17997, Jun 10 2026, 13:03:48) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "amendments_addressed": [
+      "AM1-02",
+      "AM1-03",
+      "AM1-04",
+      "AM1-05",
+      "AM1-06",
+      "AM1-07",
+      "AM1-08",
+      "AM1-10"
+    ]
+  },
+  "case_a_williams": {
+    "mesh_hierarchy": [
+      {
+        "level": "M0",
+        "nelements": 150,
+        "dofs": 192,
+        "solve_time_sec": 0.007102800002030563,
+        "j_global": 2.564244147964746e-11,
+        "j_patch": -1.6513806023993643e-11
+      },
+      {
+        "level": "M1",
+        "nelements": 600,
+        "dofs": 682,
+        "solve_time_sec": 0.011665399997582426,
+        "j_global": 2.566654887354095e-11,
+        "j_patch": -1.6750772086133564e-11
+      },
+      {
+        "level": "M2",
+        "nelements": 2400,
+        "dofs": 2562,
+        "solve_time_sec": 0.026472400000784546,
+        "j_global": 2.5672571697017376e-11,
+        "j_patch": -1.6937184153133066e-11
+      },
+      {
+        "level": "M3",
+        "nelements": 9600,
+        "dofs": 9922,
+        "solve_time_sec": 0.1413713000001735,
+        "j_global": 2.5674077149793893e-11,
+        "j_patch": -1.7090930757379587e-11
+      }
+    ],
+    "qoi_global_top_edge": {
+      "values": [
+        2.564244147964746e-11,
+        2.566654887354095e-11,
+        2.5672571697017376e-11,
+        2.5674077149793893e-11
+      ],
+      "d01": -2.410739389349069e-14,
+      "d12": -6.022823476426232e-15,
+      "contract": {
+        "issued": false,
+        "status": "unverified_difference_below_numerical_floor",
+        "qoi": {
+          "kind": "displacement",
+          "value": 2.564244147964746e-11,
+          "units": "m"
+        },
+        "limitations": [
+          "Estimated spatial discretisation uncertainty only (Grid Convergence Index)",
+          "Model-form uncertainty is not included",
+          "Material-property and boundary-condition uncertainties are not included"
+        ],
+        "refusal": {
+          "code": "unverified_difference_below_numerical_floor",
+          "reason": "Mesh differences (|d01|=2.411e-14, |d12|=6.023e-15) below numerical floor (1.000e-13).",
+          "priority": 7
+        }
+      },
+      "audit_finding": "AM1-03: Differences below 1e-13 m floor correctly trigger refusal."
+    },
+    "qoi_patch_interior": {
+      "values": [
+        -1.6513806023993643e-11,
+        -1.6750772086133564e-11,
+        -1.6937184153133066e-11,
+        -1.7090930757379587e-11
+      ],
+      "d01": 2.3696606213992127e-13,
+      "d12": 1.8641206699950164e-13,
+      "d23": 1.5374660424652098e-13,
+      "contract": {
+        "issued": false,
+        "status": "unverified_order",
+        "qoi": {
+          "kind": "displacement",
+          "value": -1.6513806023993643e-11,
+          "units": "m"
+        },
+        "limitations": [
+          "Estimated spatial discretisation uncertainty only (Grid Convergence Index)",
+          "Model-form uncertainty is not included",
+          "Material-property and boundary-condition uncertainties are not included"
+        ],
+        "refusal": {
+          "code": "unverified_order",
+          "reason": "Observed order p_obs=0.35 is outside the validated plausibility window [0.5, 3.5].",
+          "priority": 8
+        }
+      },
+      "audit_finding": "AM1-02: Stability failure correctly identified."
+    },
+    "qoi_point_stress": {
+      "contract": {
+        "issued": false,
+        "status": "ill_posed_qoi",
+        "qoi": {
+          "kind": "point_stress",
+          "value": 100.0,
+          "units": "m"
+        },
+        "limitations": [
+          "Estimated spatial discretisation uncertainty only (Grid Convergence Index)",
+          "Model-form uncertainty is not included",
+          "Material-property and boundary-condition uncertainties are not included"
+        ],
+        "refusal": {
+          "code": "ill_posed_qoi",
+          "reason": "Point stress at re-entrant corner or notch singularity is mathematically divergent in H^1 elasticity.",
+          "priority": 1
+        }
+      },
+      "audit_finding": "AM1-08: Singular point stress evaluated through ProblemAnalyser.evaluate_contract()."
+    }
+  },
+  "case_b_weakly_singular": {
+    "mesh_hierarchy": [
+      {
+        "level": "M0",
+        "nelements": 50,
+        "dofs": 72,
+        "solve_time_sec": 0.006016499999532243,
+        "j_val": 0.2871733978723072,
+        "j_exact": 0.2838096843988563,
+        "true_error": 0.0033637134734509355,
+        "relative_error": 0.011852003854539682
+      },
+      {
+        "level": "M1",
+        "nelements": 200,
+        "dofs": 242,
+        "solve_time_sec": 0.010213900000962894,
+        "j_val": 0.2846540247950037,
+        "j_exact": 0.2838096843988563,
+        "true_error": 0.0008443403961473916,
+        "relative_error": 0.002975023202382287
+      },
+      {
+        "level": "M2",
+        "nelements": 800,
+        "dofs": 882,
+        "solve_time_sec": 0.046274000000266824,
+        "j_val": 0.2840210081782852,
+        "j_exact": 0.2838096843988563,
+        "true_error": 0.0002113237794288958,
+        "relative_error": 0.0007445967880782697
+      },
+      {
+        "level": "M3",
+        "nelements": 3200,
+        "dofs": 3362,
+        "solve_time_sec": 0.2618516999973508,
+        "j_val": 0.28386253343345846,
+        "j_exact": 0.2838096843988563,
+        "true_error": 5.284903460217594e-05,
+        "relative_error": 0.00018621293601772847
+      }
+    ],
+    "j_exact": 0.2838096843988563,
+    "qoi_values": [
+      0.2871733978723072,
+      0.2846540247950037,
+      0.2840210081782852,
+      0.28386253343345846
+    ],
+    "d01": 0.002519373077303544,
+    "d12": 0.0006330166167184959,
+    "d23": 0.00015847474482671986,
+    "p_obs_012": 1.9927495009811564,
+    "p_obs_123": 1.9979904259757382,
+    "quadrature_audit": {
+      "order_a": 14,
+      "order_b": 18,
+      "j_q14": 0.2840210081782852,
+      "j_q18": 0.28402080009771746,
+      "e_quad": 2.0808056772070316e-07,
+      "e_smallest": 5.284903460217594e-05,
+      "ratio": 0.003937263363220185,
+      "target_met": true,
+      "audit_finding": "AM1-05: Denominator correctly evaluates |J_M3 - J_exact|."
+    },
+    "contract": {
+      "issued": true,
+      "status": "four_grid_verified_contract_issued",
+      "qoi": {
+        "kind": "displacement",
+        "value": 0.2871733978723072,
+        "units": "m"
+      },
+      "limitations": [
+        "Estimated spatial discretisation uncertainty only (Grid Convergence Index)",
+        "Model-form uncertainty is not included",
+        "Material-property and boundary-condition uncertainties are not included"
+      ],
+      "uncertainty": {
+        "issued": true,
+        "value": 0.00420601887505487,
+        "type": "estimated_spatial_discretization_gci",
+        "safety_factor": 1.25,
+        "refinement_ratio": 2.0,
+        "observed_order": 1.9927495009811564,
+        "order_cap": 2.0,
+        "order_used": 1.9927495009811564,
+        "mesh_levels": 4
+      },
+      "accuracy": {
+        "target_type": "relative",
+        "requested_tolerance": 0.01,
+        "evaluated_uncertainty_metric": 0.014819856778191816,
+        "estimated_target_met": false,
+        "status": "estimated_target_not_met",
+        "budget_exhausted": false
+      },
+      "verification": {
+        "status": "verified_within_tested_scope",
+        "order_plausibility": "passed",
+        "observed_order": 1.9927495009811564,
+        "order_window": [
+          0.5,
+          3.5
+        ],
+        "four_grid_status": "four_grid_stability_passed",
+        "m3_stability": true,
+        "p_obs_123": 1.9979904259757382,
+        "delta_p": 0.0052409249945817304
+      }
+    },
+    "validation_summary": {
+      "true_error_m0": 0.0033637134734509355,
+      "u0_estimated": 0.00420601887505487,
+      "covered": true,
+      "sharpness_ratio": 1.2504093788760753,
+      "target_met": false
+    }
+  }
+}

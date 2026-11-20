@@ -1,0 +1,78 @@
+{
+  "phase": "Phase C Amendment 1: Scientific Correctness, Accuracy Contract Remediation, Pilot Reconciliation & Preregistration Repair",
+  "amendment_version": "1.0.0",
+  "preregistration_status": "FROZEN_AMENDED_CONFIRMATORY_PROTOCOL",
+  "date_frozen": "2026-11-20",
+  "base_tag": "prereg-c",
+  "base_commit": "02b5f072311fe2ce831e47ef384844dd417981e8",
+  "target_tag": "prereg-c-amendment-1",
+  "foundation_commit": "01260409a0e11d8dcf97729ea25a61f20e2a4772",
+  "production_fem_commit": "01260409a0e11d8dcf97729ea25a61f20e2a4772",
+  "research_question": "Can GDEC automatically produce useful, empirically reliable estimates of spatial discretisation uncertainty for supported engineering quantities of interest, while correctly identifying and refusing computations whose convergence evidence is inadequate?",
+  "hypotheses": {
+    "H5a_empirical_uncertainty_coverage": {
+      "definition": "E_true = |J0 - J_exact| <= U0 evaluated strictly over issued contracts",
+      "formula": "C_1 = N_covered / N_issued",
+      "target_fraction_min": 0.90,
+      "minimum_issued_contracts": 32,
+      "total_tier1_configurations": 40,
+      "family_floor_min": 0.80,
+      "family_floor_qualification_min": 6,
+      "confidence_interval_type": "two_sided_95pct_clopper_pearson",
+      "statistical_interpretation": "Empirical coverage gate over issued contracts conditioned on minimum availability A1 >= 0.80."
+    },
+    "H5b_claim_integrity": {
+      "definition": "Among configurations reporting estimated_target_met, E_true <= requested_tolerance",
+      "formula": "I_1 = N_met_and_true / N_claims",
+      "target_fraction_min": 0.90,
+      "minimum_claims_required": 10,
+      "consequence_if_claims_under_10": "Evaluated conditionally or flagged inconclusive if N_claims < 10"
+    },
+    "H6a_estimate_availability": {
+      "definition": "Fraction of eligible Tier 1 configurations receiving a verified uncertainty contract",
+      "formula": "A_1 = N_issued / 40",
+      "minimum_availability_fraction": 0.80,
+      "minimum_issued_contracts": 32
+    },
+    "H6b_estimate_sharpness": {
+      "definition": "R_U = U0 / E_true for cases where E_true > numerical_floor",
+      "median_sharpness_max": 3.0,
+      "p90_sharpness_max": 10.0
+    },
+    "H7_refusal_correctness": {
+      "definition": "Fraction of Tier 3 refusal cases returning the exact intended refusal status",
+      "formula": "R_7 = N_correct_refusals / 80",
+      "required_accuracy": 1.00,
+      "total_refusal_cases": 80,
+      "cases_per_priority_category": 8,
+      "priority_categories_count": 10,
+      "forbidden_statuses": ["estimated_target_met", "verified_contract_issued", "four_grid_verified_contract_issued"]
+    },
+    "H8_tier2_performance": {
+      "definition": "Availability and coverage on Tier 2 difficult and singular elasticity benchmarks",
+      "total_tier2_configurations": 10,
+      "reference_uncertainty_ratio_max": 0.0005,
+      "quadrature_error_ratio_max": 0.010,
+      "minimum_availability_fraction": 0.60,
+      "minimum_coverage_fraction_of_issued": 0.80,
+      "conditional_scope_narrowing": "If H8 fails, automatically restrict contract scope to SMOOTH DISPLACEMENT QOIS ONLY"
+    }
+  },
+  "contract_parameters": {
+    "refinement_ratio_r": 2.0,
+    "safety_factor_Fs": 1.25,
+    "order_cap_p_cap": 2.0,
+    "observed_order_window": [0.5, 3.5],
+    "numerical_difference_floor": 1e-13,
+    "min_interior_angle_threshold_deg": 10.0,
+    "solver_relative_residual_threshold_max": 1e-10,
+    "m3_stability_max_delta_p": 0.50,
+    "tier2_reference_uncertainty_ratio_max": 0.0005
+  },
+  "dataset_manifests": {
+    "tier1": "verification/phase_c/amendment_1/tier1_manifest.json",
+    "tier2": "verification/phase_c/amendment_1/tier2_manifest.json",
+    "tier3": "verification/phase_c/amendment_1/tier3_manifest.json"
+  },
+  "stop_condition": "Freeze protocol and tag prereg-c-amendment-1. Declare AMENDMENT READY FOR INDEPENDENT REVIEW. DO NOT execute confirmatory 40-configuration runs in this task."
+}

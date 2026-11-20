@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GDEC Phase C Amendment 1 Refusal Schema & Priority Matrix",
+  "version": "1.1.0",
+  "date_frozen": "2026-11-20",
+  "amendment": "Phase C Amendment 1",
+  "priority_order": [
+    { "priority": 1, "code": "ill_posed_qoi", "meaning": "Requested QoI is mathematically divergent or undefined in the continuous H1 elasticity formulation (e.g. singular point stress)" },
+    { "priority": 2, "code": "unsupported_qoi", "meaning": "GDEC does not currently support the requested functional in H1 elasticity (e.g. unregularized point displacement, patch stress)" },
+    { "priority": 3, "code": "invalid_geometry", "meaning": "Geometric domain contains overlapping, degenerate, self-intersecting, or non-finite coordinates" },
+    { "priority": 4, "code": "mesh_quality_failure", "meaning": "Mesh contains triangles with minimum interior angle below validated threshold (< 10 deg) or zero-area degenerate elements" },
+    { "priority": 5, "code": "solver_not_converged", "meaning": "Linear solver relative backward error / residual exceeds validated tolerance (> 1e-10)" },
+    { "priority": 6, "code": "unverified_insufficient_levels", "meaning": "Fewer than 3 valid nested mesh levels available to evaluate GCI" },
+    { "priority": 7, "code": "unverified_difference_below_numerical_floor", "meaning": "Consecutive mesh QoI differences are unresolved relative to numerical precision floor (< 1e-13 m)" },
+    { "priority": 8, "code": "unverified_order", "meaning": "Observed convergence order p_obs is outside the validated plausibility window [0.5, 3.5]" },
+    { "priority": 9, "code": "unverified_non_asymptotic", "meaning": "Convergence sequence violates monotonicity (d01 * d12 <= 0) or divergence criteria (q <= 1), or four-grid stability fails (|p_012 - p_123| > 0.50)" },
+    { "priority": 10, "code": "reference_uncertain", "meaning": "Reference solution numerical uncertainty exceeds frozen 0.05% verification gate" },
+    { "priority": 11, "code": "budget_exhausted", "meaning": "Computational resource limit reached before estimated uncertainty satisfied requested tolerance" }
+  ],
+  "thresholds": {
+    "min_interior_angle_deg": 10.0,
+    "solver_relative_residual_max": 1e-10,
+    "numerical_difference_floor": 1e-13,
+    "observed_order_window": [0.5, 3.5],
+    "order_cap_p_cap": 2.0,
+    "safety_factor_Fs": 1.25,
+    "m3_stability_max_delta_p": 0.50,
+    "reference_uncertainty_gate": 0.0005
+  }
+}
