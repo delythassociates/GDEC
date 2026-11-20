@@ -184,6 +184,7 @@ class SemanticAnalyzer:
                 "Geometry must be defined as 'rectangle(width=..., height=..., [thickness=...])'",
                 stmt.loc,
             )
+        call = stmt.value
         self._validate_named_args(call, {"width", "height", "thickness"}, {"width", "height"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         width = self._positive_number(args["width"], "geometry width", call.loc)
@@ -206,6 +207,7 @@ class SemanticAnalyzer:
                 "Material must be defined as 'isotropic(E=..., nu=..., [assumption=...])'",
                 stmt.loc,
             )
+        call = stmt.value
         self._validate_named_args(call, {"E", "nu", "assumption"}, {"E", "nu"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         youngs_modulus = self._positive_number(args["E"], "Young's modulus E", call.loc)
@@ -291,6 +293,7 @@ class SemanticAnalyzer:
                 "point_displacement is rejected until point-evaluation semantics are implemented.",
                 stmt.loc,
             )
+        call = stmt.value
         self._validate_named_args(call, {"boundary", "component"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
 
@@ -317,6 +320,7 @@ class SemanticAnalyzer:
                 "Accuracy target must be 'successive_qoi_change(percent=...)'",
                 stmt.loc,
             )
+        call = stmt.value
         self._validate_named_args(call, {"percent"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         pct = self._positive_number(args.get("percent", 1.0), "accuracy percentage", call.loc)
@@ -331,6 +335,7 @@ class SemanticAnalyzer:
                 "Budget must be defined as 'max_dofs(value=..., [max_iterations=...])'",
                 stmt.loc,
             )
+        call = stmt.value
         self._validate_named_args(call, {"value", "max_iterations"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         if call.positional_args:
