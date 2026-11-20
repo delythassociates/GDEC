@@ -1,0 +1,156 @@
+[
+  {
+    "id": "A2.5a_force_sensitivity",
+    "computed": {
+      "max_relative_difference": 2.49379557757003e-13,
+      "sampled_dofs": [
+        {
+          "dof": 36,
+          "adjoint_z": -6.706449976527199e-09,
+          "fd_deriv": -6.706449976527596e-09,
+          "rel_diff": 5.920369736767329e-14
+        },
+        {
+          "dof": 78,
+          "adjoint_z": -2.3494801890233463e-08,
+          "fd_deriv": -2.349480189023324e-08,
+          "rel_diff": 9.435465587854037e-15
+        },
+        {
+          "dof": 45,
+          "adjoint_z": 3.61846107316151e-08,
+          "fd_deriv": 3.618461073161576e-08,
+          "rel_diff": 1.8288008586374992e-14
+        },
+        {
+          "dof": 65,
+          "adjoint_z": 7.307862322345256e-08,
+          "fd_deriv": 7.307862322345166e-08,
+          "rel_diff": 1.2315126564313083e-14
+        },
+        {
+          "dof": 66,
+          "adjoint_z": -1.0815817182800495e-08,
+          "fd_deriv": -1.0815817182800985e-08,
+          "rel_diff": 4.527543957886677e-14
+        },
+        {
+          "dof": 28,
+          "adjoint_z": -9.668012422741491e-09,
+          "fd_deriv": -9.668012422742742e-09,
+          "rel_diff": 1.2936443419061021e-13
+        },
+        {
+          "dof": 69,
+          "adjoint_z": 7.335717517395411e-08,
+          "fd_deriv": 7.335717517395132e-08,
+          "rel_diff": 3.806801043372954e-14
+        },
+        {
+          "dof": 27,
+          "adjoint_z": 1.042186961368557e-08,
+          "fd_deriv": 1.042186961368297e-08,
+          "rel_diff": 2.49379557757003e-13
+        },
+        {
+          "dof": 75,
+          "adjoint_z": 9.427131358664842e-08,
+          "fd_deriv": 9.427131358664292e-08,
+          "rel_diff": 5.840285755315777e-14
+        },
+        {
+          "dof": 97,
+          "adjoint_z": 1.3938084892467842e-07,
+          "fd_deriv": 1.3938084892467636e-07,
+          "rel_diff": 1.4812958954175502e-14
+        }
+      ],
+      "perturbation_N": 100.0
+    },
+    "threshold": {
+      "dJ_dfk_rel_tol": 1e-06
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Central finite difference sensitivity dJ/df_k vs adjoint vector z_k."
+  },
+  {
+    "id": "A2.5a_material_sensitivity",
+    "computed": {
+      "relative_difference": 4.118116498231784e-08,
+      "fd_derivative": 1.9916783249922044e-14,
+      "analytical_adjoint_derivative": 1.991678242972574e-14,
+      "dE": 700000.0
+    },
+    "threshold": {
+      "dJ_dE_rel_tol": 1e-06
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Central finite difference sensitivity dJ/dE vs adjoint formula -(1/E) z^T K u."
+  },
+  {
+    "id": "A2.5b_exact_discrete_identity",
+    "computed": {
+      "Ju_minus_Jw": -6.990812312402859e-05,
+      "dual_weighted_residual": -6.99081231236142e-05,
+      "absolute_identity_error": 4.143820703239598e-16,
+      "relative_identity_error": 2.457400364308431e-13
+    },
+    "threshold": {
+      "relative_tolerance": 1e-09
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Exact algebraic identity J(u) - J(w) = z^T (f - Kw)."
+  },
+  {
+    "id": "A2.5c_reference_comparison",
+    "computed": {
+      "mesh_hierarchy": {
+        "nx8_ny4": {
+          "dofs": 64,
+          "qoi_meters": -0.001180845294272976,
+          "qoi_mm": -1.1808452942729761
+        },
+        "nx16_ny8": {
+          "dofs": 256,
+          "qoi_meters": -0.001686261939008772,
+          "qoi_mm": -1.686261939008772
+        },
+        "nx32_ny16": {
+          "dofs": 1024,
+          "qoi_meters": -0.0018509201497261163,
+          "qoi_mm": -1.8509201497261163
+        },
+        "nx64_ny32": {
+          "dofs": 4096,
+          "qoi_meters": -0.0018943046528983598,
+          "qoi_mm": -1.8943046528983598
+        }
+      },
+      "finest_qoi_mm": -1.8943046528983598
+    },
+    "threshold": {
+      "report_only": true
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Hierarchical cantilever reference QoI progression (report only)."
+  },
+  {
+    "id": "A2.5d_cantilever_proportionality",
+    "computed": {
+      "k_factor": -10000.0,
+      "max_displacement_inf_m": 0.0013954148541754886,
+      "max_proportionality_abs_diff_m": 8.673617379884035e-19,
+      "relative_proportionality_diff": 6.2157983727420135e-16
+    },
+    "threshold": {
+      "relative_tolerance": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Cantilever u = k*z proportionality check."
+  }
+]
