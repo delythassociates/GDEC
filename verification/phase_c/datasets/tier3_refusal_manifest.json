@@ -1,0 +1,642 @@
+[
+  {
+    "case_id": "T3_01",
+    "category": "ill_posed_qoi",
+    "description": "Point stress at singular corner / notch / crack tip (variant 1)",
+    "test_identifier": "test_tier3_ill_posed_qoi_case_1",
+    "expected_status": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 1
+  },
+  {
+    "case_id": "T3_02",
+    "category": "ill_posed_qoi",
+    "description": "Point stress at singular corner / notch / crack tip (variant 2)",
+    "test_identifier": "test_tier3_ill_posed_qoi_case_2",
+    "expected_status": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 1
+  },
+  {
+    "case_id": "T3_03",
+    "category": "ill_posed_qoi",
+    "description": "Point stress at singular corner / notch / crack tip (variant 3)",
+    "test_identifier": "test_tier3_ill_posed_qoi_case_3",
+    "expected_status": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 1
+  },
+  {
+    "case_id": "T3_04",
+    "category": "ill_posed_qoi",
+    "description": "Point stress at singular corner / notch / crack tip (variant 4)",
+    "test_identifier": "test_tier3_ill_posed_qoi_case_4",
+    "expected_status": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 1
+  },
+  {
+    "case_id": "T3_05",
+    "category": "ill_posed_qoi",
+    "description": "Point stress at singular corner / notch / crack tip (variant 5)",
+    "test_identifier": "test_tier3_ill_posed_qoi_case_5",
+    "expected_status": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 1
+  },
+  {
+    "case_id": "T3_06",
+    "category": "ill_posed_qoi",
+    "description": "Point stress at singular corner / notch / crack tip (variant 6)",
+    "test_identifier": "test_tier3_ill_posed_qoi_case_6",
+    "expected_status": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 1
+  },
+  {
+    "case_id": "T3_07",
+    "category": "ill_posed_qoi",
+    "description": "Point stress at singular corner / notch / crack tip (variant 7)",
+    "test_identifier": "test_tier3_ill_posed_qoi_case_7",
+    "expected_status": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 1
+  },
+  {
+    "case_id": "T3_08",
+    "category": "ill_posed_qoi",
+    "description": "Point stress at singular corner / notch / crack tip (variant 8)",
+    "test_identifier": "test_tier3_ill_posed_qoi_case_8",
+    "expected_status": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 1
+  },
+  {
+    "case_id": "T3_09",
+    "category": "unsupported_qoi",
+    "description": "Unregularized point displacement / 3D stress (variant 1)",
+    "test_identifier": "test_tier3_unsupported_qoi_case_1",
+    "expected_status": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 2
+  },
+  {
+    "case_id": "T3_10",
+    "category": "unsupported_qoi",
+    "description": "Unregularized point displacement / 3D stress (variant 2)",
+    "test_identifier": "test_tier3_unsupported_qoi_case_2",
+    "expected_status": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 2
+  },
+  {
+    "case_id": "T3_11",
+    "category": "unsupported_qoi",
+    "description": "Unregularized point displacement / 3D stress (variant 3)",
+    "test_identifier": "test_tier3_unsupported_qoi_case_3",
+    "expected_status": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 2
+  },
+  {
+    "case_id": "T3_12",
+    "category": "unsupported_qoi",
+    "description": "Unregularized point displacement / 3D stress (variant 4)",
+    "test_identifier": "test_tier3_unsupported_qoi_case_4",
+    "expected_status": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 2
+  },
+  {
+    "case_id": "T3_13",
+    "category": "unsupported_qoi",
+    "description": "Unregularized point displacement / 3D stress (variant 5)",
+    "test_identifier": "test_tier3_unsupported_qoi_case_5",
+    "expected_status": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 2
+  },
+  {
+    "case_id": "T3_14",
+    "category": "unsupported_qoi",
+    "description": "Unregularized point displacement / 3D stress (variant 6)",
+    "test_identifier": "test_tier3_unsupported_qoi_case_6",
+    "expected_status": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 2
+  },
+  {
+    "case_id": "T3_15",
+    "category": "unsupported_qoi",
+    "description": "Unregularized point displacement / 3D stress (variant 7)",
+    "test_identifier": "test_tier3_unsupported_qoi_case_7",
+    "expected_status": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 2
+  },
+  {
+    "case_id": "T3_16",
+    "category": "unsupported_qoi",
+    "description": "Unregularized point displacement / 3D stress (variant 8)",
+    "test_identifier": "test_tier3_unsupported_qoi_case_8",
+    "expected_status": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 2
+  },
+  {
+    "case_id": "T3_17",
+    "category": "unverified_order",
+    "description": "Observed order outside [0.5, 3.5] window (variant 1)",
+    "test_identifier": "test_tier3_unverified_order_case_1",
+    "expected_status": "unverified_order",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 8
+  },
+  {
+    "case_id": "T3_18",
+    "category": "unverified_order",
+    "description": "Observed order outside [0.5, 3.5] window (variant 2)",
+    "test_identifier": "test_tier3_unverified_order_case_2",
+    "expected_status": "unverified_order",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 8
+  },
+  {
+    "case_id": "T3_19",
+    "category": "unverified_order",
+    "description": "Observed order outside [0.5, 3.5] window (variant 3)",
+    "test_identifier": "test_tier3_unverified_order_case_3",
+    "expected_status": "unverified_order",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 8
+  },
+  {
+    "case_id": "T3_20",
+    "category": "unverified_order",
+    "description": "Observed order outside [0.5, 3.5] window (variant 4)",
+    "test_identifier": "test_tier3_unverified_order_case_4",
+    "expected_status": "unverified_order",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 8
+  },
+  {
+    "case_id": "T3_21",
+    "category": "unverified_order",
+    "description": "Observed order outside [0.5, 3.5] window (variant 5)",
+    "test_identifier": "test_tier3_unverified_order_case_5",
+    "expected_status": "unverified_order",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 8
+  },
+  {
+    "case_id": "T3_22",
+    "category": "unverified_order",
+    "description": "Observed order outside [0.5, 3.5] window (variant 6)",
+    "test_identifier": "test_tier3_unverified_order_case_6",
+    "expected_status": "unverified_order",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 8
+  },
+  {
+    "case_id": "T3_23",
+    "category": "unverified_order",
+    "description": "Observed order outside [0.5, 3.5] window (variant 7)",
+    "test_identifier": "test_tier3_unverified_order_case_7",
+    "expected_status": "unverified_order",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 8
+  },
+  {
+    "case_id": "T3_24",
+    "category": "unverified_order",
+    "description": "Observed order outside [0.5, 3.5] window (variant 8)",
+    "test_identifier": "test_tier3_unverified_order_case_8",
+    "expected_status": "unverified_order",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 8
+  },
+  {
+    "case_id": "T3_25",
+    "category": "unverified_non_asymptotic",
+    "description": "Non-monotonic difference sequence or q <= 1.0 (variant 1)",
+    "test_identifier": "test_tier3_unverified_non_asymptotic_case_1",
+    "expected_status": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 9
+  },
+  {
+    "case_id": "T3_26",
+    "category": "unverified_non_asymptotic",
+    "description": "Non-monotonic difference sequence or q <= 1.0 (variant 2)",
+    "test_identifier": "test_tier3_unverified_non_asymptotic_case_2",
+    "expected_status": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 9
+  },
+  {
+    "case_id": "T3_27",
+    "category": "unverified_non_asymptotic",
+    "description": "Non-monotonic difference sequence or q <= 1.0 (variant 3)",
+    "test_identifier": "test_tier3_unverified_non_asymptotic_case_3",
+    "expected_status": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 9
+  },
+  {
+    "case_id": "T3_28",
+    "category": "unverified_non_asymptotic",
+    "description": "Non-monotonic difference sequence or q <= 1.0 (variant 4)",
+    "test_identifier": "test_tier3_unverified_non_asymptotic_case_4",
+    "expected_status": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 9
+  },
+  {
+    "case_id": "T3_29",
+    "category": "unverified_non_asymptotic",
+    "description": "Non-monotonic difference sequence or q <= 1.0 (variant 5)",
+    "test_identifier": "test_tier3_unverified_non_asymptotic_case_5",
+    "expected_status": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 9
+  },
+  {
+    "case_id": "T3_30",
+    "category": "unverified_non_asymptotic",
+    "description": "Non-monotonic difference sequence or q <= 1.0 (variant 6)",
+    "test_identifier": "test_tier3_unverified_non_asymptotic_case_6",
+    "expected_status": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 9
+  },
+  {
+    "case_id": "T3_31",
+    "category": "unverified_non_asymptotic",
+    "description": "Non-monotonic difference sequence or q <= 1.0 (variant 7)",
+    "test_identifier": "test_tier3_unverified_non_asymptotic_case_7",
+    "expected_status": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 9
+  },
+  {
+    "case_id": "T3_32",
+    "category": "unverified_non_asymptotic",
+    "description": "Non-monotonic difference sequence or q <= 1.0 (variant 8)",
+    "test_identifier": "test_tier3_unverified_non_asymptotic_case_8",
+    "expected_status": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 9
+  },
+  {
+    "case_id": "T3_33",
+    "category": "unverified_difference_below_numerical_floor",
+    "description": "Differences below 1e-13 numerical floor (variant 1)",
+    "test_identifier": "test_tier3_unverified_difference_below_numerical_floor_case_1",
+    "expected_status": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 7
+  },
+  {
+    "case_id": "T3_34",
+    "category": "unverified_difference_below_numerical_floor",
+    "description": "Differences below 1e-13 numerical floor (variant 2)",
+    "test_identifier": "test_tier3_unverified_difference_below_numerical_floor_case_2",
+    "expected_status": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 7
+  },
+  {
+    "case_id": "T3_35",
+    "category": "unverified_difference_below_numerical_floor",
+    "description": "Differences below 1e-13 numerical floor (variant 3)",
+    "test_identifier": "test_tier3_unverified_difference_below_numerical_floor_case_3",
+    "expected_status": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 7
+  },
+  {
+    "case_id": "T3_36",
+    "category": "unverified_difference_below_numerical_floor",
+    "description": "Differences below 1e-13 numerical floor (variant 4)",
+    "test_identifier": "test_tier3_unverified_difference_below_numerical_floor_case_4",
+    "expected_status": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 7
+  },
+  {
+    "case_id": "T3_37",
+    "category": "unverified_difference_below_numerical_floor",
+    "description": "Differences below 1e-13 numerical floor (variant 5)",
+    "test_identifier": "test_tier3_unverified_difference_below_numerical_floor_case_5",
+    "expected_status": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 7
+  },
+  {
+    "case_id": "T3_38",
+    "category": "unverified_difference_below_numerical_floor",
+    "description": "Differences below 1e-13 numerical floor (variant 6)",
+    "test_identifier": "test_tier3_unverified_difference_below_numerical_floor_case_6",
+    "expected_status": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 7
+  },
+  {
+    "case_id": "T3_39",
+    "category": "unverified_difference_below_numerical_floor",
+    "description": "Differences below 1e-13 numerical floor (variant 7)",
+    "test_identifier": "test_tier3_unverified_difference_below_numerical_floor_case_7",
+    "expected_status": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 7
+  },
+  {
+    "case_id": "T3_40",
+    "category": "unverified_difference_below_numerical_floor",
+    "description": "Differences below 1e-13 numerical floor (variant 8)",
+    "test_identifier": "test_tier3_unverified_difference_below_numerical_floor_case_8",
+    "expected_status": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 7
+  },
+  {
+    "case_id": "T3_41",
+    "category": "mesh_quality_failure",
+    "description": "Triangles with minimum interior angle < 10 deg (variant 1)",
+    "test_identifier": "test_tier3_mesh_quality_failure_case_1",
+    "expected_status": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 4
+  },
+  {
+    "case_id": "T3_42",
+    "category": "mesh_quality_failure",
+    "description": "Triangles with minimum interior angle < 10 deg (variant 2)",
+    "test_identifier": "test_tier3_mesh_quality_failure_case_2",
+    "expected_status": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 4
+  },
+  {
+    "case_id": "T3_43",
+    "category": "mesh_quality_failure",
+    "description": "Triangles with minimum interior angle < 10 deg (variant 3)",
+    "test_identifier": "test_tier3_mesh_quality_failure_case_3",
+    "expected_status": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 4
+  },
+  {
+    "case_id": "T3_44",
+    "category": "mesh_quality_failure",
+    "description": "Triangles with minimum interior angle < 10 deg (variant 4)",
+    "test_identifier": "test_tier3_mesh_quality_failure_case_4",
+    "expected_status": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 4
+  },
+  {
+    "case_id": "T3_45",
+    "category": "mesh_quality_failure",
+    "description": "Triangles with minimum interior angle < 10 deg (variant 5)",
+    "test_identifier": "test_tier3_mesh_quality_failure_case_5",
+    "expected_status": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 4
+  },
+  {
+    "case_id": "T3_46",
+    "category": "mesh_quality_failure",
+    "description": "Triangles with minimum interior angle < 10 deg (variant 6)",
+    "test_identifier": "test_tier3_mesh_quality_failure_case_6",
+    "expected_status": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 4
+  },
+  {
+    "case_id": "T3_47",
+    "category": "mesh_quality_failure",
+    "description": "Triangles with minimum interior angle < 10 deg (variant 7)",
+    "test_identifier": "test_tier3_mesh_quality_failure_case_7",
+    "expected_status": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 4
+  },
+  {
+    "case_id": "T3_48",
+    "category": "mesh_quality_failure",
+    "description": "Triangles with minimum interior angle < 10 deg (variant 8)",
+    "test_identifier": "test_tier3_mesh_quality_failure_case_8",
+    "expected_status": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 4
+  },
+  {
+    "case_id": "T3_49",
+    "category": "solver_not_converged",
+    "description": "Relative linear solver residual > 1e-10 (variant 1)",
+    "test_identifier": "test_tier3_solver_not_converged_case_1",
+    "expected_status": "solver_not_converged",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 5
+  },
+  {
+    "case_id": "T3_50",
+    "category": "solver_not_converged",
+    "description": "Relative linear solver residual > 1e-10 (variant 2)",
+    "test_identifier": "test_tier3_solver_not_converged_case_2",
+    "expected_status": "solver_not_converged",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 5
+  },
+  {
+    "case_id": "T3_51",
+    "category": "solver_not_converged",
+    "description": "Relative linear solver residual > 1e-10 (variant 3)",
+    "test_identifier": "test_tier3_solver_not_converged_case_3",
+    "expected_status": "solver_not_converged",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 5
+  },
+  {
+    "case_id": "T3_52",
+    "category": "solver_not_converged",
+    "description": "Relative linear solver residual > 1e-10 (variant 4)",
+    "test_identifier": "test_tier3_solver_not_converged_case_4",
+    "expected_status": "solver_not_converged",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 5
+  },
+  {
+    "case_id": "T3_53",
+    "category": "solver_not_converged",
+    "description": "Relative linear solver residual > 1e-10 (variant 5)",
+    "test_identifier": "test_tier3_solver_not_converged_case_5",
+    "expected_status": "solver_not_converged",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 5
+  },
+  {
+    "case_id": "T3_54",
+    "category": "solver_not_converged",
+    "description": "Relative linear solver residual > 1e-10 (variant 6)",
+    "test_identifier": "test_tier3_solver_not_converged_case_6",
+    "expected_status": "solver_not_converged",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 5
+  },
+  {
+    "case_id": "T3_55",
+    "category": "solver_not_converged",
+    "description": "Relative linear solver residual > 1e-10 (variant 7)",
+    "test_identifier": "test_tier3_solver_not_converged_case_7",
+    "expected_status": "solver_not_converged",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 5
+  },
+  {
+    "case_id": "T3_56",
+    "category": "solver_not_converged",
+    "description": "Relative linear solver residual > 1e-10 (variant 8)",
+    "test_identifier": "test_tier3_solver_not_converged_case_8",
+    "expected_status": "solver_not_converged",
+    "expected_contract_issued": false,
+    "expected_target_met": false,
+    "priority_rank": 5
+  },
+  {
+    "case_id": "T3_57",
+    "category": "budget_exhausted",
+    "description": "Refinement budget reached before accuracy target met (variant 1)",
+    "test_identifier": "test_tier3_budget_exhausted_case_1",
+    "expected_status": "budget_exhausted",
+    "expected_contract_issued": true,
+    "expected_target_met": false,
+    "priority_rank": 10
+  },
+  {
+    "case_id": "T3_58",
+    "category": "budget_exhausted",
+    "description": "Refinement budget reached before accuracy target met (variant 2)",
+    "test_identifier": "test_tier3_budget_exhausted_case_2",
+    "expected_status": "budget_exhausted",
+    "expected_contract_issued": true,
+    "expected_target_met": false,
+    "priority_rank": 10
+  },
+  {
+    "case_id": "T3_59",
+    "category": "budget_exhausted",
+    "description": "Refinement budget reached before accuracy target met (variant 3)",
+    "test_identifier": "test_tier3_budget_exhausted_case_3",
+    "expected_status": "budget_exhausted",
+    "expected_contract_issued": true,
+    "expected_target_met": false,
+    "priority_rank": 10
+  },
+  {
+    "case_id": "T3_60",
+    "category": "budget_exhausted",
+    "description": "Refinement budget reached before accuracy target met (variant 4)",
+    "test_identifier": "test_tier3_budget_exhausted_case_4",
+    "expected_status": "budget_exhausted",
+    "expected_contract_issued": true,
+    "expected_target_met": false,
+    "priority_rank": 10
+  },
+  {
+    "case_id": "T3_61",
+    "category": "budget_exhausted",
+    "description": "Refinement budget reached before accuracy target met (variant 5)",
+    "test_identifier": "test_tier3_budget_exhausted_case_5",
+    "expected_status": "budget_exhausted",
+    "expected_contract_issued": true,
+    "expected_target_met": false,
+    "priority_rank": 10
+  },
+  {
+    "case_id": "T3_62",
+    "category": "budget_exhausted",
+    "description": "Refinement budget reached before accuracy target met (variant 6)",
+    "test_identifier": "test_tier3_budget_exhausted_case_6",
+    "expected_status": "budget_exhausted",
+    "expected_contract_issued": true,
+    "expected_target_met": false,
+    "priority_rank": 10
+  },
+  {
+    "case_id": "T3_63",
+    "category": "budget_exhausted",
+    "description": "Refinement budget reached before accuracy target met (variant 7)",
+    "test_identifier": "test_tier3_budget_exhausted_case_7",
+    "expected_status": "budget_exhausted",
+    "expected_contract_issued": true,
+    "expected_target_met": false,
+    "priority_rank": 10
+  },
+  {
+    "case_id": "T3_64",
+    "category": "budget_exhausted",
+    "description": "Refinement budget reached before accuracy target met (variant 8)",
+    "test_identifier": "test_tier3_budget_exhausted_case_8",
+    "expected_status": "budget_exhausted",
+    "expected_contract_issued": true,
+    "expected_target_met": false,
+    "priority_rank": 10
+  }
+]

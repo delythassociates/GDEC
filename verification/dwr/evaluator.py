@@ -37,21 +37,34 @@ QOI_DESCRIPTIONS = {
 
 
 def find_target_metrics(records: List[Dict[str, Any]], target: float) -> Optional[Dict[str, Any]]:
-    """Find first iteration meeting the true relative error target."""
+    """
+    Find first iteration meeting the true relative error target.
+    Phase B.1.1 accounting rule: excludes mesh refinement executed after
+    the target has already been achieved on the current iteration.
+    """
     for r in records:
         if r["true_error_rel"] <= target:
             idx = r["iteration"]
+            # Exclude refinement cost of the target iteration itself
+            prior_time = sum(rec["t_total_iter_sec"] for rec in records[:idx])
+            curr_target_iter_time = r["t_total_iter_sec"] - r.get("t_refinement_sec", 0.0)
+            t_target_cumulative = prior_time + curr_target_iter_time
+
             sub = records[: idx + 1]
             return {
                 "iteration": r["iteration"],
-                "primal_dofs": r["primal_dofs"],
+                "primal_dofs": r.get("solved_mesh_dofs", r["primal_dofs"]),
+                "solved_mesh_elements": r.get("solved_mesh_elements", r.get("nelements")),
                 "true_error_rel": r["true_error_rel"],
-                "t_total_cumulative_sec": sum(rec["t_total_iter_sec"] for rec in sub),
+                "t_total_cumulative_sec": t_target_cumulative,
+                "t_target_excluding_post_refine_sec": t_target_cumulative,
+                "t_target_including_post_refine_sec": sum(rec["t_total_iter_sec"] for rec in sub),
+                "post_target_refinement_deducted_sec": r.get("t_refinement_sec", 0.0),
                 "t_primal_cumulative_sec": sum(rec["t_primal_sec"] for rec in sub),
                 "t_adjoint_cumulative_sec": sum(rec["t_adjoint_sec"] for rec in sub),
                 "t_estimator_cumulative_sec": sum(rec["t_estimator_sec"] for rec in sub),
                 "t_marking_cumulative_sec": sum(rec["t_marking_sec"] for rec in sub),
-                "t_refinement_cumulative_sec": sum(rec["t_refinement_sec"] for rec in sub),
+                "t_refinement_cumulative_sec": sum(rec["t_refinement_sec"] for rec in records[:idx]),
             }
     return None
 

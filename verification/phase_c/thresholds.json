@@ -1,0 +1,59 @@
+{
+  "phase": "Phase C: Trustworthy Numerical Accuracy, Verification Contracts & Intelligent Problem Diagnosis",
+  "preregistration_status": "FROZEN_CONFIRMATORY_PROTOCOL",
+  "date_frozen": "2026-11-20",
+  "code_baseline_commit": "85721d88b2817eb2a132ed04966bd3085ff256e4",
+  "foundation_commit": "01260409a0e11d8dcf97729ea25a61f20e2a4772",
+  "research_question": "Can GDEC automatically produce useful, empirically reliable estimates of spatial discretisation uncertainty for supported engineering quantities of interest, while correctly identifying and refusing computations whose convergence evidence is inadequate?",
+  "hypotheses": {
+    "H5a_empirical_uncertainty_coverage": {
+      "definition": "E_true = |J0 - J_exact| <= U0",
+      "target_fraction_min": 0.90,
+      "minimum_successes": 36,
+      "total_tier1_configurations": 40,
+      "family_floor_min": 0.80,
+      "confidence_interval_type": "two_sided_95pct_clopper_pearson",
+      "statistical_interpretation": "Empirical acceptance gate; does not establish 95% confidence of >=90% population coverage"
+    },
+    "H5b_claim_integrity": {
+      "definition": "Among configurations reporting estimated_target_met, E_true <= tol",
+      "minimum_integrity_fraction": 0.90
+    },
+    "H6a_estimate_availability": {
+      "definition": "Fraction of eligible Tier 1 configurations receiving a valid uncertainty estimate",
+      "minimum_availability_fraction": 0.80
+    },
+    "H6b_estimate_sharpness": {
+      "definition": "R_U = U0 / E_true for cases where E_true > numerical_floor",
+      "median_sharpness_max": 3.0,
+      "p90_sharpness_max": 10.0
+    },
+    "H7_refusal_correctness": {
+      "definition": "Fraction of Tier 3 refusal cases returning the exact intended refusal status",
+      "required_accuracy": 1.00,
+      "total_refusal_cases": 64,
+      "forbidden_statuses": ["estimated_target_met"]
+    },
+    "H8_tier2_performance": {
+      "definition": "Availability and coverage on Tier 2 difficult and singular elasticity benchmarks",
+      "conditional_scope_narrowing": "If H8 fails, restrict contract scope to SMOOTH DISPLACEMENT QOIs ONLY"
+    }
+  },
+  "contract_parameters": {
+    "refinement_ratio_r": 2.0,
+    "safety_factor_Fs": 1.25,
+    "order_cap_p_cap": 2.0,
+    "observed_order_window": [0.5, 3.5],
+    "numerical_difference_floor": 1e-13,
+    "min_interior_angle_threshold_deg": 10.0,
+    "solver_relative_residual_threshold_max": 1e-10,
+    "m3_stability_max_delta_p": 0.50,
+    "tier2_reference_uncertainty_ratio_max": 0.10
+  },
+  "dataset_manifests": {
+    "tier1": "verification/phase_c/datasets/tier1_manifest.json",
+    "tier2": "verification/phase_c/datasets/tier2_manifest.json",
+    "tier3": "verification/phase_c/datasets/tier3_refusal_manifest.json"
+  },
+  "stop_condition": "Freeze protocol and tag prereg-c. DO NOT execute confirmatory 40-configuration runs in this task."
+}

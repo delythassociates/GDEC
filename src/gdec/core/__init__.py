@@ -3,6 +3,7 @@ from gdec.core.controller import RuntimeController, ControllerDecision
 from gdec.core.cost_model import CostModel, CostRecord
 from gdec.core.telemetry import IterationRecord, ExecutionTrace, TelemetryTracker
 from gdec.core.runtime import GDECRuntime
+from gdec.core.analyser import ProblemAnalyser, AccuracyTarget, ContractResult, RefusalCode
 
 __all__ = [
     "ExecutionPlan",
@@ -15,4 +16,8 @@ __all__ = [
     "ExecutionTrace",
     "TelemetryTracker",
     "GDECRuntime",
+    "ProblemAnalyser",
+    "AccuracyTarget",
+    "ContractResult",
+    "RefusalCode",
 ]

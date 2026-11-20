@@ -81,6 +81,11 @@ def run_single_simulation(
         qoi_val = prob.evaluate_qoi(u, basis)
         t_primal = time.perf_counter() - t0
 
+        # Solved mesh telemetry (exact state on which primal solution is computed)
+        solved_elements = int(mesh.nelements)
+        solved_dofs = int(basis.N)
+        mesh_state_id = f"{prob_id}_{method}_var{variant_idx}_iter{it}"
+
         signed_err = j_ref - qoi_val
         abs_err = abs(signed_err)
         denom = max(abs(j_ref), scale)
@@ -90,6 +95,9 @@ def run_single_simulation(
         t_estimator = 0.0
         t_marking = 0.0
         t_refine = 0.0
+        t_dwr_internal_primal = 0.0
+        t_p2_assembly = 0.0
+        t_p2_adjoint_solve = 0.0
 
         estimated_err = None
         absolute_eff = None
@@ -140,11 +148,17 @@ def run_single_simulation(
             t_marking = time.perf_counter() - t_mark
 
         elif method == "dwr":
-            # Pass existing primal solve so primal is not redundantly re-assembled
             dwr_res = dwr_estimator.estimate(mesh)
-            # Adjoint time includes P2 enriched assembly and P2 linear solve
-            t_adjoint = dwr_res.timings.get("assemble", 0.0) + dwr_res.timings.get("solve_adjoint", 0.0)
+            # Detailed timing breakdown of DWR
+            t_dwr_internal_primal = (
+                dwr_res.timings.get("internal_primal_assemble", 0.0)
+                + dwr_res.timings.get("internal_primal_solve", 0.0)
+            )
+            t_p2_assembly = dwr_res.timings.get("p2_assemble", 0.0)
+            t_p2_adjoint_solve = dwr_res.timings.get("p2_adjoint_solve", 0.0)
+            t_adjoint = t_p2_assembly + t_p2_adjoint_solve
             t_estimator = dwr_res.timings.get("estimator", 0.0)
+
             adjoint_dofs = dwr_res.dofs_p2
             estimated_err = dwr_res.abs_eta_dwr
 
@@ -163,6 +177,7 @@ def run_single_simulation(
         stop_now = (rel_err < 0.004 or basis.N >= max_dofs or it == max_iterations - 1)
 
         # 4. Mesh refinement (only if continuing)
+        next_elements = None
         if not stop_now:
             t_ref = time.perf_counter()
             if method == "uniform":
@@ -170,6 +185,7 @@ def run_single_simulation(
             else:
                 mesh = mesh.refined(marked_elements)
             t_refine = time.perf_counter() - t_ref
+            next_elements = int(mesh.nelements)
 
         # End-to-end iteration wall-clock time
         t_total_iter = time.perf_counter() - t_start_iter
@@ -185,8 +201,13 @@ def run_single_simulation(
             "method": method,
             "variant_idx": variant_idx,
             "iteration": it,
-            "nelements": int(mesh.nelements),
-            "primal_dofs": int(basis.N),
+            "mesh_state_id": mesh_state_id,
+            "solved_mesh_elements": solved_elements,
+            "solved_mesh_dofs": solved_dofs,
+            "next_mesh_elements": next_elements,
+            "next_mesh_dofs": None,
+            "nelements": solved_elements,
+            "primal_dofs": solved_dofs,
             "adjoint_dofs": int(adjoint_dofs),
             "qoi_h": float(qoi_val),
             "qoi_ref": float(j_ref),
@@ -197,6 +218,10 @@ def run_single_simulation(
             "effectivity": float(absolute_eff) if absolute_eff is not None else None,
             "absolute_effectivity": float(absolute_eff) if absolute_eff is not None else None,
             "signed_effectivity": float(signed_eff) if signed_eff is not None else None,
+            "t_primal_outer_sec": float(t_primal),
+            "t_dwr_internal_primal_sec": float(t_dwr_internal_primal),
+            "t_p2_assembly_sec": float(t_p2_assembly),
+            "t_p2_adjoint_solve_sec": float(t_p2_adjoint_solve),
             "t_primal_sec": float(t_primal),
             "t_adjoint_sec": float(t_adjoint),
             "t_estimator_sec": float(t_estimator),

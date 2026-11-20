@@ -1,0 +1,180 @@
+{
+  "pilot_phase": "Phase C-P Feasibility Pilot",
+  "case_a_results": [
+    {
+      "level": "M0",
+      "nelements": 96,
+      "dofs": 130,
+      "solve_time_sec": 0.005434300001070369,
+      "memory_mb": 76.82421875,
+      "qois": {
+        "global_displacement": {
+          "computed": 2.562434419035122e-11,
+          "exact": 2.5699717200378704e-11
+        },
+        "patch_displacement": {
+          "computed": -1.5506500665663878e-11,
+          "exact": -1.6736506290620138e-11
+        }
+      }
+    },
+    {
+      "level": "M1",
+      "nelements": 384,
+      "dofs": 450,
+      "solve_time_sec": 0.009920799999235896,
+      "memory_mb": 78.1953125,
+      "qois": {
+        "global_displacement": {
+          "computed": 2.5662030695364962e-11,
+          "exact": 2.5680854386509186e-11
+        },
+        "patch_displacement": {
+          "computed": -1.6642781433661866e-11,
+          "exact": -1.7492480857438268e-11
+        }
+      }
+    },
+    {
+      "level": "M2",
+      "nelements": 1536,
+      "dofs": 1666,
+      "solve_time_sec": 0.019124099999316968,
+      "memory_mb": 81.87109375,
+      "qois": {
+        "global_displacement": {
+          "computed": 2.5671442540937074e-11,
+          "exact": 2.567614722930332e-11
+        },
+        "patch_displacement": {
+          "computed": -1.7020419141796806e-11,
+          "exact": -1.7693135133963974e-11
+        }
+      }
+    },
+    {
+      "level": "M3",
+      "nelements": 6144,
+      "dofs": 6402,
+      "solve_time_sec": 0.07732820000092033,
+      "memory_mb": 88.05859375,
+      "qois": {
+        "global_displacement": {
+          "computed": 2.5673794885120197e-11,
+          "exact": 2.5674970979880907e-11
+        },
+        "patch_displacement": {
+          "computed": -1.7069935384944968e-11,
+          "exact": -1.75882938579589e-11
+        }
+      }
+    }
+  ],
+  "gci_analysis": {
+    "global_displacement": {
+      "J0": 2.562434419035122e-11,
+      "J1": 2.5662030695364962e-11,
+      "J2": 2.5671442540937074e-11,
+      "J3": 2.5673794885120197e-11,
+      "J_exact": 2.5699717200378704e-11,
+      "d01": -3.7686505013741635e-14,
+      "d12": -9.411845572111789e-15,
+      "d23": -2.352344183122982e-15,
+      "p_obs_012": 2.0014984535874567,
+      "p_obs_123": 2.0003784858006677,
+      "order_plausible": true,
+      "asymptotic_stable": true,
+      "p_used": 2.0,
+      "U0_estimated": 6.281084168956939e-14,
+      "E_true": 7.537301002748327e-14,
+      "covered": false,
+      "sharpness_ratio": 0.8333333333333333
+    },
+    "patch_displacement": {
+      "J0": -1.5506500665663878e-11,
+      "J1": -1.6642781433661866e-11,
+      "J2": -1.7020419141796806e-11,
+      "J3": -1.7069935384944968e-11,
+      "J_exact": -1.6736506290620138e-11,
+      "d01": 1.1362807679979885e-12,
+      "d12": 3.776377081349395e-13,
+      "d23": 4.951624314816191e-14,
+      "p_obs_012": 1.5892446260119903,
+      "p_obs_123": 2.9310290638927925,
+      "order_plausible": true,
+      "asymptotic_stable": false,
+      "p_used": 1.5892446260119903,
+      "U0_estimated": 2.1273739457182525e-12,
+      "E_true": 1.2300056249562606e-12,
+      "covered": true,
+      "sharpness_ratio": 1.729564404060268
+    }
+  },
+  "case_b_results": [
+    {
+      "level": "M0",
+      "nelements": 32,
+      "dofs": 50,
+      "j_val": 0.3246109971685301,
+      "j_exact": 0.2838096843988563,
+      "error_rel": 0.14376293344639027
+    },
+    {
+      "level": "M1",
+      "nelements": 128,
+      "dofs": 162,
+      "j_val": 0.2924995895921936,
+      "j_exact": 0.2838096843988563,
+      "error_rel": 0.030618776141284866
+    },
+    {
+      "level": "M2",
+      "nelements": 512,
+      "dofs": 578,
+      "j_val": 0.2753943769334573,
+      "j_exact": 0.2838096843988563,
+      "error_rel": 0.029651234358769797
+    },
+    {
+      "level": "M3",
+      "nelements": 2048,
+      "dofs": 2178,
+      "j_val": 0.2820877289900485,
+      "j_exact": 0.2838096843988563,
+      "error_rel": 0.00606728911472868
+    }
+  ],
+  "case_b_gci": {
+    "status": "verified",
+    "p_obs": 0.9086498653942781,
+    "U0": 0.08589306801254884,
+    "E_true": 0.0408013127696738,
+    "covered": true,
+    "sharpness": 2.105154520331762,
+    "quadrature_audit": {
+      "E_quadrature": 7.398867505337137e-07,
+      "E_smallest": 0.7179122710099515,
+      "ratio": 1.030608864635854e-06,
+      "target_met": true
+    }
+  },
+  "singular_point_stress_refusal": {
+    "requested_qoi": "point_stress_at_singularity",
+    "coordinates": [
+      0.0,
+      0.0
+    ],
+    "diagnosed_issue": "Re-entrant corner geometry causes theoretical stress singularity (sigma ~ r^-0.455). Point stress is mathematically divergent.",
+    "status": "ill_posed_qoi",
+    "contract_issued": false,
+    "recommendation": "Use regularized domain patch-average displacement or stress away from notch singularity."
+  },
+  "hierarchy_cost": {
+    "M0_elements": 96,
+    "M1_elements": 384,
+    "M2_elements": 1536,
+    "M3_elements": 6144,
+    "M2_over_M0_ratio": 16.0,
+    "M3_over_M0_ratio": 64.0
+  }
+}

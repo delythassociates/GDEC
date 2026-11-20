@@ -101,33 +101,46 @@ class DWREstimator:
         b1 = Basis(mesh, ElementVector(ElementTriP1()))
         b2 = Basis(mesh, ElementVector(ElementTriP2()))
 
+        # Internal P1 primal assembly (recomputed within DWR estimator)
+        t_p1_asm_start = time.perf_counter()
         K1 = self._assemble_stiffness(b1)
-        K2 = self._assemble_stiffness(b2)
         f1 = self.problem.assemble_traction(b1)
-        f2 = self.problem.assemble_traction(b2)
         g1 = self.problem.assemble_qoi_vector(b1)
-        g2 = self.problem.assemble_qoi_vector(b2)
-
-        P = self._build_prolongation(b1, b2, mesh)
         D1 = self.problem.get_dirichlet_dofs(b1)
         I1 = np.setdiff1d(np.arange(b1.N), D1)
+        t_int_p1_asm = time.perf_counter() - t_p1_asm_start
+
+        # Enriched P2 assembly
+        t_p2_asm_start = time.perf_counter()
+        K2 = self._assemble_stiffness(b2)
+        f2 = self.problem.assemble_traction(b2)
+        g2 = self.problem.assemble_qoi_vector(b2)
+        P = self._build_prolongation(b1, b2, mesh)
         D2 = self._get_p2_dirichlet_dofs(mesh, b1, b2, D1)
         I2 = np.setdiff1d(np.arange(b2.N), D2)
-        timings["assemble"] = time.perf_counter() - t0
+        t_p2_asm = time.perf_counter() - t_p2_asm_start
 
-        # Solve primal P1
+        timings["assemble"] = time.perf_counter() - t0
+        timings["internal_primal_assemble"] = t_int_p1_asm
+        timings["p2_assemble"] = t_p2_asm
+
+        # Solve internal primal P1
         t1 = time.perf_counter()
         K1_c, f1_c, u1_full, _ = fem.condense(K1, f1, D=D1)
         u1 = u1_full.copy()
         u1[I1] = spla.spsolve(K1_c.tocsc(), f1_c)
-        timings["solve_primal"] = time.perf_counter() - t1
+        t_int_p1_solve = time.perf_counter() - t1
+        timings["solve_primal"] = t_int_p1_solve
+        timings["internal_primal_solve"] = t_int_p1_solve
 
         # Solve enriched adjoint on P2
         t2 = time.perf_counter()
         K2_adj, g2_c, z2_full, _ = fem.condense(K2, g2, D=D2)
         z2 = z2_full.copy()
         z2[I2] = spla.spsolve(K2_adj.tocsc(), g2_c)
-        timings["solve_adjoint"] = time.perf_counter() - t2
+        t_p2_adj_solve = time.perf_counter() - t2
+        timings["solve_adjoint"] = t_p2_adj_solve
+        timings["p2_adjoint_solve"] = t_p2_adj_solve
 
         # Compute DWR residual and indicators
         t3 = time.perf_counter()

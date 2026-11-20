@@ -1,0 +1,58 @@
+{
+  "phase": "Phase B Reconciliation",
+  "audit_date": "2026-11-20",
+  "reference_commit": "85721d88b2817eb2a132ed04966bd3085ff256e4",
+  "frozen_preregistration_file": "verification/phase_b_thresholds.json",
+  "frozen_preregistration_commit": "a336cc9",
+  "frozen_reference_uncertainty_threshold_max": 0.0005,
+  "frozen_reference_uncertainty_pct_max": 0.05,
+  "benchmark_evaluations": {
+    "cantilever": {
+      "reported_gci_pct": 0.01318,
+      "qualifies_under_frozen_gate": true,
+      "status": "QUALIFIED_VERIFIED",
+      "qoi_type": "boundary_average_displacement",
+      "observed_s_dof_median": 0.838,
+      "observed_s_t_median": 0.163
+    },
+    "plate_with_hole": {
+      "reported_gci_pct": 0.20966,
+      "qualifies_under_frozen_gate": false,
+      "status": "DISQUALIFIED_REF_UNCERTAIN",
+      "qoi_type": "patch_average_displacement",
+      "observed_s_dof_median": 0.886,
+      "observed_s_t_median": 0.202
+    },
+    "notched_bar": {
+      "reported_gci_pct": 1.75819,
+      "qualifies_under_frozen_gate": false,
+      "status": "DISQUALIFIED_REF_UNCERTAIN",
+      "qoi_type": "patch_average_displacement",
+      "observed_s_dof_median": 1.128,
+      "observed_s_t_median": 0.228
+    },
+    "l_shaped": {
+      "reported_gci_pct": 0.23561,
+      "qualifies_under_frozen_gate": false,
+      "status": "DISQUALIFIED_REF_UNCERTAIN",
+      "qoi_type": "patch_average_displacement",
+      "observed_s_dof_median": 1.035,
+      "observed_s_t_median": 0.325
+    }
+  },
+  "summary": {
+    "total_benchmark_problems": 4,
+    "qualifying_benchmark_problems": 1,
+    "disqualified_benchmark_problems": 3,
+    "minimum_qualifying_required": 3,
+    "reconciled_determination": "INCOMPLETE — INSUFFICIENT QUALIFYING REFERENCE SOLUTIONS",
+    "pre_registered_rule_triggered": "INCOMPLETE: DWR consistency checks fail, reference solutions uncertain, or experimental controls violated"
+  },
+  "scientific_qualifications": [
+    "Three of the four tested benchmark quantities of interest were local displacement patch averages, not global objectives.",
+    "Local stress objectives (notch tip, hole stress concentration, re-entrant corner stress intensity) were never evaluated in Phase B or B.1.",
+    "Reference grid convergence index (GCI) uncertainties on three benchmarks (0.21% to 1.76%) exceeded the frozen 0.05% threshold and were comparable to or greater than target error levels.",
+    "The previously reported 77.3% underestimation frequency is not a clean, independently reference-verified measure of DWR reliability across all problems.",
+    "Observed degree of freedom (DOF) and runtime ratios are preserved as diagnostic evidence rather than definitive hypothesis results."
+  ]
+}

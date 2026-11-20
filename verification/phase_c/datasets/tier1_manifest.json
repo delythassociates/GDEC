@@ -1,0 +1,1634 @@
+[
+  {
+    "config_id": "T1_01",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "manufactured_expression": "ux = 0.001*x^2 + -0.0005*y^2; uy = 0.001*x*y",
+    "parameters": {
+      "a": 0.001,
+      "b": -0.0005,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.25
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 101,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_02",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "manufactured_expression": "ux = 0.002*x^2 + -0.001*y^2; uy = 0.002*x*y",
+    "parameters": {
+      "a": 0.002,
+      "b": -0.001,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 110000000000.0,
+      "nu": 0.26
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 202,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_03",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "manufactured_expression": "ux = 0.003*x^2 + -0.0015*y^2; uy = 0.003*x*y",
+    "parameters": {
+      "a": 0.003,
+      "b": -0.0015,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 120000000000.0,
+      "nu": 0.27
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 303,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_04",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "manufactured_expression": "ux = 0.004*x^2 + -0.002*y^2; uy = 0.004*x*y",
+    "parameters": {
+      "a": 0.004,
+      "b": -0.002,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.28
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 404,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_05",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "manufactured_expression": "ux = 0.005*x^2 + -0.0025*y^2; uy = 0.005*x*y",
+    "parameters": {
+      "a": 0.005,
+      "b": -0.0025,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 140000000000.0,
+      "nu": 0.29
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 505,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_06",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "manufactured_expression": "ux = 0.006*x^2 + -0.003*y^2; uy = 0.006*x*y",
+    "parameters": {
+      "a": 0.006,
+      "b": -0.003,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 150000000000.0,
+      "nu": 0.3
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 606,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_07",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "manufactured_expression": "ux = 0.007*x^2 + -0.0035*y^2; uy = 0.007*x*y",
+    "parameters": {
+      "a": 0.007,
+      "b": -0.0035,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.31
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 707,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_08",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "manufactured_expression": "ux = 0.008*x^2 + -0.004*y^2; uy = 0.008*x*y",
+    "parameters": {
+      "a": 0.008,
+      "b": -0.004,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 170000000000.0,
+      "nu": 0.32
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 808,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_09",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "manufactured_expression": "ux = 0.0001*sin(1.0*pi*x)*cos(1.0*pi*y); uy = 0.0001*cos(1.0*pi*x)*sin(1.0*pi*y)",
+    "parameters": {
+      "freq": 1.0,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.25
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 1101,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_10",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "manufactured_expression": "ux = 0.0001*sin(1.25*pi*x)*cos(1.25*pi*y); uy = 0.0001*cos(1.25*pi*x)*sin(1.25*pi*y)",
+    "parameters": {
+      "freq": 1.25,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 110000000000.0,
+      "nu": 0.26
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 1202,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_11",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "manufactured_expression": "ux = 0.0001*sin(1.5*pi*x)*cos(1.5*pi*y); uy = 0.0001*cos(1.5*pi*x)*sin(1.5*pi*y)",
+    "parameters": {
+      "freq": 1.5,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 120000000000.0,
+      "nu": 0.27
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 1303,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_12",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "manufactured_expression": "ux = 0.0001*sin(1.75*pi*x)*cos(1.75*pi*y); uy = 0.0001*cos(1.75*pi*x)*sin(1.75*pi*y)",
+    "parameters": {
+      "freq": 1.75,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.28
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 1404,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_13",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "manufactured_expression": "ux = 0.0001*sin(2.0*pi*x)*cos(2.0*pi*y); uy = 0.0001*cos(2.0*pi*x)*sin(2.0*pi*y)",
+    "parameters": {
+      "freq": 2.0,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 140000000000.0,
+      "nu": 0.29
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 1505,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_14",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "manufactured_expression": "ux = 0.0001*sin(2.25*pi*x)*cos(2.25*pi*y); uy = 0.0001*cos(2.25*pi*x)*sin(2.25*pi*y)",
+    "parameters": {
+      "freq": 2.25,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 150000000000.0,
+      "nu": 0.3
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 1606,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_15",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "manufactured_expression": "ux = 0.0001*sin(2.5*pi*x)*cos(2.5*pi*y); uy = 0.0001*cos(2.5*pi*x)*sin(2.5*pi*y)",
+    "parameters": {
+      "freq": 2.5,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.31
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 1707,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_16",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "manufactured_expression": "ux = 0.0001*sin(2.75*pi*x)*cos(2.75*pi*y); uy = 0.0001*cos(2.75*pi*x)*sin(2.75*pi*y)",
+    "parameters": {
+      "freq": 2.75,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 170000000000.0,
+      "nu": 0.32
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 1808,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_17",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "manufactured_expression": "ux = 0.0002*exp(-((x-0.3)^2 + (y-0.4)^2)/0.0225); uy = 0.5*ux",
+    "parameters": {
+      "x0": 0.3,
+      "y0": 0.4,
+      "sigma": 0.15,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.25
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 2101,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_18",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "manufactured_expression": "ux = 0.0002*exp(-((x-0.35)^2 + (y-0.44)^2)/0.028899999999999995); uy = 0.5*ux",
+    "parameters": {
+      "x0": 0.35,
+      "y0": 0.44,
+      "sigma": 0.16999999999999998,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 110000000000.0,
+      "nu": 0.26
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 2202,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_19",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "manufactured_expression": "ux = 0.0002*exp(-((x-0.4)^2 + (y-0.48000000000000004)^2)/0.0361); uy = 0.5*ux",
+    "parameters": {
+      "x0": 0.4,
+      "y0": 0.48000000000000004,
+      "sigma": 0.19,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 120000000000.0,
+      "nu": 0.27
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 2303,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_20",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "manufactured_expression": "ux = 0.0002*exp(-((x-0.45)^2 + (y-0.52)^2)/0.04409999999999999); uy = 0.5*ux",
+    "parameters": {
+      "x0": 0.45,
+      "y0": 0.52,
+      "sigma": 0.21,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.28
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 2404,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_21",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "manufactured_expression": "ux = 0.0002*exp(-((x-0.5)^2 + (y-0.56)^2)/0.05289999999999999); uy = 0.5*ux",
+    "parameters": {
+      "x0": 0.5,
+      "y0": 0.56,
+      "sigma": 0.22999999999999998,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 140000000000.0,
+      "nu": 0.29
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 2505,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_22",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "manufactured_expression": "ux = 0.0002*exp(-((x-0.55)^2 + (y-0.6000000000000001)^2)/0.0625); uy = 0.5*ux",
+    "parameters": {
+      "x0": 0.55,
+      "y0": 0.6000000000000001,
+      "sigma": 0.25,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 150000000000.0,
+      "nu": 0.3
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 2606,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_23",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "manufactured_expression": "ux = 0.0002*exp(-((x-0.6000000000000001)^2 + (y-0.64)^2)/0.0729); uy = 0.5*ux",
+    "parameters": {
+      "x0": 0.6000000000000001,
+      "y0": 0.64,
+      "sigma": 0.27,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.31
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 2707,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_24",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "manufactured_expression": "ux = 0.0002*exp(-((x-0.65)^2 + (y-0.68)^2)/0.08410000000000002); uy = 0.5*ux",
+    "parameters": {
+      "x0": 0.65,
+      "y0": 0.68,
+      "sigma": 0.29000000000000004,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 170000000000.0,
+      "nu": 0.32
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 2808,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_25",
+    "family": "family_4_anisotropic_shear",
+    "family_index": 4,
+    "manufactured_expression": "ux = 0.002*x*y + 0.0008*y^2; uy = -0.0008*x^2 + 0.002*x*y",
+    "parameters": {
+      "kx": 0.002,
+      "ky": 0.0008
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.25
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 3101,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_26",
+    "family": "family_4_anisotropic_shear",
+    "family_index": 4,
+    "manufactured_expression": "ux = 0.004*x*y + 0.0016*y^2; uy = -0.0016*x^2 + 0.004*x*y",
+    "parameters": {
+      "kx": 0.004,
+      "ky": 0.0016
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 110000000000.0,
+      "nu": 0.26
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 3202,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_27",
+    "family": "family_4_anisotropic_shear",
+    "family_index": 4,
+    "manufactured_expression": "ux = 0.006*x*y + 0.0024000000000000002*y^2; uy = -0.0024000000000000002*x^2 + 0.006*x*y",
+    "parameters": {
+      "kx": 0.006,
+      "ky": 0.0024000000000000002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 120000000000.0,
+      "nu": 0.27
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 3303,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_28",
+    "family": "family_4_anisotropic_shear",
+    "family_index": 4,
+    "manufactured_expression": "ux = 0.008*x*y + 0.0032*y^2; uy = -0.0032*x^2 + 0.008*x*y",
+    "parameters": {
+      "kx": 0.008,
+      "ky": 0.0032
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.28
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 3404,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_29",
+    "family": "family_4_anisotropic_shear",
+    "family_index": 4,
+    "manufactured_expression": "ux = 0.01*x*y + 0.004*y^2; uy = -0.004*x^2 + 0.01*x*y",
+    "parameters": {
+      "kx": 0.01,
+      "ky": 0.004
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 140000000000.0,
+      "nu": 0.29
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 3505,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_30",
+    "family": "family_4_anisotropic_shear",
+    "family_index": 4,
+    "manufactured_expression": "ux = 0.012*x*y + 0.0048000000000000004*y^2; uy = -0.0048000000000000004*x^2 + 0.012*x*y",
+    "parameters": {
+      "kx": 0.012,
+      "ky": 0.0048000000000000004
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 150000000000.0,
+      "nu": 0.3
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 3606,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_31",
+    "family": "family_4_anisotropic_shear",
+    "family_index": 4,
+    "manufactured_expression": "ux = 0.014*x*y + 0.0056*y^2; uy = -0.0056*x^2 + 0.014*x*y",
+    "parameters": {
+      "kx": 0.014,
+      "ky": 0.0056
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.31
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 3707,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_32",
+    "family": "family_4_anisotropic_shear",
+    "family_index": 4,
+    "manufactured_expression": "ux = 0.016*x*y + 0.0064*y^2; uy = -0.0064*x^2 + 0.016*x*y",
+    "parameters": {
+      "kx": 0.016,
+      "ky": 0.0064
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 170000000000.0,
+      "nu": 0.32
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 3808,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_33",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "manufactured_expression": "ux = 5e-05*(sin(2*pi*x) + 0.2*sin(4*pi*x)); uy = 5e-05*(cos(2*pi*y) + 0.2*cos(4*pi*y))",
+    "parameters": {
+      "k1": 2,
+      "k2": 4,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.25
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 4101,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_34",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "manufactured_expression": "ux = 5e-05*(sin(3*pi*x) + 0.2*sin(5*pi*x)); uy = 5e-05*(cos(3*pi*y) + 0.2*cos(5*pi*y))",
+    "parameters": {
+      "k1": 3,
+      "k2": 5,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 110000000000.0,
+      "nu": 0.26
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 4202,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_35",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "manufactured_expression": "ux = 5e-05*(sin(4*pi*x) + 0.2*sin(4*pi*x)); uy = 5e-05*(cos(4*pi*y) + 0.2*cos(4*pi*y))",
+    "parameters": {
+      "k1": 4,
+      "k2": 4,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 120000000000.0,
+      "nu": 0.27
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 4303,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_36",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "manufactured_expression": "ux = 5e-05*(sin(2*pi*x) + 0.2*sin(5*pi*x)); uy = 5e-05*(cos(2*pi*y) + 0.2*cos(5*pi*y))",
+    "parameters": {
+      "k1": 2,
+      "k2": 5,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.28
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 4404,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_37",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "manufactured_expression": "ux = 5e-05*(sin(3*pi*x) + 0.2*sin(4*pi*x)); uy = 5e-05*(cos(3*pi*y) + 0.2*cos(4*pi*y))",
+    "parameters": {
+      "k1": 3,
+      "k2": 4,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 140000000000.0,
+      "nu": 0.29
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 4505,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": true,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_38",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "manufactured_expression": "ux = 5e-05*(sin(4*pi*x) + 0.2*sin(5*pi*x)); uy = 5e-05*(cos(4*pi*y) + 0.2*cos(5*pi*y))",
+    "parameters": {
+      "k1": 4,
+      "k2": 5,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 150000000000.0,
+      "nu": 0.3
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 4606,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_39",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "manufactured_expression": "ux = 5e-05*(sin(2*pi*x) + 0.2*sin(4*pi*x)); uy = 5e-05*(cos(2*pi*y) + 0.2*cos(4*pi*y))",
+    "parameters": {
+      "k1": 2,
+      "k2": 4,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.31
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 4707,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_40",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "manufactured_expression": "ux = 5e-05*(sin(3*pi*x) + 0.2*sin(5*pi*x)); uy = 5e-05*(cos(3*pi*y) + 0.2*cos(5*pi*y))",
+    "parameters": {
+      "k1": 3,
+      "k2": 5,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 170000000000.0,
+      "nu": 0.32
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 4808,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  }
+]

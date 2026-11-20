@@ -2,7 +2,7 @@ name: GDEC CI & Verification Matrix
 
 on:
   push:
-    branches: [ main, phase-a/**, remediation/** ]
+    branches: [ main, phase-a/**, phase-b/**, phase-b1/**, phase-c/**, remediation/** ]
     tags: [ 'v*', 'prereg-*' ]
   pull_request:
     branches: [ main ]
@@ -27,10 +27,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
 
-      - name: Install dependencies
+      - name: Install build tools and development dependencies
         run: |
-          python -m pip install --upgrade pip build wheel
+          python -m pip install --upgrade pip build wheel setuptools
           pip install -e ".[test,app]"
+
+      - name: Record Environment Metadata
+        run: |
+          python -c "import sys, platform, numpy, scipy, skfem, lark, pydantic, sympy, pytest; print('Python:', sys.version); print('OS:', platform.platform()); print('NumPy:', numpy.__version__); print('SciPy:', scipy.__version__); print('scikit-fem:', skfem.__version__); print('Lark:', lark.__version__); print('Pydantic:', pydantic.__version__); print('SymPy:', sympy.__version__); print('pytest:', pytest.__version__)"
 
       - name: Code quality (Ruff)
         run: |
@@ -44,16 +48,24 @@ jobs:
         run: |
           pytest tests -v --durations=10
 
-      - name: CLI smoke tests
+      - name: Numerical Verification Suite
         run: |
-          gdec hardware
-          gdec validate examples/cantilever.gdc
-          gdec compile examples/cantilever.gdc
+          python -m pytest tests/test_dwr_consistency.py tests/test_dwr_mutations.py tests/test_phase_b1_timing.py tests/test_phase_b_geometries.py -v
 
-      - name: Build wheel distribution
+      - name: Build distributable wheel
         run: |
           python -m build --wheel
 
-      - name: Wheel package verification
+      - name: Wheel archive verification
         run: |
           python -c "import zipfile, glob; zf = zipfile.ZipFile(glob.glob('dist/*.whl')[0]); assert any(f.endswith('.lark') for f in zf.namelist()), 'Grammar file missing from wheel'"
+
+      - name: Install wheel in clean environment & CLI smoke test
+        run: |
+          python -m venv test_env
+          ${{ runner.os == 'Windows' && 'test_env\\Scripts\\pip' || 'test_env/bin/pip' }} install --upgrade pip
+          ${{ runner.os == 'Windows' && 'test_env\\Scripts\\pip' || 'test_env/bin/pip' }} install $(python -c "import glob; print(glob.glob('dist/*.whl')[0])")
+          ${{ runner.os == 'Windows' && 'test_env\\Scripts\\python' || 'test_env/bin/python' }} -c "import gdec; print('Installed GDEC version:', gdec.__version__)"
+          ${{ runner.os == 'Windows' && 'test_env\\Scripts\\gdec' || 'test_env/bin/gdec' }} hardware
+          ${{ runner.os == 'Windows' && 'test_env\\Scripts\\gdec' || 'test_env/bin/gdec' }} validate examples/cantilever.gdc
+          ${{ runner.os == 'Windows' && 'test_env\\Scripts\\gdec' || 'test_env/bin/gdec' }} compile examples/cantilever.gdc

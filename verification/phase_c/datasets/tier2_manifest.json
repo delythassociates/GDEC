@@ -1,0 +1,206 @@
+[
+  {
+    "config_id": "T2_01",
+    "benchmark_class": "corner_singularity",
+    "name": "Williams Re-entrant Corner Mode I (omega=270.0 deg)",
+    "corner_angle_deg": 270.0,
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.25,
+      "assumption": "plane_strain"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 1e-05
+    },
+    "initial_mesh_seed": 7001,
+    "reference_criterion": "U_reference <= 0.1 * E_smallest",
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_02",
+    "benchmark_class": "corner_singularity",
+    "name": "Williams Re-entrant Corner Mode I (omega=280.0 deg)",
+    "corner_angle_deg": 280.0,
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.27,
+      "assumption": "plane_strain"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 1e-05
+    },
+    "initial_mesh_seed": 7002,
+    "reference_criterion": "U_reference <= 0.1 * E_smallest",
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_03",
+    "benchmark_class": "corner_singularity",
+    "name": "Williams Re-entrant Corner Mode I (omega=290.0 deg)",
+    "corner_angle_deg": 290.0,
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.29,
+      "assumption": "plane_strain"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 1e-05
+    },
+    "initial_mesh_seed": 7003,
+    "reference_criterion": "U_reference <= 0.1 * E_smallest",
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_04",
+    "benchmark_class": "corner_singularity",
+    "name": "Williams Re-entrant Corner Mode I (omega=300.0 deg)",
+    "corner_angle_deg": 300.0,
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.31,
+      "assumption": "plane_strain"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 1e-05
+    },
+    "initial_mesh_seed": 7004,
+    "reference_criterion": "U_reference <= 0.1 * E_smallest",
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_05",
+    "benchmark_class": "weakly_singular_load",
+    "name": "Weakly Singular Field (alpha=1.20)",
+    "alpha": 1.2,
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.3,
+      "assumption": "plane_stress"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 0.0001
+    },
+    "quadrature": {
+      "order": 14,
+      "verified_error_ratio": "<= 0.01"
+    },
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_06",
+    "benchmark_class": "weakly_singular_load",
+    "name": "Weakly Singular Field (alpha=1.30)",
+    "alpha": 1.3,
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.3,
+      "assumption": "plane_stress"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 0.0001
+    },
+    "quadrature": {
+      "order": 14,
+      "verified_error_ratio": "<= 0.01"
+    },
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_07",
+    "benchmark_class": "weakly_singular_load",
+    "name": "Weakly Singular Field (alpha=1.40)",
+    "alpha": 1.4,
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.3,
+      "assumption": "plane_stress"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 0.0001
+    },
+    "quadrature": {
+      "order": 14,
+      "verified_error_ratio": "<= 0.01"
+    },
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_08",
+    "benchmark_class": "weakly_singular_load",
+    "name": "Weakly Singular Field (alpha=1.50)",
+    "alpha": 1.5,
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.3,
+      "assumption": "plane_stress"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 0.0001
+    },
+    "quadrature": {
+      "order": 14,
+      "verified_error_ratio": "<= 0.01"
+    },
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_09",
+    "benchmark_class": "plate_with_hole",
+    "name": "Circular Hole Stress Concentration Plate",
+    "material": {
+      "E": 200000000000.0,
+      "nu": 0.3,
+      "assumption": "plane_stress"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 0.0001
+    },
+    "reference_criterion": "U_reference <= 0.1 * E_smallest",
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  },
+  {
+    "config_id": "T2_10",
+    "benchmark_class": "notched_bar",
+    "name": "Notched Tensile Bar Asymptotic Benchmark",
+    "material": {
+      "E": 210000000000.0,
+      "nu": 0.28,
+      "assumption": "plane_stress"
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "scale": 0.0001
+    },
+    "reference_criterion": "U_reference <= 0.1 * E_smallest",
+    "applicable_hypotheses": [
+      "H8_tier2_performance"
+    ]
+  }
+]

@@ -1,0 +1,79 @@
+{
+  "phase": "Phase C-P: Preliminary Manufactured-Solution Feasibility Pilot",
+  "status": "EXPLORATORY — NOT CONFIRMATORY",
+  "date_frozen": "2026-11-20",
+  "reference_commit": "85721d88b2817eb2a132ed04966bd3085ff256e4",
+  "objectives": [
+    "Evaluate viability of nested uniform refinement GCI contract (M0 -> M1 -> M2, r=2)",
+    "Determine observed order behaviour for smooth vs singular elasticity solutions",
+    "Test refusal of ill-posed singular point stress QoIs",
+    "Assess computational cost (runtime, peak memory) of M2 and M3 refinement"
+  ],
+  "benchmarks": [
+    {
+      "id": "case_a_williams_corner",
+      "name": "Williams Re-entrant Corner Mode-I Singularity",
+      "domain": "l_shaped",
+      "corner_angle_rad": 4.71238898038469,
+      "singular_exponent_lambda": 0.544483736782,
+      "material": { "E": 100e9, "nu": 0.30, "assumption": "plane_strain" },
+      "body_force": "zero",
+      "boundary_conditions": {
+        "notch_faces": "traction_free",
+        "outer_boundary": "exact_dirichlet"
+      },
+      "exact_qoi_available": true
+    },
+    {
+      "id": "case_b_singular_body_force",
+      "name": "Manufactured Weakly-Singular Elastic Field",
+      "domain": "unit_square",
+      "singular_exponent": 1.40,
+      "material": { "E": 200e9, "nu": 0.25, "assumption": "plane_stress" },
+      "body_force": "symbolic_navier_cauchy",
+      "quadrature": {
+        "order": 14,
+        "tolerance_ratio_max": 0.01
+      },
+      "exact_qoi_available": true
+    }
+  ],
+  "qois": [
+    {
+      "id": "smooth_global_displacement",
+      "type": "boundary_average_displacement",
+      "target_status": "SUPPORTED"
+    },
+    {
+      "id": "regularized_patch_displacement",
+      "type": "patch_average_displacement",
+      "target_status": "SUPPORTED"
+    },
+    {
+      "id": "singular_point_stress",
+      "type": "point_stress",
+      "location": [0.0, 0.0],
+      "target_status": "REFUSED_ILL_POSED"
+    },
+    {
+      "id": "finite_area_patch_stress",
+      "type": "patch_average_stress",
+      "target_status": "EXPLORATORY_ONLY"
+    }
+  ],
+  "mesh_hierarchy": {
+    "refinement_ratio": 2.0,
+    "levels": ["M0", "M1", "M2"],
+    "validation_subset_levels": ["M0", "M1", "M2", "M3"]
+  },
+  "candidate_parameters": {
+    "safety_factor_Fs": 1.25,
+    "order_cap_p_cap": 2.0,
+    "observed_order_window": [0.5, 3.5],
+    "numerical_floor": 1e-13
+  },
+  "stop_conditions": {
+    "max_dofs_per_mesh": 250000,
+    "max_memory_mb": 4096
+  }
+}
