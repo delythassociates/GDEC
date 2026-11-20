@@ -1,0 +1,94 @@
+{
+  "benchmark": "Case B \u2014 Singular Elasticity MMS",
+  "exact_qoi": 0.2838096843988563,
+  "m3_reference": {
+    "element_count": 3200,
+    "node_count": 1681,
+    "qoi_order_26": 0.2838624758465632,
+    "e_smallest_m3": 5.2791447706923567e-05,
+    "provenance": "dynamically_computed_order26"
+  },
+  "mesh_levels": {
+    "M1": {
+      "element_count": 200,
+      "node_count": 121,
+      "qoi_by_order": {
+        "Order 14": 0.28465220639469524,
+        "Order 18": 0.2846530599597299,
+        "Order 22": 0.28465343316646385,
+        "Order 26": 0.2846536229775617
+      },
+      "sensitivities": {
+        "delta_14_18": 8.535650346530588e-07,
+        "delta_18_22": 3.7320673396123993e-07,
+        "delta_22_26": 1.8981109783933192e-07
+      },
+      "convergence_assessment": {
+        "status": "CONVERGED_GEOMETRIC",
+        "is_geometric_convergence": true,
+        "rho": 0.5085950508573758,
+        "tail_error_estimate": 3.862620801245565e-07,
+        "ratio_to_spatial_error": 0.007316754832504782,
+        "passes_verification": true,
+        "failure_reason": null,
+        "nature_of_estimate": "EMPIRICAL_GEOMETRIC_TAIL_ESTIMATE"
+      }
+    },
+    "M2": {
+      "element_count": 800,
+      "node_count": 441,
+      "qoi_by_order": {
+        "Order 14": 0.2840203201049536,
+        "Order 18": 0.2840206430999671,
+        "Order 22": 0.28402078431762545,
+        "Order 26": 0.28402085613902545
+      },
+      "sensitivities": {
+        "delta_14_18": 3.2299501351307214e-07,
+        "delta_18_22": 1.412176583448499e-07,
+        "delta_22_26": 7.182139999395432e-08
+      },
+      "convergence_assessment": {
+        "status": "CONVERGED_GEOMETRIC",
+        "is_geometric_convergence": true,
+        "rho": 0.508586538225753,
+        "tail_error_estimate": 1.4615269132970703e-07,
+        "ratio_to_spatial_error": 0.002768491823544729,
+        "passes_verification": true,
+        "failure_reason": null,
+        "nature_of_estimate": "EMPIRICAL_GEOMETRIC_TAIL_ESTIMATE"
+      }
+    },
+    "M3": {
+      "element_count": 3200,
+      "node_count": 1681,
+      "qoi_by_order": {
+        "Order 14": 0.28386227280848425,
+        "Order 18": 0.2838623951538155,
+        "Order 22": 0.28386244864302357,
+        "Order 26": 0.2838624758465632
+      },
+      "sensitivities": {
+        "delta_14_18": 1.2234533125488056e-07,
+        "delta_18_22": 5.348920806280688e-08,
+        "delta_22_26": 2.7203539643139152e-08
+      },
+      "convergence_assessment": {
+        "status": "CONVERGED_GEOMETRIC",
+        "is_geometric_convergence": true,
+        "rho": 0.5085799664709343,
+        "tail_error_estimate": 5.5357001723720244e-08,
+        "ratio_to_spatial_error": 0.0010485979098553914,
+        "passes_verification": true,
+        "failure_reason": null,
+        "nature_of_estimate": "EMPIRICAL_GEOMETRIC_TAIL_ESTIMATE"
+      }
+    }
+  },
+  "acceptance_criteria": {
+    "residual_quadrature_ratio_threshold": 0.01,
+    "geometric_convergence_required": true,
+    "fail_closed_on_non_geometric": true
+  },
+  "all_levels_verified": true
+}

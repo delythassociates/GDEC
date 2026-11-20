@@ -10,9 +10,58 @@ Implements:
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+import copy
+import hashlib
+import json
+from types import MappingProxyType
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import numpy as np
 import skfem as fem
+
+
+class MeshHierarchyStatus(str, Enum):
+    """Refinement method classification and topological verification status (AM32-01)."""
+    NESTED_VERIFIED = "NESTED_VERIFIED"
+    CONFORMING_NON_NESTED_VERIFIED = "CONFORMING_NON_NESTED_VERIFIED"
+    UNVERIFIED = "UNVERIFIED"
+    INVALID = "INVALID"
+
+
+def _deep_freeze(obj: Any) -> Any:
+    """Recursively converts mutable collections (dict, list, set, ndarray) into immutable equivalents."""
+    if obj is None:
+        return None
+    if isinstance(obj, (int, float, str, bool)):
+        return obj
+    if isinstance(obj, (dict, MappingProxyType)):
+        frozen_dict = {str(k): _deep_freeze(v) for k, v in obj.items()}
+        return MappingProxyType(frozen_dict)
+    if isinstance(obj, (list, tuple)):
+        return tuple(_deep_freeze(v) for v in obj)
+    if isinstance(obj, (set, frozenset)):
+        return frozenset(_deep_freeze(v) for v in obj)
+    if isinstance(obj, np.ndarray):
+        arr_copy = obj.copy()
+        arr_copy.flags.writeable = False
+        return arr_copy
+    return obj
+
+
+def _to_json_serializable(obj: Any) -> Any:
+    """Recursively converts mappingproxy, tuples, sets back to standard dicts and lists for JSON serialization."""
+    if obj is None:
+        return None
+    if isinstance(obj, (int, float, str, bool)):
+        return obj
+    if isinstance(obj, (dict, MappingProxyType)):
+        return {str(k): _to_json_serializable(v) for k, v in sorted(obj.items(), key=lambda it: str(it[0]))}
+    if isinstance(obj, (list, tuple)):
+        return [_to_json_serializable(v) for v in obj]
+    if isinstance(obj, (set, frozenset)):
+        return sorted([_to_json_serializable(v) for v in obj], key=str)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    return str(obj)
 
 
 class RefusalCode(str, Enum):
@@ -59,40 +108,75 @@ class AccuracyTarget:
 @dataclass(frozen=True)
 class MeshLevelEvidence:
     """
-    Typed, immutable evidence representation for a single mesh level in a verification hierarchy.
+    Typed, deeply immutable evidence representation for a single mesh level in a verification hierarchy.
     Captures verifiable topological, geometric, and provenance data.
-    Enforces immutability via frozen=True (AM31-06).
+    Enforces deep immutability via frozen=True and recursive MappingProxyType freezing (AM32-03).
     """
     level_id: str
     mesh_hash: str
     element_count: int
     node_count: int
-    characteristic_h: float  # Maximum element diameter h_max = max_{K} diam(K) (AM31-02)
+    characteristic_h: float  # Maximum element diameter h_max = max_{K} diam(K) (AM31-02, AM32-05)
     characteristic_h_avg: Optional[float] = None  # Separate diagnostic area-average size
     parent_mesh_hash: Optional[str] = None
     refinement_ratio: Optional[float] = None
-    nestedness_verified: bool = False  # NEVER True by default without proof (AM31-01)
+    nestedness_verified: bool = False  # NEVER True by default without proof (AM31-01, AM32-01)
     topology_verified: bool = False  # True only if genuine topological check executed
     refinement_method: str = "uniform_midpoint"
-    provenance: Optional[Dict[str, Any]] = None
-    refinement_evidence: Optional[Dict[str, Any]] = None
+    provenance: Optional[Any] = None
+    refinement_evidence: Optional[Any] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def __post_init__(self):
+        # Defensive deep copy and recursive deep freezing to prevent caller-side or post-hoc mutation (AM32-03)
+        prov = _deep_freeze(copy.deepcopy(self.provenance)) if self.provenance is not None else None
+        ref = _deep_freeze(copy.deepcopy(self.refinement_evidence)) if self.refinement_evidence is not None else None
+        object.__setattr__(self, "provenance", prov)
+        object.__setattr__(self, "refinement_evidence", ref)
+
+    def to_canonical_dict(self) -> Dict[str, Any]:
+        """Deterministic canonical representation with recursively sorted keys and normalized primitives."""
         return {
-            "level_id": self.level_id,
-            "mesh_hash": self.mesh_hash,
-            "element_count": int(self.element_count),
-            "node_count": int(self.node_count),
             "characteristic_h": float(self.characteristic_h),
             "characteristic_h_avg": float(self.characteristic_h_avg) if self.characteristic_h_avg is not None else None,
-            "parent_mesh_hash": self.parent_mesh_hash,
-            "refinement_ratio": float(self.refinement_ratio) if self.refinement_ratio is not None else None,
+            "element_count": int(self.element_count),
+            "level_id": str(self.level_id),
+            "mesh_hash": str(self.mesh_hash),
             "nestedness_verified": bool(self.nestedness_verified),
-            "topology_verified": bool(self.topology_verified),
+            "node_count": int(self.node_count),
+            "parent_mesh_hash": str(self.parent_mesh_hash) if self.parent_mesh_hash is not None else None,
+            "provenance": _to_json_serializable(self.provenance),
+            "refinement_evidence": _to_json_serializable(self.refinement_evidence),
             "refinement_method": str(self.refinement_method),
-            "provenance": self.provenance,
-            "refinement_evidence": self.refinement_evidence,
+            "refinement_ratio": float(self.refinement_ratio) if self.refinement_ratio is not None else None,
+            "topology_verified": bool(self.topology_verified),
         }
+
+    def canonical_hash(self) -> str:
+        """Computes a deterministic SHA-256 hash of the canonical evidence representation."""
+        data_str = json.dumps(self.to_canonical_dict(), sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(data_str.encode("utf-8")).hexdigest()
+
+    def to_dict(self) -> Dict[str, Any]:
+        return self.to_canonical_dict()
+
+    @classmethod
+    def from_canonical_dict(cls, d: Dict[str, Any]) -> "MeshLevelEvidence":
+        """Reconstructs a deeply immutable MeshLevelEvidence instance from canonical dictionary."""
+        return cls(
+            level_id=str(d["level_id"]),
+            mesh_hash=str(d["mesh_hash"]),
+            element_count=int(d["element_count"]),
+            node_count=int(d["node_count"]),
+            characteristic_h=float(d["characteristic_h"]),
+            characteristic_h_avg=float(d["characteristic_h_avg"]) if d.get("characteristic_h_avg") is not None else None,
+            parent_mesh_hash=str(d["parent_mesh_hash"]) if d.get("parent_mesh_hash") is not None else None,
+            refinement_ratio=float(d["refinement_ratio"]) if d.get("refinement_ratio") is not None else None,
+            nestedness_verified=bool(d.get("nestedness_verified", False)),
+            topology_verified=bool(d.get("topology_verified", False)),
+            refinement_method=str(d.get("refinement_method", "uniform_midpoint")),
+            provenance=d.get("provenance"),
+            refinement_evidence=d.get("refinement_evidence"),
+        )
 
 
 @dataclass
@@ -449,28 +533,75 @@ class ProblemAnalyser:
                             f"Level '{ev.level_id}' claimed refinement ratio ({ev.refinement_ratio:.2f}) contradicts independently calculated ratio ({calc_ratio:.2f}).",
                         )
 
-                # Check refinement method support and genuine topological proof (AM31-01)
-                if ev.refinement_method in ("uniform_midpoint", "bisection"):
-                    # Must have actual topological proof recorded, not just unverified claimed Boolean
-                    if not ev.topology_verified or ev.refinement_evidence is None:
+                # Check refinement method support and genuine topological proof (AM31-01, AM32-01)
+                ref_ev = ev.refinement_evidence
+                if ev.refinement_method == "uniform_midpoint":
+                    # Must have actual topological proof recorded with verified connectivity, not just unverified claimed Boolean
+                    required_uniform_keys: Tuple[str, ...] = (
+                        "subdivision_pattern_verified",
+                        "element_mapping_verified",
+                        "conforming_connectivity_verified",
+                        "all_parent_nodes_inherited",
+                        "edge_midpoint_provenance_verified",
+                        "nestedness_proven",
+                    )
+                    valid_proof = (
+                        ev.topology_verified
+                        and ev.nestedness_verified
+                        and ref_ev is not None
+                        and all(ref_ev.get(k) is True for k in required_uniform_keys)
+                        and ref_ev.get("parent_elements_covered") == prev.element_count
+                        and ref_ev.get("child_elements_mapped") == ev.element_count
+                        and ref_ev.get("topology_verification_hash") is not None
+                    )
+                    if not valid_proof:
                         return (
                             False,
                             RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
                             f"Mesh level '{ev.level_id}' lacks independent topological verification evidence under refinement method '{ev.refinement_method}'.",
                         )
-                    if not ev.nestedness_verified:
+                elif ev.refinement_method == "bisection":
+                    required_bisection_keys: Tuple[str, ...] = (
+                        "bisection_provenance_verified",
+                        "element_mapping_verified",
+                        "nestedness_proven",
+                    )
+                    valid_proof = (
+                        ev.topology_verified
+                        and ev.nestedness_verified
+                        and ref_ev is not None
+                        and all(ref_ev.get(k) is True for k in required_bisection_keys)
+                        and ref_ev.get("topology_verification_hash") is not None
+                    )
+                    if not valid_proof:
                         return (
                             False,
                             RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
-                            f"Mesh level '{ev.level_id}' fails nestedness verification under refinement method '{ev.refinement_method}'.",
+                            f"Mesh level '{ev.level_id}' lacks complete bisection provenance verification.",
                         )
                 elif ev.refinement_method == "independent_conforming":
-                    # Supported non-nested method: does not demand nestedness, but requires hierarchy verification
-                    if not ev.topology_verified or ev.refinement_evidence is None:
+                    required_conforming_keys: Tuple[str, ...] = (
+                        "conforming_hierarchy_verified",
+                        "domain_equivalence_verified",
+                    )
+                    valid_proof = (
+                        ev.topology_verified
+                        and ref_ev is not None
+                        and all(ref_ev.get(k) is True for k in required_conforming_keys)
+                        and ref_ev.get("nestedness_proven") is False
+                        and ref_ev.get("topology_verification_hash") is not None
+                    )
+                    if not valid_proof:
                         return (
                             False,
                             RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
                             f"Mesh level '{ev.level_id}' lacks hierarchy verification under non-nested method '{ev.refinement_method}'.",
+                        )
+                    if ev.nestedness_verified:
+                        return (
+                            False,
+                            RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                            f"Non-nested conforming mesh level '{ev.level_id}' cannot claim nestedness_verified=True.",
                         )
                 else:
                     # Unknown/unsupported refinement method fails closed
