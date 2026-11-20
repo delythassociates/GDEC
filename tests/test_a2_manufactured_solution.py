@@ -24,8 +24,20 @@ from gdec.fem.elasticity import LinearElasticitySolver, ConstitutiveTensor
 from gdec.fem.mesh import GDECMesh
 from verification.mesh_utils import create_structured_mesh, create_perturbed_mesh
 
-RESULTS_DIR = Path("results/verification")
+RESULTS_DIR = Path("results/phase_a_completion")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def compute_max_element_diameter(mesh: fem.MeshTri) -> float:
+    """Independent calculation of maximum element diameter: h = max_{K} diam(K)."""
+    p, t = mesh.p, mesh.t
+    p0 = p[:, t[0]]
+    p1 = p[:, t[1]]
+    p2 = p[:, t[2]]
+    l01 = np.linalg.norm(p1 - p0, axis=0)
+    l12 = np.linalg.norm(p2 - p1, axis=0)
+    l20 = np.linalg.norm(p0 - p2, axis=0)
+    return float(np.max([l01, l12, l20]))
 
 
 def _record_result(entry: dict, filename: str):
@@ -90,7 +102,7 @@ def test_a2_4_manufactured_solution_convergence(mtype: str, plane_type: str):
         else:
             mesh, _ = create_perturbed_mesh(n, seed=12345)
 
-        h = 1.0 / n
+        h = compute_max_element_diameter(mesh)
         h_vals.append(h)
         element_counts.append(int(mesh.t.shape[1]))
 
