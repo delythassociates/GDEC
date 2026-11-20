@@ -1,0 +1,12 @@
+# Git attributes and line-ending normalization
+* text=auto eol=lf
+*.py text eol=lf
+*.lark text eol=lf
+*.gdc text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.csv text eol=lf
+*.txt text eol=lf

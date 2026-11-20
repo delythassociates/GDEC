@@ -142,14 +142,14 @@ streamlit run src/gdec/app.py
 ---
 
 ## 6. Documentation Directory
-- [architecture.md](file:///f:/fem-edit-benchmark/docs/architecture.md): System architecture and data flow.
-- [language_specification.md](file:///f:/fem-edit-benchmark/docs/language_specification.md): `.gdc` grammar and keyword reference.
-- [compiler_design.md](file:///f:/fem-edit-benchmark/docs/compiler_design.md): Lexing, AST construction, and semantic validation.
-- [intermediate_representation.md](file:///f:/fem-edit-benchmark/docs/intermediate_representation.md): Typed Pydantic IR specification.
-- [runtime_architecture.md](file:///f:/fem-edit-benchmark/docs/runtime_architecture.md): Execution planning, telemetry, and transactional safety.
-- [numerical_methods.md](file:///f:/fem-edit-benchmark/docs/numerical_methods.md): Elasticity formulation, assembly, adjoint solve, and GCI.
-- [adaptive_refinement.md](file:///f:/fem-edit-benchmark/docs/adaptive_refinement.md): ZZ recovery, goal heuristic, and red-green bisection.
-- [cost_model.md](file:///f:/fem-edit-benchmark/docs/cost_model.md): Empirical DOF prediction formulation.
-- [benchmark_methodology.md](file:///f:/fem-edit-benchmark/docs/benchmark_methodology.md): 3-way comparative benchmark protocol.
-- [known_limitations.md](file:///f:/fem-edit-benchmark/docs/known_limitations.md): Current algorithmic and engineering boundaries.
-- [INDEPENDENT_CODE_REVIEW_GUIDE.md](file:///f:/fem-edit-benchmark/docs/INDEPENDENT_CODE_REVIEW_GUIDE.md): Technical review checklist for external auditors.
+- [architecture.md](docs/architecture.md): System architecture and data flow.
+- [language_specification.md](docs/language_specification.md): `.gdc` grammar and keyword reference.
+- [compiler_design.md](docs/compiler_design.md): Lexing, AST construction, and semantic validation.
+- [intermediate_representation.md](docs/intermediate_representation.md): Typed Pydantic IR specification.
+- [runtime_architecture.md](docs/runtime_architecture.md): Execution planning, telemetry, and transactional safety.
+- [numerical_methods.md](docs/numerical_methods.md): Elasticity formulation, assembly, adjoint solve, and GCI.
+- [adaptive_refinement.md](docs/adaptive_refinement.md): ZZ recovery, goal heuristic, and red-green bisection.
+- [cost_model.md](docs/cost_model.md): Empirical DOF prediction formulation.
+- [benchmark_methodology.md](docs/benchmark_methodology.md): 3-way comparative benchmark protocol.
+- [known_limitations.md](docs/known_limitations.md): Current algorithmic and engineering boundaries.
+- [INDEPENDENT_CODE_REVIEW_GUIDE.md](docs/INDEPENDENT_CODE_REVIEW_GUIDE.md): Technical review checklist for external auditors.
