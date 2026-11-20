@@ -7,7 +7,7 @@ decoupled from the FEM assembly routines.
 from __future__ import annotations
 import json
 from typing import Dict, List, Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 IR_SCHEMA_VERSION = "gdec_ir_v0.1"
@@ -65,7 +65,7 @@ class AdaptivityIR(BaseModel):
 
 
 class BackendIR(BaseModel):
-    device: Literal["cpu", "cuda", "hip", "sycl"] = "cpu"
+    device: Literal["cpu", "cuda", "hip", "sycl", "tpu"] = "cpu"
 
 
 class ProblemIR(BaseModel):
@@ -81,6 +81,26 @@ class ProblemIR(BaseModel):
     budget: BudgetIR
     adaptivity: AdaptivityIR
     backend: BackendIR
+
+    @model_validator(mode="after")
+    def validate_cross_field_invariants(self) -> ProblemIR:
+        if not self.boundary_conditions:
+            raise ValueError("Problem must contain at least one boundary condition.")
+        if not self.loads:
+            raise ValueError("Problem must contain at least one load.")
+        fixed_bnds = {bc.boundary for bc in self.boundary_conditions}
+        for load in self.loads:
+            if load.boundary in fixed_bnds:
+                raise ValueError(
+                    f"Conflicting boundary condition on '{load.boundary}': "
+                    f"cannot apply traction to fixed Dirichlet boundary."
+                )
+        if self.objective.boundary in fixed_bnds:
+            raise ValueError(
+                f"Conflicting objective boundary '{self.objective.boundary}': "
+                f"cannot evaluate displacement objective on a fixed Dirichlet boundary."
+            )
+        return self
 
     def to_json(self, indent: int = 2) -> str:
         return self.model_dump_json(indent=indent)

@@ -119,7 +119,7 @@ def test_unknown_top_level_declaration_is_rejected():
 def test_duplicate_singleton_declaration_is_rejected():
     source = _cantilever_source().replace(
         "physics = linear_elasticity",
-        "physics = linear_elasticity\\n    physics = linear_elasticity",
+        "physics = linear_elasticity\n    physics = linear_elasticity",
     )
     result = GDECCompiler().compile_source(source)
     assert result.success is False
@@ -128,7 +128,7 @@ def test_duplicate_singleton_declaration_is_rejected():
 
 def test_unknown_function_argument_is_rejected():
     source = _cantilever_source().replace(
-        "width = 2.0,", "width = 2.0,\\n        widht = 2.0,"
+        "width = 2.0,", "width = 2.0,\n        widht = 2.0,"
     )
     result = GDECCompiler().compile_source(source)
     assert result.success is False
@@ -137,7 +137,7 @@ def test_unknown_function_argument_is_rejected():
 
 def test_duplicate_named_argument_is_rejected_by_parser():
     source = _cantilever_source().replace(
-        "width = 2.0,", "width = 2.0,\\n        width = 3.0,"
+        "width = 2.0,", "width = 2.0,\n        width = 3.0,"
     )
     result = GDECCompiler().compile_source(source)
     assert result.success is False

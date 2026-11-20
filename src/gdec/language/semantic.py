@@ -105,6 +105,26 @@ class SemanticAnalyzer:
         # 10. Backend
         backend = self._extract_backend(stmts.get("backend"))
 
+        # Cross-validation: conflicting boundary conditions between fix and load
+        fixed_boundaries = {bc.boundary for bc in bcs}
+        for statement in stmts.get("load", []):
+            if isinstance(statement.value, FunctionCall) and statement.value.func_name == "traction":
+                load_bnd = self._eval_value(statement.value.named_args.get("boundary"))
+                if load_bnd in fixed_boundaries:
+                    raise GDECSemanticError(
+                        f"Conflicting boundary condition on '{load_bnd}': cannot apply traction load to fixed Dirichlet boundary.",
+                        statement.loc,
+                    )
+
+        # Cross-validation: objective boundary cannot be on a fixed Dirichlet boundary
+        if objective.boundary in fixed_boundaries:
+            obj_stmts = stmts.get("objective", [])
+            loc = obj_stmts[0].loc if obj_stmts else None
+            raise GDECSemanticError(
+                f"Conflicting objective boundary '{objective.boundary}': cannot evaluate displacement objective on a fixed Dirichlet boundary.",
+                loc,
+            )
+
         return ProblemIR(
             name=ast.name,
             physics=physics,
@@ -149,6 +169,11 @@ class SemanticAnalyzer:
     def _positive_number(cls, value: Any, label: str, loc: Optional[SourceLocation]) -> float:
         result = cls._finite_number(value, label, loc)
         if result <= 0.0:
+            if "Young's modulus" in label:
+                raise GDECSemanticError(
+                    f"Young's modulus 'E' must be a strictly positive number (received {value}).",
+                    loc,
+                )
             raise GDECSemanticError(f"'{label}' must be strictly positive (received {value}).", loc)
         return result
 
@@ -185,6 +210,11 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         call = stmt.value
+        if call.positional_args:
+            raise GDECSemanticError(
+                "Geometry 'rectangle' takes only named arguments (width, height, thickness).",
+                call.loc,
+            )
         self._validate_named_args(call, {"width", "height", "thickness"}, {"width", "height"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         width = self._positive_number(args["width"], "geometry width", call.loc)
@@ -208,6 +238,11 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         call = stmt.value
+        if call.positional_args:
+            raise GDECSemanticError(
+                "Material 'isotropic' takes only named arguments (E, nu, assumption).",
+                call.loc,
+            )
         self._validate_named_args(call, {"E", "nu", "assumption"}, {"E", "nu"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         youngs_modulus = self._positive_number(args["E"], "Young's modulus E", call.loc)
@@ -237,6 +272,7 @@ class SemanticAnalyzer:
             raise GDECSemanticError("At least one boundary condition ('fix') must be specified.")
         bcs = []
         valid_boundaries = {"left", "right", "top", "bottom"}
+        seen_bcs = set()
         for stmt in stmts:
             call = stmt.value
             bnd = None
@@ -260,6 +296,12 @@ class SemanticAnalyzer:
                     f"Invalid boundary '{bnd}'. Supported boundaries are {valid_boundaries}.",
                     stmt.loc,
                 )
+            if bnd in seen_bcs:
+                raise GDECSemanticError(
+                    f"Duplicate boundary condition on boundary '{bnd}'. Each boundary may have at most one fix declaration.",
+                    stmt.loc,
+                )
+            seen_bcs.add(bnd)
             bcs.append(BoundaryConditionIR(boundary=bnd, constrained_components=comps))
         return bcs
 
@@ -275,6 +317,11 @@ class SemanticAnalyzer:
                     stmt.loc,
                 )
             call = stmt.value
+            if call.positional_args:
+                raise GDECSemanticError(
+                    "Load 'traction' takes only named arguments (boundary, tx, ty).",
+                    call.loc,
+                )
             self._validate_named_args(call, {"boundary", "tx", "ty"}, {"boundary"})
             args = {k: self._eval_value(v) for k, v in call.named_args.items()}
 
@@ -300,6 +347,11 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         call = stmt.value
+        if call.positional_args:
+            raise GDECSemanticError(
+                "Objective 'average_displacement' takes only named arguments (boundary, component).",
+                call.loc,
+            )
         self._validate_named_args(call, {"boundary", "component"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
 
@@ -327,6 +379,11 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         call = stmt.value
+        if call.positional_args:
+            raise GDECSemanticError(
+                "Accuracy target 'successive_qoi_change' takes only named arguments (percent).",
+                call.loc,
+            )
         self._validate_named_args(call, {"percent"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         pct = self._positive_number(args.get("percent", 1.0), "accuracy percentage", call.loc)
@@ -379,6 +436,11 @@ class SemanticAnalyzer:
             cost_aware = True
         elif isinstance(val, FunctionCall):
             strategy = val.func_name
+            if val.positional_args:
+                raise GDECSemanticError(
+                    f"Adaptivity strategy '{strategy}' takes only named arguments (fraction, cost_aware).",
+                    val.loc,
+                )
             self._validate_named_args(val, {"fraction", "cost_aware"})
             args = {k: self._eval_value(v) for k, v in val.named_args.items()}
             frac = self._finite_number(args.get("fraction", 0.3), "adaptivity fraction", val.loc)
@@ -419,16 +481,17 @@ class SemanticAnalyzer:
             return BackendIR(device="cpu")
         stmt = stmts[-1]
         dev = self._eval_value(stmt.value)
-        if dev not in ["cpu", "cuda", "hip", "sycl"]:
+        if dev not in ["cpu", "cuda", "hip", "sycl", "tpu"]:
             raise GDECSemanticError(
-                f"Unknown backend device '{dev}'. Supported: 'cpu', 'cuda', 'hip', 'sycl'.",
+                f"Unknown backend device '{dev}'. Supported: 'cpu', 'cuda', 'hip', 'sycl', 'tpu'.",
                 stmt.loc,
             )
         if dev != "cpu":
             # Strict Part 2.D compliance:
             # "Do not silently route a requested GPU calculation to the CPU. If CUDA is unavailable or not implemented, explicitly report that."
             raise GDECSemanticError(
-                f"Backend '{dev}' was requested, but no accelerator backend is implemented in this GDEC release. "
+                f"Backend '{dev}' was requested, but no GPU accelerator hardware or CUDA backend is available in GDEC v0.2.1 "
+                f"(no accelerator backend is implemented in this GDEC release). "
                 f"Per GDEC architecture rules, requested accelerator computations are not silently routed to CPU.",
                 stmt.loc,
             )
