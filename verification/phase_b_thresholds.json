@@ -1,0 +1,121 @@
+{
+  "phase": "Phase B: DWR vs ZZ Scientific Feasibility Gate",
+  "base_release": "v0.2.2",
+  "foundation_commit": "01260409a0e11d8dcf97729ea25a61f20e2a4772",
+  "branch": "phase-b/dwr-vs-zz",
+  "research_question": "At equivalent true QoI error, can goal-oriented DWR achieve at least 30% fewer degrees of freedom than conventional ZZ recovery across multiple engineering problems, while producing sufficiently reliable error estimates?",
+  "hypotheses": {
+    "primary_dof_savings": {
+      "definition": "S_DOF = N_DOF(ZZ) / N_DOF(DWR) at equivalent true QoI error",
+      "target_error_level": 0.01,
+      "minimum_savings_ratio": 1.30,
+      "minimum_problems_passing": 3,
+      "total_problems": 4,
+      "geometric_mean_savings_ratio_min": 1.30
+    },
+    "secondary_estimator_reliability": {
+      "definition": "I_eff = |eta_DWR| / |J_ref - J_h|",
+      "acceptable_bounds": [0.5, 2.0],
+      "minimum_in_bounds_fraction": 0.90,
+      "required_metrics": [
+        "mean_signed_effectivity",
+        "median_absolute_effectivity",
+        "fraction_below_one",
+        "fraction_in_bounds",
+        "max_underestimation",
+        "underestimation_frequency"
+      ]
+    },
+    "secondary_computational_cost": {
+      "total_time_definition": "T_total = T_primal + T_adjoint + T_estimator + T_marking + T_refinement",
+      "speedup_ratio": "S_T = T_ZZ / T_DWR",
+      "independent_reporting": true
+    }
+  },
+  "accuracy_targets": {
+    "relative_qoi_error_levels": [0.02, 0.01, 0.005],
+    "selection_rule": "First mesh level satisfying target; NOT_REACHED if budget exceeded"
+  },
+  "resource_limits": {
+    "max_committed_dofs": 100000,
+    "max_iterations": 20
+  },
+  "benchmark_problems": [
+    {
+      "id": "cantilever",
+      "name": "Cantilever Beam",
+      "domain_type": "rectangle",
+      "dimensions": { "width": 2.0, "height": 0.5 },
+      "material": { "E": 70e9, "nu": 0.33, "assumption": "plane_stress", "thickness": 0.02 },
+      "bcs": [ { "boundary": "left", "constrained": ["x", "y"] } ],
+      "loads": [ { "boundary": "right", "tx": 0.0, "ty": -1e6 } ],
+      "qoi": {
+        "type": "boundary_average",
+        "boundary": "right",
+        "component": "y",
+        "scale": 1e-3
+      },
+      "initial_mesh_variants": ["coarse_nx10_ny5", "perturbed_seed12345", "structured_nx16_ny8"]
+    },
+    {
+      "id": "plate_with_hole",
+      "name": "Rectangular Plate with Circular Hole",
+      "domain_type": "plate_with_hole",
+      "dimensions": { "width": 2.0, "height": 1.0, "hole_radius": 0.25, "hole_center": [1.0, 0.5] },
+      "material": { "E": 200e9, "nu": 0.30, "assumption": "plane_stress", "thickness": 0.01 },
+      "bcs": [ { "boundary": "left", "constrained": ["x"] }, { "boundary": "bottom_left_corner", "constrained": ["y"] } ],
+      "loads": [ { "boundary": "right", "tx": 1e7, "ty": 0.0 } ],
+      "qoi": {
+        "type": "patch_average",
+        "patch": { "type": "box", "xmin": 0.95, "xmax": 1.05, "ymin": 0.75, "ymax": 0.95 },
+        "component": "x",
+        "scale": 1e-4
+      },
+      "initial_mesh_variants": ["conforming_tri_h015", "conforming_tri_h010", "conforming_tri_h008"]
+    },
+    {
+      "id": "notched_bar",
+      "name": "Notched Tensile Bar",
+      "domain_type": "notched_bar",
+      "dimensions": { "width": 2.0, "height": 0.8, "notch_depth": 0.2, "notch_width": 0.4 },
+      "material": { "E": 210e9, "nu": 0.28, "assumption": "plane_stress", "thickness": 0.015 },
+      "bcs": [ { "boundary": "bottom", "constrained": ["x", "y"] } ],
+      "loads": [ { "boundary": "top", "tx": 0.0, "ty": 1.5e7 } ],
+      "qoi": {
+        "type": "patch_average",
+        "patch": { "type": "box", "xmin": 0.85, "xmax": 1.15, "ymin": 0.35, "ymax": 0.45 },
+        "component": "y",
+        "scale": 1e-4
+      },
+      "initial_mesh_variants": ["mesh_coarse_h012", "mesh_medium_h008", "mesh_perturbed_seed54321"]
+    },
+    {
+      "id": "l_shaped",
+      "name": "L-Shaped Elastic Domain",
+      "domain_type": "l_shaped",
+      "dimensions": { "width": 1.0, "height": 1.0, "cutout_width": 0.5, "cutout_height": 0.5 },
+      "material": { "E": 100e9, "nu": 0.25, "assumption": "plane_strain", "thickness": 1.0 },
+      "bcs": [ { "boundary": "bottom", "constrained": ["x", "y"] } ],
+      "loads": [ { "boundary": "right_top", "tx": 5e6, "ty": 0.0 } ],
+      "qoi": {
+        "type": "patch_average",
+        "patch": { "type": "box", "xmin": 0.1, "xmax": 0.4, "ymin": 0.6, "ymax": 0.9 },
+        "component": "y",
+        "scale": 1e-5
+      },
+      "initial_mesh_variants": ["l_mesh_coarse", "l_mesh_fine", "l_mesh_perturbed"]
+    }
+  ],
+  "competitors": ["uniform", "zz", "goal_aware", "dwr"],
+  "marking_strategy": {
+    "type": "dorfler",
+    "fraction_theta": 0.40
+  },
+  "reference_uncertainty_threshold_max": 0.0005,
+  "decision_rules": {
+    "PASS": "DWR consistency checks pass; S_DOF >= 1.30 on >= 3 problems at 1% error; geomean S_DOF >= 1.30; I_eff in [0.5, 2.0] for >= 90% runs; reference uncertainty <= 0.05%",
+    "PARTIAL": "DWR consistency checks pass; demonstrates advantage on some problems/QoIs but misses broad 3-problem/geomean threshold",
+    "FAIL": "DWR consistency checks pass but fails to achieve meaningful DOF savings or reliable effectivity",
+    "INCOMPLETE": "DWR consistency checks fail, reference solutions uncertain, or experimental controls violated"
+  }
+}
