@@ -7,7 +7,7 @@ decoupled from the FEM assembly routines.
 from __future__ import annotations
 import json
 from typing import Dict, List, Literal, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 IR_SCHEMA_VERSION = "gdec_ir_v0.1"
@@ -37,8 +37,8 @@ class BoundaryConditionIR(BaseModel):
 
 class TractionLoadIR(BaseModel):
     boundary: Literal["left", "right", "top", "bottom"]
-    tx: float = Field(default=0.0, description="Traction in x-direction (Pa, allow_inf_nan=False)")
-    ty: float = Field(default=0.0, description="Traction in y-direction (Pa, allow_inf_nan=False)")
+    tx: float = Field(default=0.0, description="Traction in x-direction (Pa)", allow_inf_nan=False)
+    ty: float = Field(default=0.0, description="Traction in y-direction (Pa)", allow_inf_nan=False)
 
 
 class ObjectiveIR(BaseModel):
