@@ -65,3 +65,43 @@ def test_plane_stress_von_mises_uses_zero_out_of_plane_stress():
 
     expected = np.sqrt(sx**2 - sx * sy + sy**2 + 3.0 * txy**2)
     np.testing.assert_allclose(post._von_mises(sx, sy, txy), expected)
+
+
+def test_combined_efficiency_claim_requires_dof_and_time_advantage_vs_both_baselines():
+    from types import SimpleNamespace
+
+    from gdec.benchmark.runner import BenchmarkRunner
+
+    def strategy():
+        return SimpleNamespace(
+            target_achieved=True,
+            final_dofs=1000,
+            total_execution_time_sec=1.0,
+            final_reference_error_pct=0.5,
+        )
+
+    results = {
+        "goal_aware": strategy(),
+        "uniform": strategy(),
+        "recovery": strategy(),
+    }
+    comparison = SimpleNamespace(
+        threshold_pct=1.0,
+        results={
+            "goal_aware": SimpleNamespace(achieved=True, dofs_at_target=1000),
+            "uniform": SimpleNamespace(achieved=True, dofs_at_target=2000),
+            "recovery": SimpleNamespace(achieved=True, dofs_at_target=1500),
+        },
+        dof_ratio_unif_over_goal=2.0,
+        time_ratio_unif_over_goal=0.8,  # Fewer DOFs, but slower wall-clock time.
+        dof_ratio_rec_over_goal=1.5,
+        time_ratio_rec_over_goal=1.2,
+    )
+
+    evaluation = BenchmarkRunner.__new__(BenchmarkRunner)._evaluate_hypothesis(
+        results, None, [comparison]
+    )
+
+    assert evaluation["dof_efficiency_supported"] is True
+    assert evaluation["wall_clock_efficiency_supported"] is False
+    assert evaluation["hypothesis_supported"] is False
