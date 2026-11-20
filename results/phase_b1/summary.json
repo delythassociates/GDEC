@@ -1,0 +1,2100 @@
+{
+  "title": "GDEC Phase B.1 Feasibility Gate Summary: Reconciled Audit & Evaluation",
+  "final_classification": "FAIL",
+  "primary_hypothesis": {
+    "description": "S_DOF >= 1.30 at 1.0% error on >= 3 problems, geomean >= 1.30",
+    "passed": false,
+    "evaluable_problems_meeting_target": 0,
+    "total_evaluable_problems": 3,
+    "geometric_mean_S_DOF_evaluable": 0.9157465695428818,
+    "geometric_mean_S_DOF_all_diagnostic": 0.9646803993166584,
+    "target_threshold": 1.3
+  },
+  "secondary_reliability": {
+    "description": "Effectivity in [0.5, 2.0] for >= 90% of runs and trajectories",
+    "passed": false,
+    "iteration_level": {
+      "total_evaluated_points": 75,
+      "fraction_in_bounds": 0.4,
+      "target_fraction": 0.9,
+      "mean_signed_effectivity": 0.6690164686228172,
+      "median_signed_effectivity": 0.2751412312222306,
+      "mean_absolute_effectivity": 1.1342521143611126,
+      "median_absolute_effectivity": 0.4445448134784338,
+      "underestimation_frequency": 0.7733333333333333,
+      "max_underestimation": 0.9950788287456956
+    },
+    "trajectory_level": {
+      "total_trajectories": 12,
+      "trajectories_passed": 3,
+      "trajectory_pass_fraction": 0.25,
+      "trajectories": [
+        {
+          "problem_id": "cantilever",
+          "variant_idx": 0,
+          "n_evaluations": 9,
+          "n_eligible_points": 9,
+          "fraction_in_bounds": 1.0,
+          "median_abs_effectivity": 0.9971333347632677,
+          "mean_signed_effectivity": 1.0091920756671189,
+          "underestimation_frequency": 0.5555555555555556,
+          "max_underestimation": 0.013129678656560118,
+          "final_mesh_effectivity": 1.0624500596659743,
+          "trajectory_passed": true
+        },
+        {
+          "problem_id": "cantilever",
+          "variant_idx": 1,
+          "n_evaluations": 11,
+          "n_eligible_points": 11,
+          "fraction_in_bounds": 1.0,
+          "median_abs_effectivity": 0.993586069812209,
+          "mean_signed_effectivity": 1.0060335424629117,
+          "underestimation_frequency": 0.6363636363636364,
+          "max_underestimation": 0.017647590025415827,
+          "final_mesh_effectivity": 1.0717199545328548,
+          "trajectory_passed": true
+        },
+        {
+          "problem_id": "cantilever",
+          "variant_idx": 2,
+          "n_evaluations": 7,
+          "n_eligible_points": 7,
+          "fraction_in_bounds": 1.0,
+          "median_abs_effectivity": 1.0042749452366226,
+          "mean_signed_effectivity": 1.0108327417165004,
+          "underestimation_frequency": 0.42857142857142855,
+          "max_underestimation": 0.012502967818708077,
+          "final_mesh_effectivity": 1.0505536051418183,
+          "trajectory_passed": true
+        },
+        {
+          "problem_id": "plate_with_hole",
+          "variant_idx": 0,
+          "n_evaluations": 4,
+          "n_eligible_points": 4,
+          "fraction_in_bounds": 0.0,
+          "median_abs_effectivity": 0.3435052044626422,
+          "mean_signed_effectivity": -2.263226214134698,
+          "underestimation_frequency": 0.75,
+          "max_underestimation": 0.878442626063572,
+          "final_mesh_effectivity": 9.618357891527648,
+          "trajectory_passed": false
+        },
+        {
+          "problem_id": "plate_with_hole",
+          "variant_idx": 1,
+          "n_evaluations": 9,
+          "n_eligible_points": 9,
+          "fraction_in_bounds": 0.2222222222222222,
+          "median_abs_effectivity": 0.20802644691382866,
+          "mean_signed_effectivity": 0.02955410643392025,
+          "underestimation_frequency": 1.0,
+          "max_underestimation": 0.9104461279565026,
+          "final_mesh_effectivity": 0.08955387204349743,
+          "trajectory_passed": false
+        },
+        {
+          "problem_id": "plate_with_hole",
+          "variant_idx": 2,
+          "n_evaluations": 6,
+          "n_eligible_points": 6,
+          "fraction_in_bounds": 0.16666666666666666,
+          "median_abs_effectivity": 0.26318398453837955,
+          "mean_signed_effectivity": 0.1458849397513198,
+          "underestimation_frequency": 1.0,
+          "max_underestimation": 0.8682215619105498,
+          "final_mesh_effectivity": 0.559141373531906,
+          "trajectory_passed": false
+        },
+        {
+          "problem_id": "notched_bar",
+          "variant_idx": 0,
+          "n_evaluations": 5,
+          "n_eligible_points": 5,
+          "fraction_in_bounds": 0.0,
+          "median_abs_effectivity": 0.03882925580608391,
+          "mean_signed_effectivity": 0.08417590411704468,
+          "underestimation_frequency": 1.0,
+          "max_underestimation": 0.9912134235797497,
+          "final_mesh_effectivity": 0.3274273459887407,
+          "trajectory_passed": false
+        },
+        {
+          "problem_id": "notched_bar",
+          "variant_idx": 1,
+          "n_evaluations": 2,
+          "n_eligible_points": 2,
+          "fraction_in_bounds": 0.0,
+          "median_abs_effectivity": 13.957514199686223,
+          "mean_signed_effectivity": 13.949374854324411,
+          "underestimation_frequency": 0.5,
+          "max_underestimation": 0.9918606546381867,
+          "final_mesh_effectivity": 27.906889054010634,
+          "trajectory_passed": false
+        },
+        {
+          "problem_id": "notched_bar",
+          "variant_idx": 2,
+          "n_evaluations": 4,
+          "n_eligible_points": 4,
+          "fraction_in_bounds": 0.0,
+          "median_abs_effectivity": 0.06872538681409208,
+          "mean_signed_effectivity": 0.06229506963885165,
+          "underestimation_frequency": 1.0,
+          "max_underestimation": 0.9950788287456956,
+          "final_mesh_effectivity": 0.06820706977837405,
+          "trajectory_passed": false
+        },
+        {
+          "problem_id": "l_shaped",
+          "variant_idx": 0,
+          "n_evaluations": 8,
+          "n_eligible_points": 8,
+          "fraction_in_bounds": 0.0,
+          "median_abs_effectivity": 0.2823821169633332,
+          "mean_signed_effectivity": -0.42655503759258806,
+          "underestimation_frequency": 0.75,
+          "max_underestimation": 0.8598508196556536,
+          "final_mesh_effectivity": 0.23806576536571777,
+          "trajectory_passed": false
+        },
+        {
+          "problem_id": "l_shaped",
+          "variant_idx": 1,
+          "n_evaluations": 9,
+          "n_eligible_points": 9,
+          "fraction_in_bounds": 0.0,
+          "median_abs_effectivity": 0.0979548451599068,
+          "mean_signed_effectivity": 0.12470882917287479,
+          "underestimation_frequency": 1.0,
+          "max_underestimation": 0.9524418231031818,
+          "final_mesh_effectivity": 0.10124624224467374,
+          "trajectory_passed": false
+        },
+        {
+          "problem_id": "l_shaped",
+          "variant_idx": 2,
+          "n_evaluations": 1,
+          "n_eligible_points": 1,
+          "fraction_in_bounds": 0.0,
+          "median_abs_effectivity": 4.5841678971206505,
+          "mean_signed_effectivity": 4.5841678971206505,
+          "underestimation_frequency": 0.0,
+          "max_underestimation": 0.0,
+          "final_mesh_effectivity": 4.5841678971206505,
+          "trajectory_passed": false
+        }
+      ]
+    }
+  },
+  "timing_analysis": {
+    "description": "Non-overlapping timing including primal, adjoint, estimator, marking, and refinement",
+    "median_speedup_S_T": {
+      "cantilever": 0.16265033774451476,
+      "plate_with_hole": 0.2018065908003941,
+      "notched_bar": 0.22843907481078404,
+      "l_shaped": 0.32548392673021087
+    }
+  },
+  "problems": {
+    "cantilever": {
+      "qoi_description": "Boundary-average vertical displacement on right boundary x=2.0 (m)",
+      "reference_j_ref": -0.00190914695,
+      "reference_gci_pct": 0.01318,
+      "status_at_1pct_target": "EVALUABLE",
+      "gating_note": "Reference GCI uncertainty (0.0132%) is well below 1.0% target (VERIFIED).",
+      "median_S_DOF": 0.8379277566539924,
+      "mean_S_DOF": 1.064442691877753,
+      "meets_30pct_savings": false,
+      "median_S_T_speedup": 0.16265033774451476,
+      "variant_ratios": [
+        0.7783094098883573,
+        1.577090909090909,
+        0.8379277566539924
+      ]
+    },
+    "plate_with_hole": {
+      "qoi_description": "Patch-average horizontal displacement on [0.95, 1.05] x [0.75, 0.95] (m)",
+      "reference_j_ref": 6.97792882e-05,
+      "reference_gci_pct": 0.20966,
+      "status_at_1pct_target": "EVALUABLE",
+      "gating_note": "Reference GCI uncertainty (0.2097%) is well below 1.0% target (VERIFIED).",
+      "median_S_DOF": 0.8855799373040752,
+      "mean_S_DOF": 1.3176375857963962,
+      "meets_30pct_savings": false,
+      "median_S_T_speedup": 0.2018065908003941,
+      "variant_ratios": [
+        0.8855799373040752,
+        2.547635850388144,
+        0.5196969696969697
+      ]
+    },
+    "notched_bar": {
+      "qoi_description": "Patch-average vertical displacement on [0.85, 1.15] x [0.35, 0.45] (m)",
+      "reference_j_ref": 1.98712684e-05,
+      "reference_gci_pct": 1.75819,
+      "status_at_1pct_target": "REF_UNCERTAIN",
+      "gating_note": "Reference GCI uncertainty (1.76%) exceeds 1.0% target. Preserved as diagnostic evidence only; excluded from primary pass/fail tally.",
+      "median_S_DOF": 1.1277372262773722,
+      "mean_S_DOF": 1.3627628941960175,
+      "meets_30pct_savings": false,
+      "median_S_T_speedup": 0.22843907481078404,
+      "variant_ratios": [
+        2.3349514563106797,
+        1.1277372262773722,
+        0.6256
+      ]
+    },
+    "l_shaped": {
+      "qoi_description": "Patch-average vertical displacement on [0.10, 0.40] x [0.60, 0.90] (m)",
+      "reference_j_ref": 1.26424675e-06,
+      "reference_gci_pct": 0.23561,
+      "status_at_1pct_target": "EVALUABLE",
+      "gating_note": "Reference GCI uncertainty (0.2356%) is well below 1.0% target (VERIFIED).",
+      "median_S_DOF": 1.0348837209302326,
+      "mean_S_DOF": 2.8600391597595816,
+      "meets_30pct_savings": false,
+      "median_S_T_speedup": 0.32548392673021087,
+      "variant_ratios": [
+        1.0348837209302326,
+        6.5452337583485125,
+        1.0
+      ]
+    }
+  },
+  "target_level_evaluations": {
+    "cantilever": {
+      "2.0%": {
+        "uniform": [
+          {
+            "iteration": 2,
+            "primal_dofs": 1722,
+            "true_error_rel": 0.01843310358468464,
+            "t_total_cumulative_sec": 0.03942119999919669,
+            "t_primal_cumulative_sec": 0.03886450000209152,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 1.4900000678608194e-05,
+            "t_refinement_cumulative_sec": 0.0005286999949021265
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 3362,
+            "true_error_rel": 0.016911913477383234,
+            "t_total_cumulative_sec": 0.13361070000610198,
+            "t_primal_cumulative_sec": 0.13190419999955338,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 2.7400004910305142e-05,
+            "t_refinement_cumulative_sec": 0.0016651999976602383
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 4290,
+            "true_error_rel": 0.007465100520305034,
+            "t_total_cumulative_sec": 0.08179929999823798,
+            "t_primal_cumulative_sec": 0.08084870000311639,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 1.630000042496249e-05,
+            "t_refinement_cumulative_sec": 0.0009228999952028971
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 4,
+            "primal_dofs": 1952,
+            "true_error_rel": 0.0131270670407099,
+            "t_total_cumulative_sec": 0.06837899999663932,
+            "t_primal_cumulative_sec": 0.05544479999662144,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.004973899998731213,
+            "t_marking_cumulative_sec": 0.0002629000082379207,
+            "t_refinement_cumulative_sec": 0.00767930000074557
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 3914,
+            "true_error_rel": 0.014549950346367434,
+            "t_total_cumulative_sec": 0.13899000000674278,
+            "t_primal_cumulative_sec": 0.1155410999963351,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.005767099999502534,
+            "t_marking_cumulative_sec": 0.0003859999960695859,
+            "t_refinement_cumulative_sec": 0.01727040000332636
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 1854,
+            "true_error_rel": 0.013605564932935082,
+            "t_total_cumulative_sec": 0.0788353999996616,
+            "t_primal_cumulative_sec": 0.06265450000137207,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.006342400003632065,
+            "t_marking_cumulative_sec": 0.0002353000054426957,
+            "t_refinement_cumulative_sec": 0.009585600000718841
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 6,
+            "primal_dofs": 1936,
+            "true_error_rel": 0.018571776579101175,
+            "t_total_cumulative_sec": 0.10865120000380557,
+            "t_primal_cumulative_sec": 0.07339019999562879,
+            "t_adjoint_cumulative_sec": 0.016362099999241764,
+            "t_estimator_cumulative_sec": 0.008118399997329107,
+            "t_marking_cumulative_sec": 0.0003096999971603509,
+            "t_refinement_cumulative_sec": 0.010439199999382254
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 3212,
+            "true_error_rel": 0.016155797618990008,
+            "t_total_cumulative_sec": 0.21747159999722498,
+            "t_primal_cumulative_sec": 0.14225380000061705,
+            "t_adjoint_cumulative_sec": 0.03452149999793619,
+            "t_estimator_cumulative_sec": 0.018911200008005835,
+            "t_marking_cumulative_sec": 0.000550599997950485,
+            "t_refinement_cumulative_sec": 0.021185500005231006
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 2266,
+            "true_error_rel": 0.01434729192246084,
+            "t_total_cumulative_sec": 0.16094709999742918,
+            "t_primal_cumulative_sec": 0.10998319999998785,
+            "t_adjoint_cumulative_sec": 0.025486099995760014,
+            "t_estimator_cumulative_sec": 0.011568400001124246,
+            "t_marking_cumulative_sec": 0.000423699999373639,
+            "t_refinement_cumulative_sec": 0.013450600003125146
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 5,
+            "primal_dofs": 1596,
+            "true_error_rel": 0.01678464626675093,
+            "t_total_cumulative_sec": 0.33163589999458054,
+            "t_primal_cumulative_sec": 0.062220499996328726,
+            "t_adjoint_cumulative_sec": 0.2298886999997194,
+            "t_estimator_cumulative_sec": 0.01863289999528206,
+            "t_marking_cumulative_sec": 0.0002713999929255806,
+            "t_refinement_cumulative_sec": 0.007358799997746246
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 3030,
+            "true_error_rel": 0.017564936472084056,
+            "t_total_cumulative_sec": 0.809949600003165,
+            "t_primal_cumulative_sec": 0.1707421000028262,
+            "t_adjoint_cumulative_sec": 0.5388540000130888,
+            "t_estimator_cumulative_sec": 0.04140919999917969,
+            "t_marking_cumulative_sec": 0.0006068000038794708,
+            "t_refinement_cumulative_sec": 0.021100900004967116
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 2250,
+            "true_error_rel": 0.012146466573050206,
+            "t_total_cumulative_sec": 0.47355489999972633,
+            "t_primal_cumulative_sec": 0.0842716000006476,
+            "t_adjoint_cumulative_sec": 0.3296553000000131,
+            "t_estimator_cumulative_sec": 0.023683299998083385,
+            "t_marking_cumulative_sec": 0.00039710000055492856,
+            "t_refinement_cumulative_sec": 0.011197799998626579
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          1.2230576441102756,
+          1.2917491749174916,
+          0.824
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.20618696587961902,
+          0.171603270137055,
+          0.16647573491417186
+        ]
+      },
+      "1.0%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 6642,
+            "true_error_rel": 0.004827456681281805,
+            "t_total_cumulative_sec": 0.10444939999797498,
+            "t_primal_cumulative_sec": 0.10347249999904307,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 2.13999992411118e-05,
+            "t_refinement_cumulative_sec": 0.0009395999950356781
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 13122,
+            "true_error_rel": 0.004408845081058293,
+            "t_total_cumulative_sec": 0.35254360000544693,
+            "t_primal_cumulative_sec": 0.3493825999976252,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 4.3200005165999755e-05,
+            "t_refinement_cumulative_sec": 0.0030975000008766074
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 4290,
+            "true_error_rel": 0.007465100520305034,
+            "t_total_cumulative_sec": 0.08179929999823798,
+            "t_primal_cumulative_sec": 0.08084870000311639,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 1.630000042496249e-05,
+            "t_refinement_cumulative_sec": 0.0009228999952028971
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 5,
+            "primal_dofs": 3904,
+            "true_error_rel": 0.0062776905731074415,
+            "t_total_cumulative_sec": 0.1185728999953426,
+            "t_primal_cumulative_sec": 0.0972877999956836,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.006776199999876553,
+            "t_marking_cumulative_sec": 0.0003732000113814138,
+            "t_refinement_cumulative_sec": 0.014113500001258217
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 8674,
+            "true_error_rel": 0.006282649026595524,
+            "t_total_cumulative_sec": 0.271982600006595,
+            "t_primal_cumulative_sec": 0.22247869999409886,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.011239600000408245,
+            "t_marking_cumulative_sec": 0.000688899996021064,
+            "t_refinement_cumulative_sec": 0.03754300000218791
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 3526,
+            "true_error_rel": 0.006779758645579707,
+            "t_total_cumulative_sec": 0.14142050000009476,
+            "t_primal_cumulative_sec": 0.11156240000127582,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.011294400002952898,
+            "t_marking_cumulative_sec": 0.0005012000037822872,
+            "t_refinement_cumulative_sec": 0.018037900001218077
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 8,
+            "primal_dofs": 4846,
+            "true_error_rel": 0.006835307003428095,
+            "t_total_cumulative_sec": 0.23920010000438197,
+            "t_primal_cumulative_sec": 0.15340379999543075,
+            "t_adjoint_cumulative_sec": 0.045630299999174895,
+            "t_estimator_cumulative_sec": 0.014526199996907962,
+            "t_marking_cumulative_sec": 0.0006022000015946105,
+            "t_refinement_cumulative_sec": 0.024991400001454167
+          },
+          {
+            "iteration": 10,
+            "primal_dofs": 8004,
+            "true_error_rel": 0.007038929909319701,
+            "t_total_cumulative_sec": 0.49501239999517566,
+            "t_primal_cumulative_sec": 0.3110313000033784,
+            "t_adjoint_cumulative_sec": 0.10304259999611531,
+            "t_estimator_cumulative_sec": 0.029566600005637156,
+            "t_marking_cumulative_sec": 0.0010169999950448982,
+            "t_refinement_cumulative_sec": 0.050287100002606167
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 3636,
+            "true_error_rel": 0.00845709326512726,
+            "t_total_cumulative_sec": 0.23775089999617194,
+            "t_primal_cumulative_sec": 0.1561522000010882,
+            "t_adjoint_cumulative_sec": 0.0431516999960877,
+            "t_estimator_cumulative_sec": 0.016117399998620385,
+            "t_marking_cumulative_sec": 0.0006023999994795304,
+            "t_refinement_cumulative_sec": 0.021682500002498273
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 7,
+            "primal_dofs": 5016,
+            "true_error_rel": 0.005334470676361717,
+            "t_total_cumulative_sec": 0.9189759999935632,
+            "t_primal_cumulative_sec": 0.14225349999469472,
+            "t_adjoint_cumulative_sec": 0.6681453999954101,
+            "t_estimator_cumulative_sec": 0.038330600000335835,
+            "t_marking_cumulative_sec": 0.000570399992284365,
+            "t_refinement_cumulative_sec": 0.020443799996428424
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 5500,
+            "true_error_rel": 0.009836310376205786,
+            "t_total_cumulative_sec": 1.4099363000023004,
+            "t_primal_cumulative_sec": 0.2406966000016837,
+            "t_adjoint_cumulative_sec": 1.0076760000156355,
+            "t_estimator_cumulative_sec": 0.05685599999924307,
+            "t_marking_cumulative_sec": 0.0008955000012065284,
+            "t_refinement_cumulative_sec": 0.035370900004636496
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 4208,
+            "true_error_rel": 0.006506573638933985,
+            "t_total_cumulative_sec": 0.8694755999968038,
+            "t_primal_cumulative_sec": 0.13960360000055516,
+            "t_adjoint_cumulative_sec": 0.6196810000001278,
+            "t_estimator_cumulative_sec": 0.035084099996311124,
+            "t_marking_cumulative_sec": 0.0006025000002409797,
+            "t_refinement_cumulative_sec": 0.02000190000035218
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.7783094098883573,
+          1.577090909090909,
+          0.8379277566539924
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.12902719983565744,
+          0.19290417588805342,
+          0.16265033774451476
+        ]
+      },
+      "0.5%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 6642,
+            "true_error_rel": 0.004827456681281805,
+            "t_total_cumulative_sec": 0.10444939999797498,
+            "t_primal_cumulative_sec": 0.10347249999904307,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 2.13999992411118e-05,
+            "t_refinement_cumulative_sec": 0.0009395999950356781
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 13122,
+            "true_error_rel": 0.004408845081058293,
+            "t_total_cumulative_sec": 0.35254360000544693,
+            "t_primal_cumulative_sec": 0.3493825999976252,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 4.3200005165999755e-05,
+            "t_refinement_cumulative_sec": 0.0030975000008766074
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 16770,
+            "true_error_rel": 0.001873400068191636,
+            "t_total_cumulative_sec": 0.320151399999304,
+            "t_primal_cumulative_sec": 0.3191619000026549,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 5.1799997891066596e-05,
+            "t_refinement_cumulative_sec": 0.0009228999952028971
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 6,
+            "primal_dofs": 8364,
+            "true_error_rel": 0.0029313481182237098,
+            "t_total_cumulative_sec": 0.21144919999642298,
+            "t_primal_cumulative_sec": 0.18563779999385588,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.011078199997427873,
+            "t_marking_cumulative_sec": 0.0005946000128460582,
+            "t_refinement_cumulative_sec": 0.014113500001258217
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 18972,
+            "true_error_rel": 0.002651375909893394,
+            "t_total_cumulative_sec": 0.5744797000079416,
+            "t_primal_cumulative_sec": 0.5134468999931414,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.022158499999932246,
+            "t_marking_cumulative_sec": 0.0012954999947396573,
+            "t_refinement_cumulative_sec": 0.03754300000218791
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 6930,
+            "true_error_rel": 0.003522593861640925,
+            "t_total_cumulative_sec": 0.2381457000010414,
+            "t_primal_cumulative_sec": 0.20378160000473144,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.015482900002098177,
+            "t_marking_cumulative_sec": 0.0008149000022967812,
+            "t_refinement_cumulative_sec": 0.018037900001218077
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 9,
+            "primal_dofs": 7522,
+            "true_error_rel": 0.004689798247393767,
+            "t_total_cumulative_sec": 0.36141560000396566,
+            "t_primal_cumulative_sec": 0.22614669999529724,
+            "t_adjoint_cumulative_sec": 0.07854499999666587,
+            "t_estimator_cumulative_sec": 0.019309199997223914,
+            "t_marking_cumulative_sec": 0.0008306000017910264,
+            "t_refinement_cumulative_sec": 0.03652850000071339
+          },
+          {
+            "iteration": 11,
+            "primal_dofs": 12822,
+            "true_error_rel": 0.004672092555809442,
+            "t_total_cumulative_sec": 0.8202403999966918,
+            "t_primal_cumulative_sec": 0.5022180000014487,
+            "t_adjoint_cumulative_sec": 0.1907835999991221,
+            "t_estimator_cumulative_sec": 0.04207480000695796,
+            "t_marking_cumulative_sec": 0.001578999996127095,
+            "t_refinement_cumulative_sec": 0.0835060000026715
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 8022,
+            "true_error_rel": 0.004271863307100931,
+            "t_total_cumulative_sec": 0.5515450999992026,
+            "t_primal_cumulative_sec": 0.33535660000052303,
+            "t_adjoint_cumulative_sec": 0.12334329999430338,
+            "t_estimator_cumulative_sec": 0.0391550999993342,
+            "t_marking_cumulative_sec": 0.0012077999963366892,
+            "t_refinement_cumulative_sec": 0.052416500006074784
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 8,
+            "primal_dofs": 9018,
+            "true_error_rel": 0.0033129564847990357,
+            "t_total_cumulative_sec": 1.922653799992986,
+            "t_primal_cumulative_sec": 0.23917709999659564,
+            "t_adjoint_cumulative_sec": 1.493526699996437,
+            "t_estimator_cumulative_sec": 0.05971109999882174,
+            "t_marking_cumulative_sec": 0.001013999994029291,
+            "t_refinement_cumulative_sec": 0.020443799996428424
+          },
+          {
+            "iteration": 10,
+            "primal_dofs": 18514,
+            "true_error_rel": 0.002960434617084805,
+            "t_total_cumulative_sec": 5.3731406000006245,
+            "t_primal_cumulative_sec": 0.6710299000005762,
+            "t_adjoint_cumulative_sec": 4.226962400010962,
+            "t_estimator_cumulative_sec": 0.1329340999982378,
+            "t_marking_cumulative_sec": 0.002217700002802303,
+            "t_refinement_cumulative_sec": 0.06170860000202083
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 7242,
+            "true_error_rel": 0.003951251162666864,
+            "t_total_cumulative_sec": 1.6464162999982364,
+            "t_primal_cumulative_sec": 0.23453859999790438,
+            "t_adjoint_cumulative_sec": 1.23738510000112,
+            "t_estimator_cumulative_sec": 0.05271389999325038,
+            "t_marking_cumulative_sec": 0.0009515999990981072,
+            "t_refinement_cumulative_sec": 0.02000190000035218
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.927478376580173,
+          1.0247380360808038,
+          0.9569179784589892
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.10997778174999283,
+          0.10691693048342617,
+          0.14464488720215932
+        ]
+      }
+    },
+    "plate_with_hole": {
+      "2.0%": {
+        "uniform": [
+          {
+            "iteration": 2,
+            "primal_dofs": 4664,
+            "true_error_rel": 0.010125706968993346,
+            "t_total_cumulative_sec": 0.09483990000080667,
+            "t_primal_cumulative_sec": 0.0922943999976269,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 2.5299999833805487e-05,
+            "t_refinement_cumulative_sec": 0.0025067999995371792
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 27184,
+            "true_error_rel": 0.01590148069665229,
+            "t_total_cumulative_sec": 0.5559372999996413,
+            "t_primal_cumulative_sec": 0.545480700002372,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 4.7500001528533176e-05,
+            "t_refinement_cumulative_sec": 0.010391199997684453
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 9592,
+            "true_error_rel": 0.004167593666373645,
+            "t_total_cumulative_sec": 0.17178950000015902,
+            "t_primal_cumulative_sec": 0.16767779999645427,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.400000059627928e-05,
+            "t_refinement_cumulative_sec": 0.004066199999215314
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 2,
+            "primal_dofs": 1130,
+            "true_error_rel": 0.0006608429629890002,
+            "t_total_cumulative_sec": 0.06877500000337022,
+            "t_primal_cumulative_sec": 0.06125439999959781,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.00444950000019162,
+            "t_marking_cumulative_sec": 0.00017250000382773578,
+            "t_refinement_cumulative_sec": 0.0028853000003437046
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 7220,
+            "true_error_rel": 0.006574257207144358,
+            "t_total_cumulative_sec": 0.22754250000070897,
+            "t_primal_cumulative_sec": 0.18601160000253003,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.009970000002795132,
+            "t_marking_cumulative_sec": 0.0005627000027743634,
+            "t_refinement_cumulative_sec": 0.03097150000394322
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 2058,
+            "true_error_rel": 0.007849945669726811,
+            "t_total_cumulative_sec": 0.07114089999959106,
+            "t_primal_cumulative_sec": 0.05597529999431572,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.005382900002587121,
+            "t_marking_cumulative_sec": 0.00019889999748556875,
+            "t_refinement_cumulative_sec": 0.009569700003339676
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 408,
+            "true_error_rel": 0.0006813673541547071,
+            "t_total_cumulative_sec": 0.03417040000203997,
+            "t_primal_cumulative_sec": 0.027218099996389356,
+            "t_adjoint_cumulative_sec": 0.0035942000031354837,
+            "t_estimator_cumulative_sec": 0.002193199998146156,
+            "t_marking_cumulative_sec": 7.729999924777076e-05,
+            "t_refinement_cumulative_sec": 0.001079300000128569
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 808,
+            "true_error_rel": 0.017982976434966536,
+            "t_total_cumulative_sec": 0.06524390000413405,
+            "t_primal_cumulative_sec": 0.0449363000006997,
+            "t_adjoint_cumulative_sec": 0.008352600001671817,
+            "t_estimator_cumulative_sec": 0.005910699997912161,
+            "t_marking_cumulative_sec": 0.00017189999925903976,
+            "t_refinement_cumulative_sec": 0.005855600000359118
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 1666,
+            "true_error_rel": 0.01427447965110588,
+            "t_total_cumulative_sec": 0.12282000000050175,
+            "t_primal_cumulative_sec": 0.08130399999572546,
+            "t_adjoint_cumulative_sec": 0.018416300001263153,
+            "t_estimator_cumulative_sec": 0.009904599999572383,
+            "t_marking_cumulative_sec": 0.000279499996395316,
+            "t_refinement_cumulative_sec": 0.012890799993328983
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 3,
+            "primal_dofs": 1276,
+            "true_error_rel": 0.0006378224466477061,
+            "t_total_cumulative_sec": 0.34079660000497825,
+            "t_primal_cumulative_sec": 0.07255829999849084,
+            "t_adjoint_cumulative_sec": 0.2271015999976953,
+            "t_estimator_cumulative_sec": 0.020368899997265544,
+            "t_marking_cumulative_sec": 0.0002784000025712885,
+            "t_refinement_cumulative_sec": 0.005108400004246505
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 616,
+            "true_error_rel": 0.01314656242054995,
+            "t_total_cumulative_sec": 0.11828830000013113,
+            "t_primal_cumulative_sec": 0.02070060000187368,
+            "t_adjoint_cumulative_sec": 0.08201470000494737,
+            "t_estimator_cumulative_sec": 0.007365800003753975,
+            "t_marking_cumulative_sec": 0.00011789999916800298,
+            "t_refinement_cumulative_sec": 0.0029622000038216356
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 2198,
+            "true_error_rel": 0.015079849196781207,
+            "t_total_cumulative_sec": 0.44868709999718703,
+            "t_primal_cumulative_sec": 0.07201070000155596,
+            "t_adjoint_cumulative_sec": 0.32119020000391174,
+            "t_estimator_cumulative_sec": 0.021376999997301027,
+            "t_marking_cumulative_sec": 0.00033030000122380443,
+            "t_refinement_cumulative_sec": 0.011570999999094056
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.8855799373040752,
+          11.720779220779221,
+          0.9363057324840764
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.2018065908003941,
+          1.9236264279768729,
+          0.15855347746801068
+        ]
+      },
+      "1.0%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 18096,
+            "true_error_rel": 0.002336872815541873,
+            "t_total_cumulative_sec": 0.3502821000001859,
+            "t_primal_cumulative_sec": 0.3476570999955584,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 0.00010140000085812062,
+            "t_refinement_cumulative_sec": 0.0025067999995371792
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 107360,
+            "true_error_rel": 0.002253348134885442,
+            "t_total_cumulative_sec": 3.3358044999986305,
+            "t_primal_cumulative_sec": 3.325285000002623,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 0.0001050000028044451,
+            "t_refinement_cumulative_sec": 0.010391199997684453
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 9592,
+            "true_error_rel": 0.004167593666373645,
+            "t_total_cumulative_sec": 0.17178950000015902,
+            "t_primal_cumulative_sec": 0.16767779999645427,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.400000059627928e-05,
+            "t_refinement_cumulative_sec": 0.004066199999215314
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 2,
+            "primal_dofs": 1130,
+            "true_error_rel": 0.0006608429629890002,
+            "t_total_cumulative_sec": 0.06877500000337022,
+            "t_primal_cumulative_sec": 0.06125439999959781,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.00444950000019162,
+            "t_marking_cumulative_sec": 0.00017250000382773578,
+            "t_refinement_cumulative_sec": 0.0028853000003437046
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 7220,
+            "true_error_rel": 0.006574257207144358,
+            "t_total_cumulative_sec": 0.22754250000070897,
+            "t_primal_cumulative_sec": 0.18601160000253003,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.009970000002795132,
+            "t_marking_cumulative_sec": 0.0005627000027743634,
+            "t_refinement_cumulative_sec": 0.03097150000394322
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 2058,
+            "true_error_rel": 0.007849945669726811,
+            "t_total_cumulative_sec": 0.07114089999959106,
+            "t_primal_cumulative_sec": 0.05597529999431572,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.005382900002587121,
+            "t_marking_cumulative_sec": 0.00019889999748556875,
+            "t_refinement_cumulative_sec": 0.009569700003339676
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 408,
+            "true_error_rel": 0.0006813673541547071,
+            "t_total_cumulative_sec": 0.03417040000203997,
+            "t_primal_cumulative_sec": 0.027218099996389356,
+            "t_adjoint_cumulative_sec": 0.0035942000031354837,
+            "t_estimator_cumulative_sec": 0.002193199998146156,
+            "t_marking_cumulative_sec": 7.729999924777076e-05,
+            "t_refinement_cumulative_sec": 0.001079300000128569
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 7104,
+            "true_error_rel": 0.007756333995464001,
+            "t_total_cumulative_sec": 0.46125109999775304,
+            "t_primal_cumulative_sec": 0.281402500004333,
+            "t_adjoint_cumulative_sec": 0.09890800000357558,
+            "t_estimator_cumulative_sec": 0.03300369999851682,
+            "t_marking_cumulative_sec": 0.0009024999999382999,
+            "t_refinement_cumulative_sec": 0.04697860000305809
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 2456,
+            "true_error_rel": 0.007138981722506089,
+            "t_total_cumulative_sec": 0.18629929999951855,
+            "t_primal_cumulative_sec": 0.11850169999524951,
+            "t_adjoint_cumulative_sec": 0.03118180000092252,
+            "t_estimator_cumulative_sec": 0.01694099999804166,
+            "t_marking_cumulative_sec": 0.00043929999810643494,
+            "t_refinement_cumulative_sec": 0.01920169999357313
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 3,
+            "primal_dofs": 1276,
+            "true_error_rel": 0.0006378224466477061,
+            "t_total_cumulative_sec": 0.34079660000497825,
+            "t_primal_cumulative_sec": 0.07255829999849084,
+            "t_adjoint_cumulative_sec": 0.2271015999976953,
+            "t_estimator_cumulative_sec": 0.020368899997265544,
+            "t_marking_cumulative_sec": 0.0002784000025712885,
+            "t_refinement_cumulative_sec": 0.005108400004246505
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 2834,
+            "true_error_rel": 0.004841847640187454,
+            "t_total_cumulative_sec": 0.6024420000030659,
+            "t_primal_cumulative_sec": 0.09525480000229436,
+            "t_adjoint_cumulative_sec": 0.4328815000044415,
+            "t_estimator_cumulative_sec": 0.026916000002529472,
+            "t_marking_cumulative_sec": 0.00046350000047823414,
+            "t_refinement_cumulative_sec": 0.015870400002313545
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 3960,
+            "true_error_rel": 0.004676869459099532,
+            "t_total_cumulative_sec": 0.8041729999968084,
+            "t_primal_cumulative_sec": 0.12057049999930314,
+            "t_adjoint_cumulative_sec": 0.5885733000068285,
+            "t_estimator_cumulative_sec": 0.03209029999561608,
+            "t_marking_cumulative_sec": 0.0004836999978579115,
+            "t_refinement_cumulative_sec": 0.019944399999076268
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.8855799373040752,
+          2.547635850388144,
+          0.5196969696969697
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.2018065908003941,
+          0.3777002599412906,
+          0.08846467115890909
+        ]
+      },
+      "0.5%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 18096,
+            "true_error_rel": 0.002336872815541873,
+            "t_total_cumulative_sec": 0.3502821000001859,
+            "t_primal_cumulative_sec": 0.3476570999955584,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 0.00010140000085812062,
+            "t_refinement_cumulative_sec": 0.0025067999995371792
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 107360,
+            "true_error_rel": 0.002253348134885442,
+            "t_total_cumulative_sec": 3.3358044999986305,
+            "t_primal_cumulative_sec": 3.325285000002623,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 0.0001050000028044451,
+            "t_refinement_cumulative_sec": 0.010391199997684453
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 9592,
+            "true_error_rel": 0.004167593666373645,
+            "t_total_cumulative_sec": 0.17178950000015902,
+            "t_primal_cumulative_sec": 0.16767779999645427,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.400000059627928e-05,
+            "t_refinement_cumulative_sec": 0.004066199999215314
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 2,
+            "primal_dofs": 1130,
+            "true_error_rel": 0.0006608429629890002,
+            "t_total_cumulative_sec": 0.06877500000337022,
+            "t_primal_cumulative_sec": 0.06125439999959781,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.00444950000019162,
+            "t_marking_cumulative_sec": 0.00017250000382773578,
+            "t_refinement_cumulative_sec": 0.0028853000003437046
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 34954,
+            "true_error_rel": 0.00323824202717174,
+            "t_total_cumulative_sec": 1.1185670000013488,
+            "t_primal_cumulative_sec": 0.9973917000061192,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.04366250000020955,
+            "t_marking_cumulative_sec": 0.002239100002043415,
+            "t_refinement_cumulative_sec": 0.07523380000202451
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 4574,
+            "true_error_rel": 0.0024559765732838036,
+            "t_total_cumulative_sec": 0.12888720000046305,
+            "t_primal_cumulative_sec": 0.11113749999276479,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0078108000016072765,
+            "t_marking_cumulative_sec": 0.0003513999981805682,
+            "t_refinement_cumulative_sec": 0.009569700003339676
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 408,
+            "true_error_rel": 0.0006813673541547071,
+            "t_total_cumulative_sec": 0.03417040000203997,
+            "t_primal_cumulative_sec": 0.027218099996389356,
+            "t_adjoint_cumulative_sec": 0.0035942000031354837,
+            "t_estimator_cumulative_sec": 0.002193199998146156,
+            "t_marking_cumulative_sec": 7.729999924777076e-05,
+            "t_refinement_cumulative_sec": 0.001079300000128569
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 10844,
+            "true_error_rel": 0.0025308649091342937,
+            "t_total_cumulative_sec": 0.7008444999992207,
+            "t_primal_cumulative_sec": 0.431381300004432,
+            "t_adjoint_cumulative_sec": 0.1788382000013371,
+            "t_estimator_cumulative_sec": 0.04226909999852069,
+            "t_marking_cumulative_sec": 0.0013134000000718515,
+            "t_refinement_cumulative_sec": 0.04697860000305809
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 9216,
+            "true_error_rel": 0.0024704154282422027,
+            "t_total_cumulative_sec": 0.611553399998229,
+            "t_primal_cumulative_sec": 0.39077939999333466,
+            "t_adjoint_cumulative_sec": 0.14001269999425858,
+            "t_estimator_cumulative_sec": 0.037021899996034335,
+            "t_marking_cumulative_sec": 0.0011924999962502625,
+            "t_refinement_cumulative_sec": 0.04248889999144012
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 3,
+            "primal_dofs": 1276,
+            "true_error_rel": 0.0006378224466477061,
+            "t_total_cumulative_sec": 0.34079660000497825,
+            "t_primal_cumulative_sec": 0.07255829999849084,
+            "t_adjoint_cumulative_sec": 0.2271015999976953,
+            "t_estimator_cumulative_sec": 0.020368899997265544,
+            "t_marking_cumulative_sec": 0.0002784000025712885,
+            "t_refinement_cumulative_sec": 0.005108400004246505
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 2834,
+            "true_error_rel": 0.004841847640187454,
+            "t_total_cumulative_sec": 0.6024420000030659,
+            "t_primal_cumulative_sec": 0.09525480000229436,
+            "t_adjoint_cumulative_sec": 0.4328815000044415,
+            "t_estimator_cumulative_sec": 0.026916000002529472,
+            "t_marking_cumulative_sec": 0.00046350000047823414,
+            "t_refinement_cumulative_sec": 0.015870400002313545
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 3960,
+            "true_error_rel": 0.004676869459099532,
+            "t_total_cumulative_sec": 0.8041729999968084,
+            "t_primal_cumulative_sec": 0.12057049999930314,
+            "t_adjoint_cumulative_sec": 0.5885733000068285,
+            "t_estimator_cumulative_sec": 0.03209029999561608,
+            "t_marking_cumulative_sec": 0.0004836999978579115,
+            "t_refinement_cumulative_sec": 0.019944399999076268
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.8855799373040752,
+          12.333803810868032,
+          1.155050505050505
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.2018065908003941,
+          1.8567214769150495,
+          0.16027297608969038
+        ]
+      }
+    },
+    "notched_bar": {
+      "2.0%": {
+        "uniform": [
+          {
+            "iteration": 2,
+            "primal_dofs": 3482,
+            "true_error_rel": 0.012565331994908356,
+            "t_total_cumulative_sec": 0.0730598000009195,
+            "t_primal_cumulative_sec": 0.0709359999964363,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 1.870000414783135e-05,
+            "t_refinement_cumulative_sec": 0.0020934999993187375
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 1374,
+            "true_error_rel": 0.00899205151837981,
+            "t_total_cumulative_sec": 0.0288235000007262,
+            "t_primal_cumulative_sec": 0.02816489999895566,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 9.20000093174167e-06,
+            "t_refinement_cumulative_sec": 0.0006429999993997626
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 504,
+            "true_error_rel": 0.019137713607186357,
+            "t_total_cumulative_sec": 0.010041300000011688,
+            "t_primal_cumulative_sec": 0.009806799997022608,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.7999998312443495e-06,
+            "t_refinement_cumulative_sec": 0.00022729999909643084
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 1,
+            "primal_dofs": 468,
+            "true_error_rel": 0.01680931160215785,
+            "t_total_cumulative_sec": 0.02116579999710666,
+            "t_primal_cumulative_sec": 0.017506299998785835,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0011425000011513475,
+            "t_marking_cumulative_sec": 7.639999603270553e-05,
+            "t_refinement_cumulative_sec": 0.0024325000013050158
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 618,
+            "true_error_rel": 0.009340002176185138,
+            "t_total_cumulative_sec": 0.02233409999826108,
+            "t_primal_cumulative_sec": 0.01842430000033346,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0011525999980221968,
+            "t_marking_cumulative_sec": 7.760000153211877e-05,
+            "t_refinement_cumulative_sec": 0.002672200003871694
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 504,
+            "true_error_rel": 0.019137713607186357,
+            "t_total_cumulative_sec": 0.011754200000723358,
+            "t_primal_cumulative_sec": 0.009786599999642931,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0006238999994820915,
+            "t_marking_cumulative_sec": 4.1799998143687844e-05,
+            "t_refinement_cumulative_sec": 0.0012979999992239755
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 3,
+            "primal_dofs": 848,
+            "true_error_rel": 0.01182285539369279,
+            "t_total_cumulative_sec": 0.0640237999978126,
+            "t_primal_cumulative_sec": 0.04758979999678559,
+            "t_adjoint_cumulative_sec": 0.00716669999746955,
+            "t_estimator_cumulative_sec": 0.003569599997717887,
+            "t_marking_cumulative_sec": 0.00017149999985122122,
+            "t_refinement_cumulative_sec": 0.005507300003955606
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 1202,
+            "true_error_rel": 0.014740329673886724,
+            "t_total_cumulative_sec": 0.06650299999819254,
+            "t_primal_cumulative_sec": 0.045620200002304045,
+            "t_adjoint_cumulative_sec": 0.009919099997205194,
+            "t_estimator_cumulative_sec": 0.003632200001447927,
+            "t_marking_cumulative_sec": 0.00018959999579237774,
+            "t_refinement_cumulative_sec": 0.007123600000340957
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 504,
+            "true_error_rel": 0.019137713607186357,
+            "t_total_cumulative_sec": 0.013443100000586128,
+            "t_primal_cumulative_sec": 0.00938020000103279,
+            "t_adjoint_cumulative_sec": 0.00197180000031949,
+            "t_estimator_cumulative_sec": 0.0007719999994151294,
+            "t_marking_cumulative_sec": 3.989999822806567e-05,
+            "t_refinement_cumulative_sec": 0.001274300000659423
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 2,
+            "primal_dofs": 640,
+            "true_error_rel": 0.014490462742757582,
+            "t_total_cumulative_sec": 0.14026310000190279,
+            "t_primal_cumulative_sec": 0.025948200003767852,
+            "t_adjoint_cumulative_sec": 0.09493529999235761,
+            "t_estimator_cumulative_sec": 0.010511899999983143,
+            "t_marking_cumulative_sec": 0.00014630000077886507,
+            "t_refinement_cumulative_sec": 0.0038122000041767024
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 548,
+            "true_error_rel": 4.491746288822184e-05,
+            "t_total_cumulative_sec": 0.09776830000191694,
+            "t_primal_cumulative_sec": 0.01856430000407272,
+            "t_adjoint_cumulative_sec": 0.06727509999836911,
+            "t_estimator_cumulative_sec": 0.007017699997959426,
+            "t_marking_cumulative_sec": 0.00010230000043520704,
+            "t_refinement_cumulative_sec": 0.001143700003012782
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 504,
+            "true_error_rel": 0.019137713607186357,
+            "t_total_cumulative_sec": 0.07481530000222847,
+            "t_primal_cumulative_sec": 0.014418299997487338,
+            "t_adjoint_cumulative_sec": 0.05250979999982519,
+            "t_estimator_cumulative_sec": 0.0036211000006005634,
+            "t_marking_cumulative_sec": 5.2900002629030496e-05,
+            "t_refinement_cumulative_sec": 0.0013337999989744276
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.73125,
+          1.1277372262773722,
+          1.0
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.15090070016147888,
+          0.22843907481078404,
+          0.15710957518546667
+        ]
+      },
+      "1.0%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 13362,
+            "true_error_rel": 0.0018229934356689096,
+            "t_total_cumulative_sec": 0.24828210000123363,
+            "t_primal_cumulative_sec": 0.24613939999471768,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.4400003642076626e-05,
+            "t_refinement_cumulative_sec": 0.0020934999993187375
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 1374,
+            "true_error_rel": 0.00899205151837981,
+            "t_total_cumulative_sec": 0.0288235000007262,
+            "t_primal_cumulative_sec": 0.02816489999895566,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 9.20000093174167e-06,
+            "t_refinement_cumulative_sec": 0.0006429999993997626
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 6978,
+            "true_error_rel": 0.004082798225617284,
+            "t_total_cumulative_sec": 0.11323919999631471,
+            "t_primal_cumulative_sec": 0.11053179999726126,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 2.0399998902576044e-05,
+            "t_refinement_cumulative_sec": 0.0026747999982035253
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 4,
+            "primal_dofs": 4810,
+            "true_error_rel": 0.004507039960186909,
+            "t_total_cumulative_sec": 0.14917699999932665,
+            "t_primal_cumulative_sec": 0.11943329999485286,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.007117900000594091,
+            "t_marking_cumulative_sec": 0.0004090999973414,
+            "t_refinement_cumulative_sec": 0.022192999997059815
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 618,
+            "true_error_rel": 0.009340002176185138,
+            "t_total_cumulative_sec": 0.02233409999826108,
+            "t_primal_cumulative_sec": 0.01842430000033346,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0011525999980221968,
+            "t_marking_cumulative_sec": 7.760000153211877e-05,
+            "t_refinement_cumulative_sec": 0.002672200003871694
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 782,
+            "true_error_rel": 0.007370078484986283,
+            "t_total_cumulative_sec": 0.02634340000076918,
+            "t_primal_cumulative_sec": 0.021582999997917796,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0014023999974597245,
+            "t_marking_cumulative_sec": 9.109999882639386e-05,
+            "t_refinement_cumulative_sec": 0.0032594000003882684
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 4,
+            "primal_dofs": 1334,
+            "true_error_rel": 0.008785658405321925,
+            "t_total_cumulative_sec": 0.09243229999992764,
+            "t_primal_cumulative_sec": 0.06667449999804376,
+            "t_adjoint_cumulative_sec": 0.011869399997522123,
+            "t_estimator_cumulative_sec": 0.004963599996699486,
+            "t_marking_cumulative_sec": 0.0002367999986745417,
+            "t_refinement_cumulative_sec": 0.008663700002216501
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 1896,
+            "true_error_rel": 0.005777544202545842,
+            "t_total_cumulative_sec": 0.10293169999931706,
+            "t_primal_cumulative_sec": 0.06836000000112108,
+            "t_adjoint_cumulative_sec": 0.01747849999810569,
+            "t_estimator_cumulative_sec": 0.005461700002342695,
+            "t_marking_cumulative_sec": 0.00027209999461774714,
+            "t_refinement_cumulative_sec": 0.01133539999864297
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 654,
+            "true_error_rel": 0.004170266686813213,
+            "t_total_cumulative_sec": 0.02903130000049714,
+            "t_primal_cumulative_sec": 0.019644300002255477,
+            "t_adjoint_cumulative_sec": 0.0045971000035933685,
+            "t_estimator_cumulative_sec": 0.0017431999986001756,
+            "t_marking_cumulative_sec": 9.089999730349518e-05,
+            "t_refinement_cumulative_sec": 0.0029455000003508758
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 4,
+            "primal_dofs": 2060,
+            "true_error_rel": 0.001121031991167546,
+            "t_total_cumulative_sec": 0.420566200002213,
+            "t_primal_cumulative_sec": 0.07843380000485922,
+            "t_adjoint_cumulative_sec": 0.29535619999296614,
+            "t_estimator_cumulative_sec": 0.022610500000155298,
+            "t_marking_cumulative_sec": 0.0003097000044363085,
+            "t_refinement_cumulative_sec": 0.00672340000528493
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 548,
+            "true_error_rel": 4.491746288822184e-05,
+            "t_total_cumulative_sec": 0.09776830000191694,
+            "t_primal_cumulative_sec": 0.01856430000407272,
+            "t_adjoint_cumulative_sec": 0.06727509999836911,
+            "t_estimator_cumulative_sec": 0.007017699997959426,
+            "t_marking_cumulative_sec": 0.00010230000043520704,
+            "t_refinement_cumulative_sec": 0.001143700003012782
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 1250,
+            "true_error_rel": 0.005388340383222188,
+            "t_total_cumulative_sec": 0.24284020000413875,
+            "t_primal_cumulative_sec": 0.04230040000038571,
+            "t_adjoint_cumulative_sec": 0.17132850000052713,
+            "t_estimator_cumulative_sec": 0.012841200004913844,
+            "t_marking_cumulative_sec": 0.00018460000137565657,
+            "t_refinement_cumulative_sec": 0.006174099999043392
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          2.3349514563106797,
+          1.1277372262773722,
+          0.6256
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.35470515699678595,
+          0.22843907481078404,
+          0.10848039163334657
+        ]
+      },
+      "0.5%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 13362,
+            "true_error_rel": 0.0018229934356689096,
+            "t_total_cumulative_sec": 0.24828210000123363,
+            "t_primal_cumulative_sec": 0.24613939999471768,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.4400003642076626e-05,
+            "t_refinement_cumulative_sec": 0.0020934999993187375
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 20082,
+            "true_error_rel": 0.0016699532447806097,
+            "t_total_cumulative_sec": 0.3701328999995894,
+            "t_primal_cumulative_sec": 0.367947800001275,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 4.6200002543628216e-05,
+            "t_refinement_cumulative_sec": 0.002124899998307228
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 6978,
+            "true_error_rel": 0.004082798225617284,
+            "t_total_cumulative_sec": 0.11323919999631471,
+            "t_primal_cumulative_sec": 0.11053179999726126,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 2.0399998902576044e-05,
+            "t_refinement_cumulative_sec": 0.0026747999982035253
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 4,
+            "primal_dofs": 4810,
+            "true_error_rel": 0.004507039960186909,
+            "t_total_cumulative_sec": 0.14917699999932665,
+            "t_primal_cumulative_sec": 0.11943329999485286,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.007117900000594091,
+            "t_marking_cumulative_sec": 0.0004090999973414,
+            "t_refinement_cumulative_sec": 0.022192999997059815
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 11768,
+            "true_error_rel": 0.000975937769712588,
+            "t_total_cumulative_sec": 0.3065333999984432,
+            "t_primal_cumulative_sec": 0.2689098000046215,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.012654399997700239,
+            "t_marking_cumulative_sec": 0.0007714999992458615,
+            "t_refinement_cumulative_sec": 0.024171800003387034
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 3392,
+            "true_error_rel": 0.0011419351347802407,
+            "t_total_cumulative_sec": 0.09031380000305944,
+            "t_primal_cumulative_sec": 0.07863159999396885,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.004469499996048398,
+            "t_marking_cumulative_sec": 0.00028870000096503645,
+            "t_refinement_cumulative_sec": 0.006909700001415331
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 5,
+            "primal_dofs": 2218,
+            "true_error_rel": 0.001251550395773776,
+            "t_total_cumulative_sec": 0.1308772999982466,
+            "t_primal_cumulative_sec": 0.09395669999867096,
+            "t_adjoint_cumulative_sec": 0.020774399996298598,
+            "t_estimator_cumulative_sec": 0.00711589999627904,
+            "t_marking_cumulative_sec": 0.00033660000190138817,
+            "t_refinement_cumulative_sec": 0.008663700002216501
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 7608,
+            "true_error_rel": 0.004160563808203589,
+            "t_total_cumulative_sec": 0.46541639999850304,
+            "t_primal_cumulative_sec": 0.2911666000036348,
+            "t_adjoint_cumulative_sec": 0.10401839999758522,
+            "t_estimator_cumulative_sec": 0.02140740000322694,
+            "t_marking_cumulative_sec": 0.0008588999953644816,
+            "t_refinement_cumulative_sec": 0.047914399998262525
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 654,
+            "true_error_rel": 0.004170266686813213,
+            "t_total_cumulative_sec": 0.02903130000049714,
+            "t_primal_cumulative_sec": 0.019644300002255477,
+            "t_adjoint_cumulative_sec": 0.0045971000035933685,
+            "t_estimator_cumulative_sec": 0.0017431999986001756,
+            "t_marking_cumulative_sec": 9.089999730349518e-05,
+            "t_refinement_cumulative_sec": 0.0029455000003508758
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 4,
+            "primal_dofs": 2060,
+            "true_error_rel": 0.001121031991167546,
+            "t_total_cumulative_sec": 0.420566200002213,
+            "t_primal_cumulative_sec": 0.07843380000485922,
+            "t_adjoint_cumulative_sec": 0.29535619999296614,
+            "t_estimator_cumulative_sec": 0.022610500000155298,
+            "t_marking_cumulative_sec": 0.0003097000044363085,
+            "t_refinement_cumulative_sec": 0.00672340000528493
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 548,
+            "true_error_rel": 4.491746288822184e-05,
+            "t_total_cumulative_sec": 0.09776830000191694,
+            "t_primal_cumulative_sec": 0.01856430000407272,
+            "t_adjoint_cumulative_sec": 0.06727509999836911,
+            "t_estimator_cumulative_sec": 0.007017699997959426,
+            "t_marking_cumulative_sec": 0.00010230000043520704,
+            "t_refinement_cumulative_sec": 0.001143700003012782
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 2178,
+            "true_error_rel": 0.0023222375755976993,
+            "t_total_cumulative_sec": 0.42101480000201263,
+            "t_primal_cumulative_sec": 0.06866510000327253,
+            "t_adjoint_cumulative_sec": 0.307030300002225,
+            "t_estimator_cumulative_sec": 0.020293100002163555,
+            "t_marking_cumulative_sec": 0.0002824000002874527,
+            "t_refinement_cumulative_sec": 0.006174099999043392
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          2.3349514563106797,
+          21.474452554744527,
+          1.5573921028466482
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.35470515699678595,
+          3.1353045925154985,
+          0.2145145491384809
+        ]
+      }
+    },
+    "l_shaped": {
+      "2.0%": {
+        "uniform": [
+          {
+            "iteration": 0,
+            "primal_dofs": 130,
+            "true_error_rel": 0.017172742620896825,
+            "t_total_cumulative_sec": 0.005950500002654735,
+            "t_primal_cumulative_sec": 0.0058392999999341555,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.0999981390777975e-06,
+            "t_refinement_cumulative_sec": 0.00010449999899719842
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 962,
+            "true_error_rel": 0.01337093247037637,
+            "t_total_cumulative_sec": 0.021302800003468292,
+            "t_primal_cumulative_sec": 0.020970400000805967,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 8.200000593205914e-06,
+            "t_refinement_cumulative_sec": 0.0003175999991071876
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.009421199996722862,
+            "t_primal_cumulative_sec": 0.009415100001206156,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.7999998312443495e-06,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 0,
+            "primal_dofs": 130,
+            "true_error_rel": 0.017172742620896825,
+            "t_total_cumulative_sec": 0.007367800000793068,
+            "t_primal_cumulative_sec": 0.006190699998114724,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0004891999997198582,
+            "t_marking_cumulative_sec": 3.220000144210644e-05,
+            "t_refinement_cumulative_sec": 0.0006513999978778884
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 4888,
+            "true_error_rel": 0.012650247481095214,
+            "t_total_cumulative_sec": 0.16950400000132504,
+            "t_primal_cumulative_sec": 0.1366543999974965,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.007430099994962802,
+            "t_marking_cumulative_sec": 0.0004839000066567678,
+            "t_refinement_cumulative_sec": 0.024906899998313747
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.016572600001381943,
+            "t_primal_cumulative_sec": 0.015499900000577327,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0010211000007984694,
+            "t_marking_cumulative_sec": 4.850000186706893e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 0,
+            "primal_dofs": 130,
+            "true_error_rel": 0.017172742620896825,
+            "t_total_cumulative_sec": 0.008883900001819711,
+            "t_primal_cumulative_sec": 0.006337700000585755,
+            "t_adjoint_cumulative_sec": 0.0011961999989580363,
+            "t_estimator_cumulative_sec": 0.0006657000012637582,
+            "t_marking_cumulative_sec": 3.199999991920777e-05,
+            "t_refinement_cumulative_sec": 0.000646799999231007
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 1472,
+            "true_error_rel": 0.015561171217603585,
+            "t_total_cumulative_sec": 0.08484780000071623,
+            "t_primal_cumulative_sec": 0.057379400001082104,
+            "t_adjoint_cumulative_sec": 0.013299499998538522,
+            "t_estimator_cumulative_sec": 0.004828999997698702,
+            "t_marking_cumulative_sec": 0.0003080000024056062,
+            "t_refinement_cumulative_sec": 0.009007100001326762
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.011629799999354873,
+            "t_primal_cumulative_sec": 0.009149100002105115,
+            "t_adjoint_cumulative_sec": 0.0016222000012930948,
+            "t_estimator_cumulative_sec": 0.0008153999988280702,
+            "t_marking_cumulative_sec": 3.9599999581696466e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 0,
+            "primal_dofs": 130,
+            "true_error_rel": 0.017172742620896825,
+            "t_total_cumulative_sec": 0.02763259999846923,
+            "t_primal_cumulative_sec": 0.00671390000206884,
+            "t_adjoint_cumulative_sec": 0.016928000000916654,
+            "t_estimator_cumulative_sec": 0.002576699997007381,
+            "t_marking_cumulative_sec": 3.559999822755344e-05,
+            "t_refinement_cumulative_sec": 0.000603899999987334
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 3294,
+            "true_error_rel": 0.006894358536877899,
+            "t_total_cumulative_sec": 0.6873970999986341,
+            "t_primal_cumulative_sec": 0.11484930000369786,
+            "t_adjoint_cumulative_sec": 0.4898204999990412,
+            "t_estimator_cumulative_sec": 0.03313970000090194,
+            "t_marking_cumulative_sec": 0.00044780000098398887,
+            "t_refinement_cumulative_sec": 0.016557899994950276
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.050916800002596574,
+            "t_primal_cumulative_sec": 0.008436399999482092,
+            "t_adjoint_cumulative_sec": 0.03421140000136802,
+            "t_estimator_cumulative_sec": 0.006175399998028297,
+            "t_marking_cumulative_sec": 6.929999653948471e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          1.0,
+          1.4839101396478445,
+          1.0
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.26663433774603995,
+          0.24658818025514198,
+          0.32548392673021087
+        ]
+      },
+      "1.0%": {
+        "uniform": [
+          {
+            "iteration": 1,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019843604,
+            "t_total_cumulative_sec": 0.014447600002313266,
+            "t_primal_cumulative_sec": 0.014330600002722349,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 6.899997970322147e-06,
+            "t_refinement_cumulative_sec": 0.00010449999899719842
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 3650,
+            "true_error_rel": 0.0017298301955778325,
+            "t_total_cumulative_sec": 0.06624070000179927,
+            "t_primal_cumulative_sec": 0.06589600000006612,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 1.7600003047846258e-05,
+            "t_refinement_cumulative_sec": 0.0003175999991071876
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.009421199996722862,
+            "t_primal_cumulative_sec": 0.009415100001206156,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.7999998312443495e-06,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 1,
+            "primal_dofs": 178,
+            "true_error_rel": 0.002322883889803306,
+            "t_total_cumulative_sec": 0.013748000001214677,
+            "t_primal_cumulative_sec": 0.012126199999329401,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0009009000023070257,
+            "t_marking_cumulative_sec": 6.300000313785858e-05,
+            "t_refinement_cumulative_sec": 0.0006513999978778884
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 21560,
+            "true_error_rel": 0.0076305903682626535,
+            "t_total_cumulative_sec": 0.7778117999987444,
+            "t_primal_cumulative_sec": 0.6401005999978224,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.02304519999961485,
+            "t_marking_cumulative_sec": 0.0014689000090584159,
+            "t_refinement_cumulative_sec": 0.1131545999996888
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.016572600001381943,
+            "t_primal_cumulative_sec": 0.015499900000577327,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0010211000007984694,
+            "t_marking_cumulative_sec": 4.850000186706893e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 172,
+            "true_error_rel": 0.0031899064348071306,
+            "t_total_cumulative_sec": 0.016190300000744173,
+            "t_primal_cumulative_sec": 0.012348399999609683,
+            "t_adjoint_cumulative_sec": 0.0019481000017549377,
+            "t_estimator_cumulative_sec": 0.0011768000040319748,
+            "t_marking_cumulative_sec": 6.170000051497482e-05,
+            "t_refinement_cumulative_sec": 0.000646799999231007
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 2334,
+            "true_error_rel": 0.006835211115048141,
+            "t_total_cumulative_sec": 0.1314144000025408,
+            "t_primal_cumulative_sec": 0.08564570000089589,
+            "t_adjoint_cumulative_sec": 0.023010599998087855,
+            "t_estimator_cumulative_sec": 0.00700209999922663,
+            "t_marking_cumulative_sec": 0.0004065000030095689,
+            "t_refinement_cumulative_sec": 0.01531780000004801
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.011629799999354873,
+            "t_primal_cumulative_sec": 0.009149100002105115,
+            "t_adjoint_cumulative_sec": 0.0016222000012930948,
+            "t_estimator_cumulative_sec": 0.0008153999988280702,
+            "t_marking_cumulative_sec": 3.9599999581696466e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 1,
+            "primal_dofs": 172,
+            "true_error_rel": 0.004649842774868946,
+            "t_total_cumulative_sec": 0.05667259999609087,
+            "t_primal_cumulative_sec": 0.012492400001065107,
+            "t_adjoint_cumulative_sec": 0.03567800000382704,
+            "t_estimator_cumulative_sec": 0.0052530999964801595,
+            "t_marking_cumulative_sec": 7.449999975506216e-05,
+            "t_refinement_cumulative_sec": 0.001329700000496814
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 3294,
+            "true_error_rel": 0.006894358536877899,
+            "t_total_cumulative_sec": 0.6873970999986341,
+            "t_primal_cumulative_sec": 0.11484930000369786,
+            "t_adjoint_cumulative_sec": 0.4898204999990412,
+            "t_estimator_cumulative_sec": 0.03313970000090194,
+            "t_marking_cumulative_sec": 0.00044780000098398887,
+            "t_refinement_cumulative_sec": 0.016557899994950276
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.050916800002596574,
+            "t_primal_cumulative_sec": 0.008436399999482092,
+            "t_adjoint_cumulative_sec": 0.03421140000136802,
+            "t_estimator_cumulative_sec": 0.006175399998028297,
+            "t_marking_cumulative_sec": 6.929999653948471e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          1.0348837209302326,
+          6.5452337583485125,
+          1.0
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.24258636452470825,
+          1.1315319776593324,
+          0.32548392673021087
+        ]
+      },
+      "0.5%": {
+        "uniform": [
+          {
+            "iteration": 1,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019843604,
+            "t_total_cumulative_sec": 0.014447600002313266,
+            "t_primal_cumulative_sec": 0.014330600002722349,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 6.899997970322147e-06,
+            "t_refinement_cumulative_sec": 0.00010449999899719842
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 3650,
+            "true_error_rel": 0.0017298301955778325,
+            "t_total_cumulative_sec": 0.06624070000179927,
+            "t_primal_cumulative_sec": 0.06589600000006612,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 1.7600003047846258e-05,
+            "t_refinement_cumulative_sec": 0.0003175999991071876
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.009421199996722862,
+            "t_primal_cumulative_sec": 0.009415100001206156,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0,
+            "t_marking_cumulative_sec": 3.7999998312443495e-06,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 1,
+            "primal_dofs": 178,
+            "true_error_rel": 0.002322883889803306,
+            "t_total_cumulative_sec": 0.013748000001214677,
+            "t_primal_cumulative_sec": 0.012126199999329401,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0009009000023070257,
+            "t_marking_cumulative_sec": 6.300000313785858e-05,
+            "t_refinement_cumulative_sec": 0.0006513999978778884
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 45278,
+            "true_error_rel": 0.0035925977684023833,
+            "t_total_cumulative_sec": 1.6743185999985144,
+            "t_primal_cumulative_sec": 1.5093326999958663,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.048900900001171976,
+            "t_marking_cumulative_sec": 0.0028830000082962215,
+            "t_refinement_cumulative_sec": 0.1131545999996888
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.016572600001381943,
+            "t_primal_cumulative_sec": 0.015499900000577327,
+            "t_adjoint_cumulative_sec": 0.0,
+            "t_estimator_cumulative_sec": 0.0010211000007984694,
+            "t_marking_cumulative_sec": 4.850000186706893e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 172,
+            "true_error_rel": 0.0031899064348071306,
+            "t_total_cumulative_sec": 0.016190300000744173,
+            "t_primal_cumulative_sec": 0.012348399999609683,
+            "t_adjoint_cumulative_sec": 0.0019481000017549377,
+            "t_estimator_cumulative_sec": 0.0011768000040319748,
+            "t_marking_cumulative_sec": 6.170000051497482e-05,
+            "t_refinement_cumulative_sec": 0.000646799999231007
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 5578,
+            "true_error_rel": 0.0008718894068020715,
+            "t_total_cumulative_sec": 0.31094930000108434,
+            "t_primal_cumulative_sec": 0.202253200000996,
+            "t_adjoint_cumulative_sec": 0.07087699999829056,
+            "t_estimator_cumulative_sec": 0.014527200000884477,
+            "t_marking_cumulative_sec": 0.0007359000046562869,
+            "t_refinement_cumulative_sec": 0.022510300001158612
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.011629799999354873,
+            "t_primal_cumulative_sec": 0.009149100002105115,
+            "t_adjoint_cumulative_sec": 0.0016222000012930948,
+            "t_estimator_cumulative_sec": 0.0008153999988280702,
+            "t_marking_cumulative_sec": 3.9599999581696466e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 1,
+            "primal_dofs": 172,
+            "true_error_rel": 0.004649842774868946,
+            "t_total_cumulative_sec": 0.05667259999609087,
+            "t_primal_cumulative_sec": 0.012492400001065107,
+            "t_adjoint_cumulative_sec": 0.03567800000382704,
+            "t_estimator_cumulative_sec": 0.0052530999964801595,
+            "t_marking_cumulative_sec": 7.449999975506216e-05,
+            "t_refinement_cumulative_sec": 0.001329700000496814
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 6044,
+            "true_error_rel": 0.004924257579210143,
+            "t_total_cumulative_sec": 1.302827299998171,
+            "t_primal_cumulative_sec": 0.1932771000028879,
+            "t_adjoint_cumulative_sec": 0.9641722999986087,
+            "t_estimator_cumulative_sec": 0.04913510000187671,
+            "t_marking_cumulative_sec": 0.0007012000023678411,
+            "t_refinement_cumulative_sec": 0.02942319999783649
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.050916800002596574,
+            "t_primal_cumulative_sec": 0.008436399999482092,
+            "t_adjoint_cumulative_sec": 0.03421140000136802,
+            "t_estimator_cumulative_sec": 0.006175399998028297,
+            "t_marking_cumulative_sec": 6.929999653948471e-05,
+            "t_refinement_cumulative_sec": 0.0
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          1.0348837209302326,
+          7.491396426207809,
+          1.0
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.24258636452470825,
+          1.2851423976154515,
+          0.32548392673021087
+        ]
+      }
+    }
+  }
+}

@@ -23,7 +23,8 @@ from verification.dwr.geometries import ProblemDefinition
 class DWREstimateResult:
     eta_dwr: float                  # Global signed DWR error estimate
     abs_eta_dwr: float              # Absolute DWR error estimate |eta_dwr|
-    element_indicators: np.ndarray  # Per-element local error indicators for marking
+    element_indicators: np.ndarray  # Per-element local error indicators for marking: |signed_elem|
+    signed_element_contributions: np.ndarray  # Per-element signed DWR residual contributions: tr_elem - a_elem
     qoi_h: float                    # Primal QoI value J(u_h)
     u_h: np.ndarray                 # P1 primal solution vector
     z_enriched: np.ndarray          # P2 enriched adjoint solution vector
@@ -211,8 +212,9 @@ class DWREstimator:
                 for e_idx, tr_val in zip(fb.tind, tr_vals):
                     tr_elem[e_idx] += tr_val
 
-        # Local element indicator: | l_K(psi) - a_K(u_h, psi) |
-        element_indicators = np.abs(tr_elem - a_elem)
+        # Local element indicator: signed and absolute | l_K(psi) - a_K(u_h, psi) |
+        signed_element_contributions = tr_elem - a_elem
+        element_indicators = np.abs(signed_element_contributions)
         timings["estimator"] = time.perf_counter() - t3
 
         qoi_val = float(g1 @ u1)
@@ -221,6 +223,7 @@ class DWREstimator:
             eta_dwr=eta_dwr,
             abs_eta_dwr=abs(eta_dwr),
             element_indicators=element_indicators,
+            signed_element_contributions=signed_element_contributions,
             qoi_h=qoi_val,
             u_h=u1,
             z_enriched=z2,
