@@ -173,11 +173,11 @@ class DWREstimator:
                 if self.problem.id == "cantilever":
                     @fem.Functional
                     def tr_fn(w):
-                        return thickness * (-1e6 * w["psi"].value[1])
+                        return thickness * (-1e6 * w["psi"][1])
                 else: # plate_with_hole
                     @fem.Functional
                     def tr_fn(w):
-                        return thickness * (1e7 * w["psi"].value[0])
+                        return thickness * (1e7 * w["psi"][0])
                 tr_vals = tr_fn.elemental(fb, psi=fb.interpolate(psi))
                 for e_idx, tr_val in zip(fb.tind, tr_vals):
                     tr_elem[e_idx] += tr_val
@@ -190,7 +190,7 @@ class DWREstimator:
                 fb = FacetBasis(mesh, b2.elem, facets=tr_facets)
                 @fem.Functional
                 def tr_fn(w):
-                    return thickness * (1.5e7 * w["psi"].value[1])
+                    return thickness * (1.5e7 * w["psi"][1])
                 tr_vals = tr_fn.elemental(fb, psi=fb.interpolate(psi))
                 for e_idx, tr_val in zip(fb.tind, tr_vals):
                     tr_elem[e_idx] += tr_val
@@ -206,7 +206,7 @@ class DWREstimator:
                 fb = FacetBasis(mesh, b2.elem, facets=tr_facets)
                 @fem.Functional
                 def tr_fn(w):
-                    return thickness * (-5e6 * w["psi"].value[1])
+                    return thickness * (-5e6 * w["psi"][1])
                 tr_vals = tr_fn.elemental(fb, psi=fb.interpolate(psi))
                 for e_idx, tr_val in zip(fb.tind, tr_vals):
                     tr_elem[e_idx] += tr_val
