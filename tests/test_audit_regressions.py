@@ -33,7 +33,7 @@ def test_invalid_ir_constraints_return_compiler_diagnostic():
 
     assert result.success is False
     assert result.ir is None
-    assert "IR validation error" in result.diagnostics[0].message
+    assert "Adaptivity fraction must satisfy" in result.diagnostics[0].message
 
 
 def test_plane_strain_von_mises_includes_out_of_plane_stress():
@@ -105,3 +105,73 @@ def test_combined_efficiency_claim_requires_dof_and_time_advantage_vs_both_basel
     assert evaluation["dof_efficiency_supported"] is True
     assert evaluation["wall_clock_efficiency_supported"] is False
     assert evaluation["hypothesis_supported"] is False
+
+
+def test_unknown_top_level_declaration_is_rejected():
+    source = _cantilever_source().replace(
+        "physics = linear_elasticity", "physcis = linear_elasticity"
+    )
+    result = GDECCompiler().compile_source(source)
+    assert result.success is False
+    assert "Unknown declaration 'physcis'" in result.diagnostics[0].message
+
+
+def test_duplicate_singleton_declaration_is_rejected():
+    source = _cantilever_source().replace(
+        "physics = linear_elasticity",
+        "physics = linear_elasticity\\n    physics = linear_elasticity",
+    )
+    result = GDECCompiler().compile_source(source)
+    assert result.success is False
+    assert "Duplicate declaration 'physics'" in result.diagnostics[0].message
+
+
+def test_unknown_function_argument_is_rejected():
+    source = _cantilever_source().replace(
+        "width = 2.0,", "width = 2.0,\\n        widht = 2.0,"
+    )
+    result = GDECCompiler().compile_source(source)
+    assert result.success is False
+    assert "Unknown argument(s) for 'rectangle'" in result.diagnostics[0].message
+
+
+def test_duplicate_named_argument_is_rejected_by_parser():
+    source = _cantilever_source().replace(
+        "width = 2.0,", "width = 2.0,\\n        width = 3.0,"
+    )
+    result = GDECCompiler().compile_source(source)
+    assert result.success is False
+    assert "Duplicate named argument 'width'" in result.diagnostics[0].message
+
+
+def test_fractional_dof_budget_is_rejected_without_truncation():
+    source = _cantilever_source().replace("value = 25000", "value = 25000.5")
+    result = GDECCompiler().compile_source(source)
+    assert result.success is False
+    assert "positive whole number" in result.diagnostics[0].message
+
+
+def test_nonfinite_geometry_is_rejected():
+    source = _cantilever_source().replace("width = 2.0", "width = 1e999")
+    result = GDECCompiler().compile_source(source)
+    assert result.success is False
+    assert "finite number" in result.diagnostics[0].message
+
+
+def test_cost_aware_false_is_preserved_as_false():
+    source = _cantilever_source().replace(
+        "adaptivity = goal_aware",
+        "adaptivity = goal_aware(cost_aware=false)",
+    )
+    result = GDECCompiler().compile_source(source)
+    assert result.success is True
+    assert result.ir.adaptivity.cost_aware is False
+
+
+def test_max_dofs_rejects_duplicate_positional_and_named_value():
+    source = _cantilever_source().replace(
+        "value = 25000", "25000, value = 25000"
+    )
+    result = GDECCompiler().compile_source(source)
+    assert result.success is False
+    assert "either positional or named" in result.diagnostics[0].message
