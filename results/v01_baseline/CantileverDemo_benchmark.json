@@ -1,0 +1,61 @@
+{
+  "problem_name": "CantileverDemo",
+  "timestamp": "2026-11-20T01:41:52.411007",
+  "reference": {
+    "qoi_meters": -0.0019068056716535155,
+    "qoi_mm": -1.9068056716535156,
+    "dofs": 24200,
+    "solve_time_sec": 0.2809322999964934
+  },
+  "hypothesis_evaluation": {
+    "uniform": {
+      "converged": false,
+      "final_dofs": 10098,
+      "total_time_sec": 0.2213027000252623,
+      "final_ref_error_pct": 0.2077565054122156
+    },
+    "recovery": {
+      "converged": true,
+      "final_dofs": 8466,
+      "total_time_sec": 0.2870532999804709,
+      "final_ref_error_pct": 0.14363082019658407
+    },
+    "goal_aware": {
+      "converged": true,
+      "final_dofs": 8328,
+      "total_time_sec": 0.3156234000052791,
+      "final_ref_error_pct": 0.2241188894807239
+    },
+    "hypothesis_supported": true,
+    "reasons": [
+      "Goal-Aware achieved comparable or lower error with 1.21x fewer DOFs than Uniform."
+    ],
+    "dof_ratio_unif_over_goal": 1.212536023054755,
+    "time_ratio_unif_over_goal": 0.7011606237736517,
+    "dof_ratio_rec_over_goal": 1.0165706051873198,
+    "time_ratio_rec_over_goal": 0.9094804123384694
+  },
+  "strategies": {
+    "uniform": {
+      "converged": false,
+      "final_dofs": 10098,
+      "total_time_sec": 0.2213027000252623,
+      "final_reference_error_pct": 0.2077565054122156,
+      "iterations_count": 4
+    },
+    "recovery": {
+      "converged": true,
+      "final_dofs": 8466,
+      "total_time_sec": 0.2870532999804709,
+      "final_reference_error_pct": 0.14363082019658407,
+      "iterations_count": 6
+    },
+    "goal_aware": {
+      "converged": true,
+      "final_dofs": 8328,
+      "total_time_sec": 0.3156234000052791,
+      "final_reference_error_pct": 0.2241188894807239,
+      "iterations_count": 6
+    }
+  }
+}

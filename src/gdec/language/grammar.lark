@@ -1,0 +1,25 @@
+start: problem
+
+problem: "problem" CNAME "{" statement* "}"
+
+statement: CNAME "=" expr
+
+?expr: call
+     | CNAME           -> identifier
+     | SIGNED_NUMBER   -> number
+     | ESCAPED_STRING  -> string
+
+call: CNAME "(" [arg_list] ")"
+
+arg_list: arg ("," arg)* [","]
+
+arg: CNAME "=" expr  -> named_arg
+   | expr            -> positional_arg
+
+COMMENT: /#[^\n]*|\/\/[^\n]*/
+%import common.CNAME
+%import common.SIGNED_NUMBER
+%import common.ESCAPED_STRING
+%import common.WS
+%ignore WS
+%ignore COMMENT

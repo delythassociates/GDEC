@@ -1,0 +1,153 @@
+{
+  "problem_name": "CantileverDemo",
+  "timestamp": "2026-11-20 04:14:40",
+  "reference": {
+    "qoi_meters": -0.0019095247600000001,
+    "qoi_mm": -1.90952476,
+    "dofs": 45000,
+    "solve_time_sec": 0.652,
+    "mesh_resolution": [
+      300,
+      75
+    ],
+    "discretization_uncertainty_pct": 0.098305
+  },
+  "hypothesis_evaluation": {},
+  "equal_accuracy_comparisons": [
+    {
+      "threshold_pct": 2.0,
+      "dof_ratio_unif_over_goal": 1.3721174004192873,
+      "time_ratio_unif_over_goal": 0.6007425926196653,
+      "strategies": {
+        "uniform": {
+          "achieved": true,
+          "iteration": 3,
+          "dofs": 2618,
+          "time_sec": 0.04908890000660904,
+          "actual_ref_error_pct": 1.3121262974764523
+        },
+        "recovery": {
+          "achieved": true,
+          "iteration": 4,
+          "dofs": 1788,
+          "time_sec": 0.05663440001080744,
+          "actual_ref_error_pct": 1.3443191304343005
+        },
+        "goal_aware": {
+          "achieved": true,
+          "iteration": 4,
+          "dofs": 1908,
+          "time_sec": 0.08171370002673939,
+          "actual_ref_error_pct": 1.4861567110620553
+        }
+      }
+    },
+    {
+      "threshold_pct": 1.0,
+      "dof_ratio_unif_over_goal": 2.503222607833416,
+      "time_ratio_unif_over_goal": 1.116041059483676,
+      "strategies": {
+        "uniform": {
+          "achieved": true,
+          "iteration": 4,
+          "dofs": 10098,
+          "time_sec": 0.1721644000208471,
+          "actual_ref_error_pct": 0.349856745241417
+        },
+        "recovery": {
+          "achieved": true,
+          "iteration": 5,
+          "dofs": 3918,
+          "time_sec": 0.10402210001484491,
+          "actual_ref_error_pct": 0.6512643914614773
+        },
+        "goal_aware": {
+          "achieved": true,
+          "iteration": 5,
+          "dofs": 4034,
+          "time_sec": 0.1542635000369046,
+          "actual_ref_error_pct": 0.7462073837310116
+        }
+      }
+    },
+    {
+      "threshold_pct": 0.5,
+      "dof_ratio_unif_over_goal": 1.212536023054755,
+      "time_ratio_unif_over_goal": 0.5900274340360754,
+      "strategies": {
+        "uniform": {
+          "achieved": true,
+          "iteration": 4,
+          "dofs": 10098,
+          "time_sec": 0.1721644000208471,
+          "actual_ref_error_pct": 0.349856745241417
+        },
+        "recovery": {
+          "achieved": true,
+          "iteration": 6,
+          "dofs": 8466,
+          "time_sec": 0.20280679999268614,
+          "actual_ref_error_pct": 0.2858223724819569
+        },
+        "goal_aware": {
+          "achieved": true,
+          "iteration": 6,
+          "dofs": 8328,
+          "time_sec": 0.29179050005041063,
+          "actual_ref_error_pct": 0.366195829945837
+        }
+      }
+    },
+    {
+      "threshold_pct": 0.25,
+      "dof_ratio_unif_over_goal": null,
+      "time_ratio_unif_over_goal": null,
+      "strategies": {
+        "uniform": {
+          "achieved": false,
+          "iteration": null,
+          "dofs": null,
+          "time_sec": null,
+          "actual_ref_error_pct": 0.349856745241417
+        },
+        "recovery": {
+          "achieved": true,
+          "iteration": 7,
+          "dofs": 18262,
+          "time_sec": 0.47206219998770393,
+          "actual_ref_error_pct": 0.1306645338407527
+        },
+        "goal_aware": {
+          "achieved": true,
+          "iteration": 7,
+          "dofs": 17030,
+          "time_sec": 0.6159713000233751,
+          "actual_ref_error_pct": 0.18019021676734526
+        }
+      }
+    }
+  ],
+  "strategies": {
+    "uniform": {
+      "converged": false,
+      "final_dofs": 10098,
+      "total_time_sec": 0.17533139997976832,
+      "final_reference_error_pct": 0.349856745241417,
+      "iterations_count": 4
+    },
+    "recovery": {
+      "converged": false,
+      "final_dofs": 29490,
+      "total_time_sec": 1.8127730999840423,
+      "final_reference_error_pct": 0.07347416834017777,
+      "iterations_count": 9
+    },
+    "goal_aware": {
+      "converged": false,
+      "final_dofs": 29846,
+      "total_time_sec": 2.8030480000015814,
+      "final_reference_error_pct": 0.1049458421226866,
+      "iterations_count": 10
+    }
+  }
+}

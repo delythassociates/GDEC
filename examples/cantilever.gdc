@@ -1,0 +1,41 @@
+problem CantileverDemo {
+
+    physics = linear_elasticity
+
+    geometry = rectangle(
+        width = 2.0,
+        height = 0.5,
+        thickness = 0.02
+    )
+
+    material = isotropic(
+        E = 70e9,
+        nu = 0.33,
+        assumption = plane_stress
+    )
+
+    fix = boundary(left)
+
+    load = traction(
+        boundary = right,
+        tx = 0.0,
+        ty = -1.0e6
+    )
+
+    objective = average_displacement(
+        boundary = right,
+        component = y
+    )
+
+    accuracy = successive_qoi_change(
+        percent = 1.0
+    )
+
+    budget = max_dofs(
+        value = 25000
+    )
+
+    adaptivity = goal_aware
+
+    backend = cpu
+}

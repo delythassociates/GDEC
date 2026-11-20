@@ -1,0 +1,13 @@
+Target Error,Strategy,Target Achieved,Iteration,DOFs Required,Time to Target (s),Actual Ref Error (%),Runtime Change (%),Peak RAM (MB),Status Note
+<= 2.0%,Uniform,YES,3,"2,618",0.043,1.197%,3.596%,279.4,"Target reached at iteration 3 with 2,618 DOFs."
+<= 2.0%,Recovery,YES,4,"1,788",0.051,1.229%,1.879%,276.6,"Target reached at iteration 4 with 1,788 DOFs."
+<= 2.0%,Goal Aware,YES,4,"1,908",0.083,1.371%,1.806%,245.0,"Target reached at iteration 4 with 1,908 DOFs."
+<= 1.0%,Uniform,YES,4,"10,098",0.149,0.233%,0.966%,292.1,"Target reached at iteration 4 with 10,098 DOFs."
+<= 1.0%,Recovery,YES,5,"3,918",0.095,0.535%,0.698%,283.8,"Target reached at iteration 5 with 3,918 DOFs."
+<= 1.0%,Goal Aware,YES,5,"4,034",0.134,0.630%,0.746%,245.1,"Target reached at iteration 5 with 4,034 DOFs."
+<= 0.5%,Uniform,YES,4,"10,098",0.149,0.233%,0.966%,292.1,"Target reached at iteration 4 with 10,098 DOFs."
+<= 0.5%,Recovery,YES,6,"8,466",0.191,0.169%,0.366%,294.3,"Target reached at iteration 6 with 8,466 DOFs."
+<= 0.5%,Goal Aware,YES,6,"8,328",0.235,0.250%,0.381%,245.2,"Target reached at iteration 6 with 8,328 DOFs."
+<= 0.25%,Uniform,YES,4,"10,098",0.149,0.233%,0.966%,292.1,"Target reached at iteration 4 with 10,098 DOFs."
+<= 0.25%,Recovery,YES,6,"8,466",0.191,0.169%,0.366%,294.3,"Target reached at iteration 6 with 8,466 DOFs."
+<= 0.25%,Goal Aware,YES,6,"8,328",0.235,0.250%,0.381%,245.2,"Target reached at iteration 6 with 8,328 DOFs."

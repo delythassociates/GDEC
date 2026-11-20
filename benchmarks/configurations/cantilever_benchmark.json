@@ -1,0 +1,13 @@
+{
+  "problem_name": "CantileverDemo",
+  "source_file": "examples/cantilever.gdc",
+  "reference_dofs": 30000,
+  "accuracy_targets_percent": [2.0, 1.0, 0.5, 0.25],
+  "evaluated_strategies": ["goal_aware", "recovery", "uniform"],
+  "marking_fraction": 0.3,
+  "max_iterations": 15,
+  "max_dofs_budget": 25000,
+  "continuum_reference_celik_mm": -1.90952476,
+  "continuum_reference_roache_mm": -1.90923950,
+  "discrete_reference_29k_mm": -1.90729549
+}

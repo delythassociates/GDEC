@@ -1,0 +1,300 @@
+{
+  "pathways": {
+    "Pathway A (Initial mesh > budget)": {
+      "initial_dofs": 200,
+      "final_dofs": 200,
+      "budget": 100,
+      "converged": false,
+      "stop_reason": "Budget exhausted: current DOFs (200) reached limit (100). Target accuracy not achieved.",
+      "iterations_count": 1,
+      "safe": true
+    },
+    "Pathway B (Candidate slightly > budget)": {
+      "final_dofs": 200,
+      "budget": 254,
+      "converged": false,
+      "stop_reason": "Budget constraint: next planned refinement (261 DOFs) would exceed budget (254). Stopping execution.",
+      "safe": true
+    },
+    "Pathway C (Severe underprediction)": {
+      "final_dofs": 200,
+      "budget": 254,
+      "converged": false,
+      "stop_reason": "Candidate refinement (256 DOFs) exceeds budget (254 DOFs). Rollback committed to previous valid mesh.",
+      "safe": true
+    },
+    "Pathway D (Rollback preservation)": {
+      "final_dofs": 200,
+      "budget": 400,
+      "last_record_dofs": 200,
+      "qoi_mm": -1.5942819169812414,
+      "safe": true,
+      "stop_reason": "Budget constraint: next planned refinement (401 DOFs) would exceed budget (400). Stopping execution."
+    },
+    "Pathway E (Iteration limit)": {
+      "iterations": 2,
+      "max_iterations": 2,
+      "converged": false,
+      "stop_reason": "Iteration limit reached (2 iterations). Accuracy target not achieved within budget.",
+      "safe": true
+    },
+    "Pathway F (Successful target convergence)": {
+      "final_dofs": 1908,
+      "converged": true,
+      "stop_reason": "Target convergence achieved: successive change 1.806% <= 5.0% for 2 consecutive iterations.",
+      "safe": true
+    }
+  },
+  "cost_model_dataset": [
+    {
+      "strategy": "uniform",
+      "iteration": 1,
+      "marked_count": 152,
+      "predicted_delta": 684,
+      "actual_delta": 502,
+      "error_abs_dofs": 182,
+      "error_pct": 36.254980079681275,
+      "signed_bias_dofs": 182,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "uniform",
+      "iteration": 2,
+      "marked_count": 608,
+      "predicted_delta": 2347,
+      "actual_delta": 1916,
+      "error_abs_dofs": 431,
+      "error_pct": 22.494780793319418,
+      "signed_bias_dofs": 431,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "uniform",
+      "iteration": 3,
+      "marked_count": 2432,
+      "predicted_delta": 8512,
+      "actual_delta": 7480,
+      "error_abs_dofs": 1032,
+      "error_pct": 13.796791443850267,
+      "signed_bias_dofs": 1032,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "recovery",
+      "iteration": 1,
+      "marked_count": 46,
+      "predicted_delta": 269,
+      "actual_delta": 200,
+      "error_abs_dofs": 69,
+      "error_pct": 34.5,
+      "signed_bias_dofs": 69,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "recovery",
+      "iteration": 2,
+      "marked_count": 100,
+      "predicted_delta": 543,
+      "actual_delta": 482,
+      "error_abs_dofs": 61,
+      "error_pct": 12.655601659751037,
+      "signed_bias_dofs": 61,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "recovery",
+      "iteration": 3,
+      "marked_count": 233,
+      "predicted_delta": 1205,
+      "actual_delta": 906,
+      "error_abs_dofs": 299,
+      "error_pct": 33.00220750551877,
+      "signed_bias_dofs": 299,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "recovery",
+      "iteration": 4,
+      "marked_count": 495,
+      "predicted_delta": 2371,
+      "actual_delta": 2130,
+      "error_abs_dofs": 241,
+      "error_pct": 11.31455399061033,
+      "signed_bias_dofs": 241,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "recovery",
+      "iteration": 5,
+      "marked_count": 1112,
+      "predicted_delta": 5075,
+      "actual_delta": 4548,
+      "error_abs_dofs": 527,
+      "error_pct": 11.587510993843447,
+      "signed_bias_dofs": 527,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "recovery",
+      "iteration": 6,
+      "marked_count": 2449,
+      "predicted_delta": 10630,
+      "actual_delta": 9796,
+      "error_abs_dofs": 834,
+      "error_pct": 8.513679052674561,
+      "signed_bias_dofs": 834,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "recovery",
+      "iteration": 7,
+      "marked_count": 1956,
+      "predicted_delta": 9376,
+      "actual_delta": 7862,
+      "error_abs_dofs": 1514,
+      "error_pct": 19.257186466547953,
+      "signed_bias_dofs": 1514,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "recovery",
+      "iteration": 8,
+      "marked_count": 646,
+      "predicted_delta": 3331,
+      "actual_delta": 3366,
+      "error_abs_dofs": 35,
+      "error_pct": 1.0398098633392752,
+      "signed_bias_dofs": -35,
+      "is_underprediction": true,
+      "is_overprediction": false
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 1,
+      "marked_count": 46,
+      "predicted_delta": 269,
+      "actual_delta": 218,
+      "error_abs_dofs": 51,
+      "error_pct": 23.394495412844037,
+      "signed_bias_dofs": 51,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 2,
+      "marked_count": 103,
+      "predicted_delta": 567,
+      "actual_delta": 476,
+      "error_abs_dofs": 91,
+      "error_pct": 19.11764705882353,
+      "signed_bias_dofs": 91,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 3,
+      "marked_count": 234,
+      "predicted_delta": 1216,
+      "actual_delta": 1014,
+      "error_abs_dofs": 202,
+      "error_pct": 19.92110453648915,
+      "signed_bias_dofs": 202,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 4,
+      "marked_count": 523,
+      "predicted_delta": 2561,
+      "actual_delta": 2126,
+      "error_abs_dofs": 435,
+      "error_pct": 20.46095954844779,
+      "signed_bias_dofs": 435,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 5,
+      "marked_count": 1134,
+      "predicted_delta": 5219,
+      "actual_delta": 4294,
+      "error_abs_dofs": 925,
+      "error_pct": 21.541686073591055,
+      "signed_bias_dofs": 925,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 6,
+      "marked_count": 2386,
+      "predicted_delta": 10285,
+      "actual_delta": 8702,
+      "error_abs_dofs": 1583,
+      "error_pct": 18.191220409101355,
+      "signed_bias_dofs": 1583,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 7,
+      "marked_count": 2161,
+      "predicted_delta": 9956,
+      "actual_delta": 7972,
+      "error_abs_dofs": 1984,
+      "error_pct": 24.88710486703462,
+      "signed_bias_dofs": 1984,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 8,
+      "marked_count": 833,
+      "predicted_delta": 4113,
+      "actual_delta": 3686,
+      "error_abs_dofs": 427,
+      "error_pct": 11.584373304395008,
+      "signed_bias_dofs": 427,
+      "is_underprediction": false,
+      "is_overprediction": true
+    },
+    {
+      "strategy": "goal_aware",
+      "iteration": 9,
+      "marked_count": 218,
+      "predicted_delta": 1129,
+      "actual_delta": 1158,
+      "error_abs_dofs": 29,
+      "error_pct": 2.5043177892918824,
+      "signed_bias_dofs": -29,
+      "is_underprediction": true,
+      "is_overprediction": false
+    }
+  ],
+  "statistics": {
+    "total_observations": 20,
+    "mean_error_pct": 18.301000542457736,
+    "median_error_pct": 19.187416762685743,
+    "mean_bias_dofs": 541.2,
+    "underprediction_count": 2,
+    "overprediction_count": 18,
+    "exact_count": 0,
+    "max_underprediction_dofs": 35
+  }
+}

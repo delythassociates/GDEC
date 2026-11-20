@@ -1,0 +1,51 @@
+# Python build and cache artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# Testing and coverage caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE and editor settings
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary generated scratch and reproduced results
+results/reproduced/
+scratch/__pycache__/
+*.tmp
+
+# Preserve scientific benchmark datasets and historical reports
+!results/**/*.csv
+!results/**/*.json
+!results/**/*.md
+!results/**/CantileverDemo*
+!results/v01_baseline/*
+!results/v021/*
+!results/v022/*
