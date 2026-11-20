@@ -1,0 +1,1578 @@
+{
+  "total_tests": 39,
+  "passed_tests": 39,
+  "failed_tests": 0,
+  "failure_classes": {},
+  "modules": {
+    "A2_1_patch": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.1a_plane_stress",
+          "computed": {
+            "relative_interior_displacement_error": 2.032879073410321e-16,
+            "relative_element_stress_error": 1.3206389885914475e-15,
+            "max_interior_displacement_abs_error_m": 6.505213034913027e-19,
+            "max_stress_abs_error_Pa": 3.2782554626464844e-07,
+            "assumption": "plane_stress",
+            "mesh_metrics": {
+              "node_count": 36,
+              "element_count": 50,
+              "dof_count": 72,
+              "min_angle_deg": 34.04508372282885,
+              "max_angle_deg": 111.19591945500814,
+              "max_aspect_ratio": 1.7392814818465259,
+              "max_diameter_h": 0.31656924762873306,
+              "min_element_area": 0.014284117778283353,
+              "max_element_area": 0.025370091294168607,
+              "all_areas_positive": true,
+              "refinement_level_n": 5,
+              "type": "perturbed",
+              "random_seed": 12345,
+              "accepted": true
+            }
+          },
+          "threshold": {
+            "interior_nodal_displacement_rel_tol": 1e-10,
+            "stress_constitutive_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Linear displacement patch test (plane_stress) on 5x5 perturbed mesh with h_loc perturbation."
+        },
+        {
+          "id": "A2.1a_plane_strain",
+          "computed": {
+            "relative_interior_displacement_error": 4.743384504624082e-16,
+            "relative_element_stress_error": 1.8139212238712026e-15,
+            "max_interior_displacement_abs_error_m": 1.5178830414797062e-18,
+            "max_stress_abs_error_Pa": 6.556510925292969e-07,
+            "assumption": "plane_strain",
+            "mesh_metrics": {
+              "node_count": 36,
+              "element_count": 50,
+              "dof_count": 72,
+              "min_angle_deg": 34.04508372282885,
+              "max_angle_deg": 111.19591945500814,
+              "max_aspect_ratio": 1.7392814818465259,
+              "max_diameter_h": 0.31656924762873306,
+              "min_element_area": 0.014284117778283353,
+              "max_element_area": 0.025370091294168607,
+              "all_areas_positive": true,
+              "refinement_level_n": 5,
+              "type": "perturbed",
+              "random_seed": 12345,
+              "accepted": true
+            }
+          },
+          "threshold": {
+            "interior_nodal_displacement_rel_tol": 1e-10,
+            "stress_constitutive_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Linear displacement patch test (plane_strain) on 5x5 perturbed mesh with h_loc perturbation."
+        },
+        {
+          "id": "A2.1b_plane_stress",
+          "computed": {
+            "relative_displacement_error_Linf": 2.5477162866633252e-15,
+            "max_absolute_error_m": 3.639594695233322e-23,
+            "assumption": "plane_stress",
+            "applied_traction_Pa": 1000.0
+          },
+          "threshold": {
+            "relative_error_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Production solve uniform tension test (plane_stress) on unit square."
+        },
+        {
+          "id": "A2.1b_plane_strain",
+          "computed": {
+            "relative_displacement_error_Linf": 3.5088572724166135e-15,
+            "max_absolute_error_m": 4.4667753077863494e-23,
+            "assumption": "plane_strain",
+            "applied_traction_Pa": 1000.0
+          },
+          "threshold": {
+            "relative_error_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Production solve uniform tension test (plane_strain) on unit square."
+        }
+      ]
+    },
+    "A2_2_operator": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.2_symmetry_plane_stress",
+          "computed": {
+            "frobenius_asymmetry_ratio": 0.0,
+            "frobenius_diff": 0.0,
+            "frobenius_K": 16.130255090311987,
+            "assumption": "plane_stress"
+          },
+          "threshold": {
+            "stiffness_symmetry_frobenius_rel_tol": 1e-12
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Stiffness matrix symmetry check (plane_stress) on A0-4 mesh."
+        },
+        {
+          "id": "A2.2_rigid_modes_plane_stress",
+          "computed": {
+            "smallest_four_eigenvalues": [
+              -4.779990527700709e-16,
+              -4.327104708025196e-16,
+              6.102589224195682e-17,
+              0.18829288133229644
+            ],
+            "largest_eigenvalue": 7.6270971168272625,
+            "null_eigenvalues_count": 3,
+            "fourth_to_largest_ratio": 0.02468735856488254,
+            "expected_ratio_order": "~2e-2",
+            "assumption": "plane_stress"
+          },
+          "threshold": {
+            "null_space_dimension": 3,
+            "null_space_eigenvalue_max_rel_tol": 1e-10,
+            "fourth_eigenvalue_ratio_min": 0.0001
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Rigid body eigenvalue spectrum check (plane_stress) on unconstrained stiffness."
+        },
+        {
+          "id": "A2.2_null_projection_plane_stress",
+          "computed": {
+            "translation_x_projection_residual": 2.415775361872046e-15,
+            "translation_y_projection_residual": 2.3777201070088437e-15,
+            "rotation_projection_residual": 2.0647795530490398e-15,
+            "max_projection_residual": 2.415775361872046e-15,
+            "assumption": "plane_stress"
+          },
+          "threshold": {
+            "rigid_body_null_projection_residual_rel_tol": 1e-08
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Null space projection residual of analytical rigid body modes (plane_stress)."
+        },
+        {
+          "id": "A2.2_symmetry_plane_strain",
+          "computed": {
+            "frobenius_asymmetry_ratio": 0.0,
+            "frobenius_diff": 0.0,
+            "frobenius_K": 19.305357488140555,
+            "assumption": "plane_strain"
+          },
+          "threshold": {
+            "stiffness_symmetry_frobenius_rel_tol": 1e-12
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Stiffness matrix symmetry check (plane_strain) on A0-4 mesh."
+        },
+        {
+          "id": "A2.2_rigid_modes_plane_strain",
+          "computed": {
+            "smallest_four_eigenvalues": [
+              -4.302541339815511e-16,
+              -4.8584669333693175e-17,
+              9.262128723860479e-16,
+              0.20002921168068782
+            ],
+            "largest_eigenvalue": 9.322571417164635,
+            "null_eigenvalues_count": 3,
+            "fourth_to_largest_ratio": 0.021456441868859897,
+            "expected_ratio_order": "~2e-2",
+            "assumption": "plane_strain"
+          },
+          "threshold": {
+            "null_space_dimension": 3,
+            "null_space_eigenvalue_max_rel_tol": 1e-10,
+            "fourth_eigenvalue_ratio_min": 0.0001
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Rigid body eigenvalue spectrum check (plane_strain) on unconstrained stiffness."
+        },
+        {
+          "id": "A2.2_null_projection_plane_strain",
+          "computed": {
+            "translation_x_projection_residual": 3.520310101710033e-15,
+            "translation_y_projection_residual": 1.7682789540366583e-15,
+            "rotation_projection_residual": 3.1496992293782124e-15,
+            "max_projection_residual": 3.520310101710033e-15,
+            "assumption": "plane_strain"
+          },
+          "threshold": {
+            "rigid_body_null_projection_residual_rel_tol": 1e-08
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Null space projection residual of analytical rigid body modes (plane_strain)."
+        },
+        {
+          "id": "A2.2_cantilever_residual",
+          "computed": {
+            "relative_free_dof_residual": 8.33159128502487e-13,
+            "residual_norm_N": 3.8967450093993375e-09,
+            "load_norm_N": 4677.071733467426
+          },
+          "threshold": {
+            "cantilever_residual_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Cantilever free-DOF equation equilibrium residual ||Ku - f|| / ||f||."
+        },
+        {
+          "id": "A2.2_reaction_equilibrium",
+          "computed": {
+            "total_reaction_force_x_N": 29678.207599806734,
+            "total_reaction_force_y_N": 4339.70619018555,
+            "net_force_balance_x_N": -2.1100277081131935e-10,
+            "net_force_balance_y_N": -2.8576323529705405e-09,
+            "relative_reaction_equilibrium_error": 2.865411808804103e-13
+          },
+          "threshold": {
+            "cantilever_reaction_equilibrium_rel_tol": 1e-08
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Static force equilibrium between applied surface traction and boundary reaction forces."
+        }
+      ]
+    },
+    "A2_3_independent_assembler": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.3_plane_stress_tensor_17x9",
+          "computed": {
+            "stiffness_frobenius_rel_diff": 1.1777009109092918e-16,
+            "traction_rel_diff": 1.2833982128471103e-16,
+            "qoi_vector_rel_diff": 1.0643777371246588e-17,
+            "displacement_inf_rel_diff": 4.532249317028195e-14,
+            "qoi_rel_diff": 4.4138510486442266e-14,
+            "qoi_production": -5.181391334646624e-07,
+            "qoi_independent": -5.181391334646853e-07,
+            "dofs": 360,
+            "elements": 306,
+            "mesh_name": "tensor_17x9",
+            "plane_type": "plane_stress"
+          },
+          "threshold": {
+            "stiffness_rel_tol": 1e-10,
+            "displacement_rel_tol": 1e-10,
+            "qoi_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Independent pure-NumPy P1 assembly comparison for tensor_17x9 (plane_stress)."
+        },
+        {
+          "id": "A2.3_plane_strain_tensor_17x9",
+          "computed": {
+            "stiffness_frobenius_rel_diff": 1.1228496308997353e-16,
+            "traction_rel_diff": 1.2833982128471103e-16,
+            "qoi_vector_rel_diff": 1.0643777371246588e-17,
+            "displacement_inf_rel_diff": 2.1138019114489863e-13,
+            "qoi_rel_diff": 2.1084773390256161e-13,
+            "qoi_production": -4.6173533655349545e-07,
+            "qoi_independent": -4.617353365535928e-07,
+            "dofs": 360,
+            "elements": 306,
+            "mesh_name": "tensor_17x9",
+            "plane_type": "plane_strain"
+          },
+          "threshold": {
+            "stiffness_rel_tol": 1e-10,
+            "displacement_rel_tol": 1e-10,
+            "qoi_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Independent pure-NumPy P1 assembly comparison for tensor_17x9 (plane_strain)."
+        },
+        {
+          "id": "A2.3_plane_stress_perturbed_5x5",
+          "computed": {
+            "stiffness_frobenius_rel_diff": 1.2920120974619301e-16,
+            "traction_rel_diff": 2.935973774066766e-16,
+            "qoi_vector_rel_diff": 2.0057551350074842e-16,
+            "displacement_inf_rel_diff": 7.495501146920858e-15,
+            "qoi_rel_diff": 6.661864295066886e-15,
+            "qoi_production": -8.939990589108816e-08,
+            "qoi_independent": -8.939990589108875e-08,
+            "dofs": 72,
+            "elements": 50,
+            "mesh_name": "perturbed_5x5",
+            "plane_type": "plane_stress"
+          },
+          "threshold": {
+            "stiffness_rel_tol": 1e-10,
+            "displacement_rel_tol": 1e-10,
+            "qoi_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Independent pure-NumPy P1 assembly comparison for perturbed_5x5 (plane_stress)."
+        },
+        {
+          "id": "A2.3_plane_strain_perturbed_5x5",
+          "computed": {
+            "stiffness_frobenius_rel_diff": 1.3401913699144394e-16,
+            "traction_rel_diff": 2.935973774066766e-16,
+            "qoi_vector_rel_diff": 2.0057551350074842e-16,
+            "displacement_inf_rel_diff": 7.40171521567764e-15,
+            "qoi_rel_diff": 7.626670909655054e-15,
+            "qoi_production": -8.15611199183119e-08,
+            "qoi_independent": -8.156111991831128e-08,
+            "dofs": 72,
+            "elements": 50,
+            "mesh_name": "perturbed_5x5",
+            "plane_type": "plane_strain"
+          },
+          "threshold": {
+            "stiffness_rel_tol": 1e-10,
+            "displacement_rel_tol": 1e-10,
+            "qoi_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Independent pure-NumPy P1 assembly comparison for perturbed_5x5 (plane_strain)."
+        },
+        {
+          "id": "A2.3_plane_stress_cantilever_20x5",
+          "computed": {
+            "stiffness_frobenius_rel_diff": 1.0758341136077e-16,
+            "traction_rel_diff": 1.3702674035366925e-16,
+            "qoi_vector_rel_diff": 1.186620740406602e-16,
+            "displacement_inf_rel_diff": 1.3579773052645974e-12,
+            "qoi_rel_diff": 1.3583841345943882e-12,
+            "qoi_production": -1.673009379016253e-06,
+            "qoi_independent": -1.6730093790185256e-06,
+            "dofs": 252,
+            "elements": 200,
+            "mesh_name": "cantilever_20x5",
+            "plane_type": "plane_stress"
+          },
+          "threshold": {
+            "stiffness_rel_tol": 1e-10,
+            "displacement_rel_tol": 1e-10,
+            "qoi_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Independent pure-NumPy P1 assembly comparison for cantilever_20x5 (plane_stress)."
+        },
+        {
+          "id": "A2.3_plane_strain_cantilever_20x5",
+          "computed": {
+            "stiffness_frobenius_rel_diff": 1.1012372674532909e-16,
+            "traction_rel_diff": 1.3702674035366925e-16,
+            "qoi_vector_rel_diff": 1.186620740406602e-16,
+            "displacement_inf_rel_diff": 2.2524516475535165e-13,
+            "qoi_rel_diff": 2.2353275202389662e-13,
+            "qoi_production": -1.4607756501455552e-06,
+            "qoi_independent": -1.4607756501452287e-06,
+            "dofs": 252,
+            "elements": 200,
+            "mesh_name": "cantilever_20x5",
+            "plane_type": "plane_strain"
+          },
+          "threshold": {
+            "stiffness_rel_tol": 1e-10,
+            "displacement_rel_tol": 1e-10,
+            "qoi_rel_tol": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Independent pure-NumPy P1 assembly comparison for cantilever_20x5 (plane_strain)."
+        }
+      ]
+    },
+    "A2_4_manufactured_solution": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.4_structured_plane_stress",
+          "computed": {
+            "mesh_type": "structured",
+            "plane_type": "plane_stress",
+            "refinement_levels_n": [
+              8,
+              16,
+              32,
+              64,
+              128
+            ],
+            "h_values": [
+              0.125,
+              0.0625,
+              0.03125,
+              0.015625,
+              0.0078125
+            ],
+            "dof_counts": [
+              162,
+              578,
+              2178,
+              8450,
+              33282
+            ],
+            "element_counts": [
+              128,
+              512,
+              2048,
+              8192,
+              32768
+            ],
+            "l2_displacement_errors": [
+              0.021115864529419083,
+              0.005456620493325767,
+              0.0013771015332685677,
+              0.00034512841373207144,
+              8.633641478280948e-05
+            ],
+            "energy_norm_errors": [
+              0.36860967368482334,
+              0.18584803146054296,
+              0.09312635133483534,
+              0.04658882541245716,
+              0.02329763089936446
+            ],
+            "qoi_j1_errors": [
+              0.002030125671777877,
+              0.0005735983201503869,
+              0.00014817322322940862,
+              3.736170746063139e-05,
+              9.360930691509894e-06
+            ],
+            "qoi_j2_errors": [
+              0.022181471742106385,
+              0.005649616154636439,
+              0.0014198639154768822,
+              0.00035546192223612216,
+              8.889737631823103e-05
+            ],
+            "asymptotic_rates_32_128": {
+              "L2": 1.997760969062648,
+              "energy": 0.9995030991758379,
+              "qoi_j1": 1.9922444869088194,
+              "qoi_j2": 1.9987340064196786
+            },
+            "pairwise_slopes": {
+              "L2": [
+                1.9522477022102043,
+                1.9863727752464029,
+                1.9964297748788968,
+                1.999092163246403
+              ],
+              "energy": [
+                0.9879705261668763,
+                0.9968620466276217,
+                0.9992054972416098,
+                0.9998007011100675
+              ],
+              "qoi_j1": [
+                1.823456333913604,
+                1.9527560409402267,
+                1.9876524639931827,
+                1.9968365098244583
+              ],
+              "qoi_j2": [
+                1.9731303349835025,
+                1.9924001878689248,
+                1.9979857346506094,
+                1.9994822781887498
+              ]
+            }
+          },
+          "threshold": {
+            "asymptotic_rates": {
+              "L2_min": 1.9,
+              "energy_range": [
+                0.9,
+                1.1
+              ],
+              "qoi_min": 1.8
+            },
+            "pairwise_slopes": {
+              "L2_min": 1.7999999999999998,
+              "energy_range": [
+                0.8,
+                1.2
+              ],
+              "qoi_min": 1.7
+            }
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "MMS convergence study on structured meshes (plane_stress) over n in [8, 16, 32, 64, 128]."
+        },
+        {
+          "id": "A2.4_perturbed_plane_stress",
+          "computed": {
+            "mesh_type": "perturbed",
+            "plane_type": "plane_stress",
+            "refinement_levels_n": [
+              8,
+              16,
+              32,
+              64,
+              128
+            ],
+            "h_values": [
+              0.125,
+              0.0625,
+              0.03125,
+              0.015625,
+              0.0078125
+            ],
+            "dof_counts": [
+              162,
+              578,
+              2178,
+              8450,
+              33282
+            ],
+            "element_counts": [
+              128,
+              512,
+              2048,
+              8192,
+              32768
+            ],
+            "l2_displacement_errors": [
+              0.02211563596532235,
+              0.00565137937455349,
+              0.001430925147448356,
+              0.000360319852911285,
+              9.021238424014412e-05
+            ],
+            "energy_norm_errors": [
+              0.3765099164660853,
+              0.1891764627130225,
+              0.09480979320695776,
+              0.04750215724700845,
+              0.023766138517078227
+            ],
+            "qoi_j1_errors": [
+              0.0019655108756121975,
+              0.0005232861069511541,
+              0.00013585412061759006,
+              3.508676557294199e-05,
+              8.683042743984348e-06
+            ],
+            "qoi_j2_errors": [
+              0.023113484795641126,
+              0.0058557105774565965,
+              0.0014660628080210847,
+              0.00036839439869895685,
+              9.206966851649234e-05
+            ],
+            "asymptotic_rates_32_128": {
+              "L2": 1.993739448587302,
+              "energy": 0.9980642858968563,
+              "qoi_j1": 1.9838569144267326,
+              "qoi_j2": 1.9965385745829458
+            },
+            "pairwise_slopes": {
+              "L2": [
+                1.9683917844789136,
+                1.9816548341115796,
+                1.989598157085792,
+                1.9978807400888159
+              ],
+              "energy": [
+                0.99295526280395,
+                0.9966246075751187,
+                0.9970430544090869,
+                0.9990855173846265
+              ],
+              "qoi_j1": [
+                1.9092324849747764,
+                1.9455416315660319,
+                1.9530594588368142,
+                2.0146543700166504
+              ],
+              "qoi_j2": [
+                1.9808186355118504,
+                1.9978973374728146,
+                1.9926238806491938,
+                2.0004532685167016
+              ]
+            }
+          },
+          "threshold": {
+            "asymptotic_rates": {
+              "L2_min": 1.8,
+              "energy_range": [
+                0.9,
+                1.1
+              ],
+              "qoi_min": 1.8
+            },
+            "pairwise_slopes": {
+              "L2_min": 1.7,
+              "energy_range": [
+                0.8,
+                1.2
+              ],
+              "qoi_min": 1.7
+            }
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "MMS convergence study on perturbed meshes (plane_stress) over n in [8, 16, 32, 64, 128]."
+        },
+        {
+          "id": "A2.4_structured_plane_strain",
+          "computed": {
+            "mesh_type": "structured",
+            "plane_type": "plane_strain",
+            "refinement_levels_n": [
+              8,
+              16,
+              32,
+              64,
+              128
+            ],
+            "h_values": [
+              0.125,
+              0.0625,
+              0.03125,
+              0.015625,
+              0.0078125
+            ],
+            "dof_counts": [
+              162,
+              578,
+              2178,
+              8450,
+              33282
+            ],
+            "element_counts": [
+              128,
+              512,
+              2048,
+              8192,
+              32768
+            ],
+            "l2_displacement_errors": [
+              0.021347625631909388,
+              0.005557554029791862,
+              0.0014061513068178572,
+              0.0003526607270631278,
+              8.823717335995542e-05
+            ],
+            "energy_norm_errors": [
+              0.39622413038823756,
+              0.19987050541695744,
+              0.10016893833821226,
+              0.05011422597717454,
+              0.02506085115004604
+            ],
+            "qoi_j1_errors": [
+              0.0028408240158380726,
+              0.000793263265863986,
+              0.0002044908516883187,
+              5.1541331671539625e-05,
+              1.291255367161237e-05
+            ],
+            "qoi_j2_errors": [
+              0.022089297479287007,
+              0.0056468369049187395,
+              0.0014209482357971925,
+              0.00035586330840509106,
+              8.900655401666846e-05
+            ],
+            "asymptotic_rates_32_128": {
+              "L2": 1.9971107280189286,
+              "energy": 0.9994639446342002,
+              "qoi_j1": 1.9925950259443685,
+              "qoi_j2": 1.998399307869687
+            },
+            "pairwise_slopes": {
+              "L2": [
+                1.9415536423505668,
+                1.9826982271922131,
+                1.9953990131242332,
+                1.998822442913623
+              ],
+              "energy": [
+                0.9872511527627853,
+                0.9966303828955996,
+                0.9991431025996419,
+                0.9997847866687605
+              ],
+              "qoi_j1": [
+                1.8404378139499964,
+                1.955763440025157,
+                1.988234585079461,
+                1.996955466809278
+              ],
+              "qoi_j2": [
+                1.9678326681130105,
+                1.9905889640876495,
+                1.9974589038079895,
+                1.9993397119313836
+              ]
+            }
+          },
+          "threshold": {
+            "asymptotic_rates": {
+              "L2_min": 1.9,
+              "energy_range": [
+                0.9,
+                1.1
+              ],
+              "qoi_min": 1.8
+            },
+            "pairwise_slopes": {
+              "L2_min": 1.7999999999999998,
+              "energy_range": [
+                0.8,
+                1.2
+              ],
+              "qoi_min": 1.7
+            }
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "MMS convergence study on structured meshes (plane_strain) over n in [8, 16, 32, 64, 128]."
+        },
+        {
+          "id": "A2.4_perturbed_plane_strain",
+          "computed": {
+            "mesh_type": "perturbed",
+            "plane_type": "plane_strain",
+            "refinement_levels_n": [
+              8,
+              16,
+              32,
+              64,
+              128
+            ],
+            "h_values": [
+              0.125,
+              0.0625,
+              0.03125,
+              0.015625,
+              0.0078125
+            ],
+            "dof_counts": [
+              162,
+              578,
+              2178,
+              8450,
+              33282
+            ],
+            "element_counts": [
+              128,
+              512,
+              2048,
+              8192,
+              32768
+            ],
+            "l2_displacement_errors": [
+              0.022324118463869145,
+              0.00573982488088816,
+              0.0014561578515297968,
+              0.000367215445920175,
+              9.192715261140115e-05
+            ],
+            "energy_norm_errors": [
+              0.4045648107912276,
+              0.20339263596933108,
+              0.10189988055780241,
+              0.05105789169838247,
+              0.02554426662359301
+            ],
+            "qoi_j1_errors": [
+              0.0027626498359272222,
+              0.0007381217358125858,
+              0.00019137825522506924,
+              4.917357815512058e-05,
+              1.2187147432632384e-05
+            ],
+            "qoi_j2_errors": [
+              0.023031757974927625,
+              0.005842958202817661,
+              0.0014619448188986084,
+              0.0003678934453128502,
+              9.189403625475823e-05
+            ],
+            "asymptotic_rates_32_128": {
+              "L2": 1.992765945616048,
+              "energy": 0.9980404694024413,
+              "qoi_j1": 1.9864972645310086,
+              "qoi_j2": 1.9958869055699942
+            },
+            "pairwise_slopes": {
+              "L2": [
+                1.9595245804432064,
+                1.9788399655491336,
+                1.9874681079494838,
+                1.9980637832826122
+              ],
+              "energy": [
+                0.9921033932162331,
+                0.9971150855002381,
+                0.9969464886634045,
+                0.9991344501414793
+              ],
+              "qoi_j1": [
+                1.9041220334559843,
+                1.9474318572309777,
+                1.9604716743185742,
+                2.0125228547434477
+              ],
+              "qoi_j2": [
+                1.9788536595761275,
+                1.9988101113049652,
+                1.9905289803685202,
+                2.001244830771473
+              ]
+            }
+          },
+          "threshold": {
+            "asymptotic_rates": {
+              "L2_min": 1.8,
+              "energy_range": [
+                0.9,
+                1.1
+              ],
+              "qoi_min": 1.8
+            },
+            "pairwise_slopes": {
+              "L2_min": 1.7,
+              "energy_range": [
+                0.8,
+                1.2
+              ],
+              "qoi_min": 1.7
+            }
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "MMS convergence study on perturbed meshes (plane_strain) over n in [8, 16, 32, 64, 128]."
+        }
+      ]
+    },
+    "A2_5_adjoint": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.5a_force_sensitivity",
+          "computed": {
+            "max_relative_difference": 2.49379557757003e-13,
+            "sampled_dofs": [
+              {
+                "dof": 36,
+                "adjoint_z": -6.706449976527199e-09,
+                "fd_deriv": -6.706449976527596e-09,
+                "rel_diff": 5.920369736767329e-14
+              },
+              {
+                "dof": 78,
+                "adjoint_z": -2.3494801890233463e-08,
+                "fd_deriv": -2.349480189023324e-08,
+                "rel_diff": 9.435465587854037e-15
+              },
+              {
+                "dof": 45,
+                "adjoint_z": 3.61846107316151e-08,
+                "fd_deriv": 3.618461073161576e-08,
+                "rel_diff": 1.8288008586374992e-14
+              },
+              {
+                "dof": 65,
+                "adjoint_z": 7.307862322345256e-08,
+                "fd_deriv": 7.307862322345166e-08,
+                "rel_diff": 1.2315126564313083e-14
+              },
+              {
+                "dof": 66,
+                "adjoint_z": -1.0815817182800495e-08,
+                "fd_deriv": -1.0815817182800985e-08,
+                "rel_diff": 4.527543957886677e-14
+              },
+              {
+                "dof": 28,
+                "adjoint_z": -9.668012422741491e-09,
+                "fd_deriv": -9.668012422742742e-09,
+                "rel_diff": 1.2936443419061021e-13
+              },
+              {
+                "dof": 69,
+                "adjoint_z": 7.335717517395411e-08,
+                "fd_deriv": 7.335717517395132e-08,
+                "rel_diff": 3.806801043372954e-14
+              },
+              {
+                "dof": 27,
+                "adjoint_z": 1.042186961368557e-08,
+                "fd_deriv": 1.042186961368297e-08,
+                "rel_diff": 2.49379557757003e-13
+              },
+              {
+                "dof": 75,
+                "adjoint_z": 9.427131358664842e-08,
+                "fd_deriv": 9.427131358664292e-08,
+                "rel_diff": 5.840285755315777e-14
+              },
+              {
+                "dof": 97,
+                "adjoint_z": 1.3938084892467842e-07,
+                "fd_deriv": 1.3938084892467636e-07,
+                "rel_diff": 1.4812958954175502e-14
+              }
+            ],
+            "perturbation_N": 100.0
+          },
+          "threshold": {
+            "dJ_dfk_rel_tol": 1e-06
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Central finite difference sensitivity dJ/df_k vs adjoint vector z_k."
+        },
+        {
+          "id": "A2.5a_material_sensitivity",
+          "computed": {
+            "relative_difference": 4.118116498231784e-08,
+            "fd_derivative": 1.9916783249922044e-14,
+            "analytical_adjoint_derivative": 1.991678242972574e-14,
+            "dE": 700000.0
+          },
+          "threshold": {
+            "dJ_dE_rel_tol": 1e-06
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Central finite difference sensitivity dJ/dE vs adjoint formula -(1/E) z^T K u."
+        },
+        {
+          "id": "A2.5b_exact_discrete_identity",
+          "computed": {
+            "Ju_minus_Jw": -6.990812312402859e-05,
+            "dual_weighted_residual": -6.99081231236142e-05,
+            "absolute_identity_error": 4.143820703239598e-16,
+            "relative_identity_error": 2.457400364308431e-13
+          },
+          "threshold": {
+            "relative_tolerance": 1e-09
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Exact algebraic identity J(u) - J(w) = z^T (f - Kw)."
+        },
+        {
+          "id": "A2.5c_reference_comparison",
+          "computed": {
+            "mesh_hierarchy": {
+              "nx8_ny4": {
+                "dofs": 64,
+                "qoi_meters": -0.001180845294272976,
+                "qoi_mm": -1.1808452942729761
+              },
+              "nx16_ny8": {
+                "dofs": 256,
+                "qoi_meters": -0.001686261939008772,
+                "qoi_mm": -1.686261939008772
+              },
+              "nx32_ny16": {
+                "dofs": 1024,
+                "qoi_meters": -0.0018509201497261163,
+                "qoi_mm": -1.8509201497261163
+              },
+              "nx64_ny32": {
+                "dofs": 4096,
+                "qoi_meters": -0.0018943046528983598,
+                "qoi_mm": -1.8943046528983598
+              }
+            },
+            "finest_qoi_mm": -1.8943046528983598
+          },
+          "threshold": {
+            "report_only": true
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Hierarchical cantilever reference QoI progression (report only)."
+        },
+        {
+          "id": "A2.5d_cantilever_proportionality",
+          "computed": {
+            "k_factor": -10000.0,
+            "max_displacement_inf_m": 0.0013954148541754886,
+            "max_proportionality_abs_diff_m": 8.673617379884035e-19,
+            "relative_proportionality_diff": 6.2157983727420135e-16
+          },
+          "threshold": {
+            "relative_tolerance": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Cantilever u = k*z proportionality check."
+        }
+      ]
+    },
+    "A2_6_refinement": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.6_refinement_goal_aware",
+          "computed": {
+            "strategy": "goal_aware",
+            "cycles_completed": 8,
+            "initial_min_angle_deg": 40.100907546212206,
+            "min_allowed_angle_deg": 20.050453773106103,
+            "final_elements": 67808,
+            "final_min_angle_deg": 40.10090754621113,
+            "cycles": [
+              {
+                "cycle": 1,
+                "elements": 343,
+                "nodes": 209,
+                "min_angle_deg": 40.100907546212206,
+                "max_angle_deg": 99.7981849075756,
+                "max_aspect_ratio": 1.5524677935467786,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 8.881784197001252e-16,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 2,
+                "elements": 778,
+                "nodes": 447,
+                "min_angle_deg": 40.100907546212085,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467786,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 8.881784197001252e-16,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 3,
+                "elements": 1743,
+                "nodes": 954,
+                "min_angle_deg": 40.100907546212085,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467825,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 1.1102230246251565e-16,
+                "pass": true
+              },
+              {
+                "cycle": 4,
+                "elements": 3780,
+                "nodes": 2017,
+                "min_angle_deg": 40.100907546212085,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467825,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 1.1102230246251565e-16,
+                "pass": true
+              },
+              {
+                "cycle": 5,
+                "elements": 7953,
+                "nodes": 4164,
+                "min_angle_deg": 40.100907546212085,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467825,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 6,
+                "elements": 16505,
+                "nodes": 8515,
+                "min_angle_deg": 40.100907546212085,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467825,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 7,
+                "elements": 33741,
+                "nodes": 17261,
+                "min_angle_deg": 40.10090754621113,
+                "max_angle_deg": 99.79818490757775,
+                "max_aspect_ratio": 1.5524677935467825,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 8,
+                "elements": 67808,
+                "nodes": 34434,
+                "min_angle_deg": 40.10090754621113,
+                "max_angle_deg": 99.79818490757775,
+                "max_aspect_ratio": 1.552467793546813,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              }
+            ]
+          },
+          "threshold": {
+            "interior_edge_sharing": "exactly 2 triangles",
+            "hanging_nodes": 0,
+            "interior_vertex_angle_sum_abs_tol": 1e-09,
+            "element_area_sum_rel_tol": 1e-12,
+            "min_angle_deg": 20.050453773106103
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "8-cycle adaptive refinement conformity and quality verification for goal_aware."
+        },
+        {
+          "id": "A2.6_refinement_recovery",
+          "computed": {
+            "strategy": "recovery",
+            "cycles_completed": 8,
+            "initial_min_angle_deg": 40.100907546212206,
+            "min_allowed_angle_deg": 20.050453773106103,
+            "final_elements": 86829,
+            "final_min_angle_deg": 40.10090754621113,
+            "cycles": [
+              {
+                "cycle": 1,
+                "elements": 333,
+                "nodes": 200,
+                "min_angle_deg": 40.100907546212206,
+                "max_angle_deg": 99.7981849075756,
+                "max_aspect_ratio": 1.5524677935467786,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 2,
+                "elements": 774,
+                "nodes": 441,
+                "min_angle_deg": 40.100907546212206,
+                "max_angle_deg": 99.7981849075756,
+                "max_aspect_ratio": 1.5524677935467786,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 1.1102230246251565e-16,
+                "pass": true
+              },
+              {
+                "cycle": 3,
+                "elements": 1650,
+                "nodes": 894,
+                "min_angle_deg": 40.100907546212085,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467825,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 4,
+                "elements": 3705,
+                "nodes": 1959,
+                "min_angle_deg": 40.100907546212085,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467825,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 5,
+                "elements": 8161,
+                "nodes": 4233,
+                "min_angle_deg": 40.100907546212085,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467825,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 6,
+                "elements": 17822,
+                "nodes": 9131,
+                "min_angle_deg": 40.10090754621193,
+                "max_angle_deg": 99.79818490757583,
+                "max_aspect_ratio": 1.5524677935467877,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 1.1102230246251565e-16,
+                "pass": true
+              },
+              {
+                "cycle": 7,
+                "elements": 40497,
+                "nodes": 20613,
+                "min_angle_deg": 40.10090754621113,
+                "max_angle_deg": 99.79818490757775,
+                "max_aspect_ratio": 1.5524677935467877,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              },
+              {
+                "cycle": 8,
+                "elements": 86829,
+                "nodes": 43877,
+                "min_angle_deg": 40.10090754621113,
+                "max_angle_deg": 99.79818490757775,
+                "max_aspect_ratio": 1.552467793546813,
+                "bad_interior_edges": 0,
+                "bad_boundary_edges": 0,
+                "hanging_nodes": 0,
+                "max_interior_angle_sum_err_rad": 1.7763568394002505e-15,
+                "area_relative_error": 0.0,
+                "pass": true
+              }
+            ]
+          },
+          "threshold": {
+            "interior_edge_sharing": "exactly 2 triangles",
+            "hanging_nodes": 0,
+            "interior_vertex_angle_sum_abs_tol": 1e-09,
+            "element_area_sum_rel_tol": 1e-12,
+            "min_angle_deg": 20.050453773106103
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "8-cycle adaptive refinement conformity and quality verification for recovery."
+        }
+      ]
+    },
+    "A2_7_zz_effectivity": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.7_zz_effectivity_n64",
+          "computed": {
+            "n": 64,
+            "dofs": 8450,
+            "elements": 8192,
+            "exact_energy_norm_error": 0.04658882541245716,
+            "zz_recovered_energy_error": 0.033455790605654734,
+            "effectivity_index_I_eff": 0.7181076215050735
+          },
+          "threshold": {
+            "min_effectivity": 0.7,
+            "max_effectivity": 1.3
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "ZZ energy norm effectivity index on n=64 structured mesh."
+        },
+        {
+          "id": "A2.7_zz_effectivity_n128",
+          "computed": {
+            "n": 128,
+            "dofs": 33282,
+            "elements": 32768,
+            "exact_energy_norm_error": 0.02329763089936446,
+            "zz_recovered_energy_error": 0.016548883668465155,
+            "effectivity_index_I_eff": 0.7103247424576803
+          },
+          "threshold": {
+            "min_effectivity": 0.7,
+            "max_effectivity": 1.3
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "ZZ energy norm effectivity index on n=128 structured mesh."
+        },
+        {
+          "id": "A2.7_goal_regression_uniform_cantilever",
+          "computed": {
+            "mesh_case": "uniform_cantilever",
+            "elements": 64,
+            "max_abs_difference": 4.683753385137379e-16,
+            "relative_difference": 1.0760872455677868e-15,
+            "k_factor": -10000.0
+          },
+          "threshold": {
+            "relative_tolerance": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Goal indicator algebraic identity regression for uniform_cantilever."
+        },
+        {
+          "id": "A2.7_goal_regression_adapted_cantilever",
+          "computed": {
+            "mesh_case": "adapted_cantilever",
+            "elements": 91,
+            "max_abs_difference": 4.475586568020162e-16,
+            "relative_difference": 5.791689835609488e-16,
+            "k_factor": -10000.0
+          },
+          "threshold": {
+            "relative_tolerance": 1e-10
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Goal indicator algebraic identity regression for adapted_cantilever."
+        }
+      ]
+    },
+    "A2_8_reference_scale": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.8_reference_study_reproduction",
+          "computed": {
+            "computed_qois": {
+              "16x4": -0.0014275033997611878,
+              "32x8": -0.001786472195292505,
+              "64x16": -0.0018791431716114182,
+              "128x32": -0.0019017824927009426
+            },
+            "relative_differences": {
+              "16x4": 2.7188915540287938e-11,
+              "32x8": 4.195469505828862e-12,
+              "64x16": 6.076262273082589e-12,
+              "128x32": 4.956430992382632e-13
+            },
+            "max_relative_difference": 2.7188915540287938e-11
+          },
+          "threshold": {
+            "relative_tolerance": 1e-08
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Reproduction of 4-level cantilever reference study."
+        },
+        {
+          "id": "A2.8_celik_richardson_gci",
+          "computed": {
+            "order_p": 2.033286874947495,
+            "f_extrapolated": -0.00190910116678253,
+            "approximate_relative_error_ea": 0.011904264124262945,
+            "extrapolated_relative_error": 0.003833570588018807,
+            "gci_fine_pct": 0.48104042593084123,
+            "gci_coarse_pct": 1.9690734414637094
+          },
+          "threshold": {
+            "order_p_rel_tol": 0.001,
+            "f_ext_rel_tol": 1e-06,
+            "gci_rel_tol": 0.001
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Independent Celik / Richardson / GCI discretization uncertainty analysis."
+        },
+        {
+          "id": "A2.8_scale_invariance",
+          "computed": {
+            "si_qoi_m": -0.0013941747700804677,
+            "dimensionless_qoi": -0.0006970873850398144,
+            "reconstructed_qoi_m": -0.0013941747700796287,
+            "relative_difference": 6.017578707301246e-13
+          },
+          "threshold": {
+            "relative_tolerance": 1e-09
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "SI vs dimensionless formulation scale invariance test."
+        }
+      ]
+    },
+    "A2_9_determinism": {
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "items": [
+        {
+          "id": "A2.9_determinism_uniform",
+          "computed": {
+            "strategy": "uniform",
+            "dofs_run1": [
+              200,
+              702,
+              2618,
+              10098,
+              39650
+            ],
+            "dofs_run2": [
+              200,
+              702,
+              2618,
+              10098,
+              39650
+            ],
+            "dof_identical": true,
+            "max_qoi_relative_difference": 0.0,
+            "goal_aware_prefix_match": true
+          },
+          "threshold": {
+            "dof_sequence_equality": "exact",
+            "qoi_relative_tolerance": 1e-08,
+            "expected_prefix": null
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Deterministic execution repeatability for uniform strategy."
+        },
+        {
+          "id": "A2.9_determinism_recovery",
+          "computed": {
+            "strategy": "recovery",
+            "dofs_run1": [
+              200,
+              400,
+              882,
+              1788,
+              3918
+            ],
+            "dofs_run2": [
+              200,
+              400,
+              882,
+              1788,
+              3918
+            ],
+            "dof_identical": true,
+            "max_qoi_relative_difference": 0.0,
+            "goal_aware_prefix_match": true
+          },
+          "threshold": {
+            "dof_sequence_equality": "exact",
+            "qoi_relative_tolerance": 1e-08,
+            "expected_prefix": null
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Deterministic execution repeatability for recovery strategy."
+        },
+        {
+          "id": "A2.9_determinism_goal_aware",
+          "computed": {
+            "strategy": "goal_aware",
+            "dofs_run1": [
+              200,
+              418,
+              894,
+              1908,
+              4034
+            ],
+            "dofs_run2": [
+              200,
+              418,
+              894,
+              1908,
+              4034
+            ],
+            "dof_identical": true,
+            "max_qoi_relative_difference": 0.0,
+            "goal_aware_prefix_match": true
+          },
+          "threshold": {
+            "dof_sequence_equality": "exact",
+            "qoi_relative_tolerance": 1e-08,
+            "expected_prefix": [
+              200,
+              418,
+              894,
+              1908,
+              4034
+            ]
+          },
+          "pass": true,
+          "failure_class": null,
+          "details": "Deterministic execution repeatability for goal_aware strategy."
+        }
+      ]
+    }
+  },
+  "acceptance_gates": {
+    "A1_hygiene": true,
+    "A2_1_patch": true,
+    "A2_2_operator": true,
+    "A2_3_independent_assembler": true,
+    "A2_4_manufactured_solution": true,
+    "A2_5_adjoint": true,
+    "A2_6_refinement": true,
+    "A2_7_zz_effectivity": true,
+    "A2_8_reference_scale": true,
+    "A2_9_determinism": true,
+    "A3_mutation_testing": true
+  },
+  "pass_rate_pct": 100.0
+}
