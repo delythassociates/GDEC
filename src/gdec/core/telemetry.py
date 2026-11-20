@@ -7,7 +7,7 @@ from __future__ import annotations
 import time
 import psutil
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 
 @dataclass
@@ -35,7 +35,7 @@ class IterationRecord:
     refinement_time_sec: float = 0.0
     postprocess_time_sec: float = 0.0
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "iteration": self.iteration,
             "nelements": self.nelements,

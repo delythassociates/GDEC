@@ -6,7 +6,7 @@ decoupled from the FEM assembly routines.
 
 from __future__ import annotations
 import json
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, cast
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -30,7 +30,7 @@ class MaterialIR(BaseModel):
 class BoundaryConditionIR(BaseModel):
     boundary: Literal["left", "right", "top", "bottom"]
     constrained_components: List[Literal["x", "y"]] = Field(
-        default_factory=lambda: ["x", "y"],
+        default_factory=lambda: cast(List[Literal["x", "y"]], ["x", "y"]),
         description="Constrained displacement directions",
     )
 

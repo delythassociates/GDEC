@@ -4,7 +4,7 @@ Performs strict validation and generates typed ProblemIR.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal, cast
 import shutil
 
 from gdec.language.ast import (
@@ -89,7 +89,7 @@ class SemanticAnalyzer:
 
         return ProblemIR(
             name=ast.name,
-            physics=physics,
+            physics=cast(Literal["linear_elasticity"], physics),
             geometry=geometry,
             material=material,
             boundary_conditions=bcs,
@@ -211,7 +211,7 @@ class SemanticAnalyzer:
                     f"Invalid boundary '{bnd}'. Supported boundaries are {valid_boundaries}.",
                     stmt.loc,
                 )
-            bcs.append(BoundaryConditionIR(boundary=bnd, constrained_components=comps))
+            bcs.append(BoundaryConditionIR(boundary=cast(Literal["left", "right", "top", "bottom"], bnd), constrained_components=cast(List[Literal["x", "y"]], comps)))
         return bcs
 
     def _extract_loads(self, stmts: List[Statement]) -> List[TractionLoadIR]:

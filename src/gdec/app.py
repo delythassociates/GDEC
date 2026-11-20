@@ -4,6 +4,7 @@ Interactive scientific computing and adaptive finite element research dashboard.
 """
 
 from __future__ import annotations
+from typing import Any
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -18,6 +19,7 @@ from gdec.benchmark import (
     BenchmarkReporter,
     BenchmarkMetrics,
     EqualAccuracyEvaluator,
+    ReferenceSolver,
     AdjointValidator,
     BenefitAnalyzer,
     RuntimeProfiler,
@@ -428,7 +430,7 @@ elif section == "5. Live Simulation":
             table_placeholder = st.empty()
             plot_placeholder = st.empty()
 
-            iter_history = []
+            iter_history: list[dict[str, Any]] = []
             sim_state = {"final_mesh": None, "final_post": None}
 
             def iter_callback(record, mesh, post):
@@ -736,11 +738,10 @@ elif section == "8. Research Validation (v0.2)":
 
             if st.button("Run Live Adjoint Verification Experiment", type="primary", key="btn_run_adj"):
                 with st.spinner("Computing central finite difference perturbations..."):
-                    adj_rep = AdjointValidator.validate(ir)
-                    st.session_state["adj_report"] = adj_rep
+                    st.session_state["adj_report"] = AdjointValidator.validate(ir)
                     st.success("Adjoint validation finished!")
 
-            adj_rep = st.session_state.get("adj_report")
+            adj_rep: Any = st.session_state.get("adj_report")
             if adj_rep:
                 m1, m2, m3 = st.columns(3)
                 m1.metric("QoI Functional Error", f"{adj_rep.qoi_direct_agreement_abs_err:.2e} m")
@@ -761,11 +762,10 @@ elif section == "8. Research Validation (v0.2)":
 
             if st.button("Run Benefit Correlation & Threshold Sweep", key="btn_run_benefit"):
                 with st.spinner("Analyzing benefit correlation across iterations and marking thresholds..."):
-                    ben_res = BenefitAnalyzer.analyze(ir)
-                    st.session_state["benefit_report"] = ben_res
+                    st.session_state["benefit_report"] = BenefitAnalyzer.analyze(ir)
                     st.success("Benefit analysis complete!")
 
-            ben_res = st.session_state.get("benefit_report")
+            ben_res: Any = st.session_state.get("benefit_report")
             if ben_res:
                 c1, c2, c3 = st.columns(3)
                 c1.metric("Pearson Correlation r", f"{ben_res.pearson_r:.3f}")
@@ -816,11 +816,10 @@ elif section == "8. Research Validation (v0.2)":
 
             if st.button("Run Fine-Grained Profiler (5 repetitions)", key="btn_run_prof"):
                 with st.spinner("Profiling stages with high-resolution timers..."):
-                    prof_res = RuntimeProfiler.profile(ir, grid_size=(45, 18), repetitions=5)
-                    st.session_state["prof_report"] = prof_res
+                    st.session_state["prof_report"] = RuntimeProfiler.profile(ir, grid_size=(45, 18), repetitions=5)
                     st.success("Profiling complete!")
 
-            prof_res = st.session_state.get("prof_report")
+            prof_res: Any = st.session_state.get("prof_report")
             if prof_res:
                 c1, c2, c3 = st.columns(3)
                 c1.metric("Total Median Time", f"{prof_res.total_time_median_ms:.2f} ms")
@@ -863,11 +862,10 @@ elif section == "8. Research Validation (v0.2)":
 
             if st.button("Run Scalability Suite", key="btn_run_scale"):
                 with st.spinner("Executing scalability sweep..."):
-                    scale_res = ScalabilityRunner.run_scaling(ir, scale_targets=sorted(scale_choice))
-                    st.session_state["scale_report"] = scale_res
+                    st.session_state["scale_report"] = ScalabilityRunner.run_scaling(ir, scale_targets=sorted(scale_choice))
                     st.success("Scalability benchmark complete!")
 
-            scale_res = st.session_state.get("scale_report")
+            scale_res: Any = st.session_state.get("scale_report")
             if scale_res:
                 sc_rows = [
                     {

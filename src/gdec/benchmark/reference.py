@@ -106,7 +106,7 @@ class ReferenceSolver:
         aspect = geo.width / geo.height
 
         # If verification requested, generate progressive levels: e.g. target/3, target/1.5, target
-        levels_to_run = []
+        levels_to_run: list[tuple[str, int]] = []
         if verify_convergence:
             targets = [
                 ("Level 1 (Coarse Ref)", max(6000, int(target_dofs * 0.35))),

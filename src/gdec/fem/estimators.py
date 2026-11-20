@@ -35,7 +35,7 @@ class IndicatorResult:
     indicators: np.ndarray       # per-element raw indicator values
     priorities: np.ndarray       # per-element selection priority (cost-weighed if applicable)
     estimated_dofs_increase: np.ndarray  # predicted additional DOFs if element is refined
-    details: Dict[str, any]      # auxiliary diagnostic data
+    details: Dict[str, Any]      # auxiliary diagnostic data
 
 
 class RefinementEstimator:

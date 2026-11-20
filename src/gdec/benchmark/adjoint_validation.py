@@ -9,7 +9,7 @@ Verifies:
 from __future__ import annotations
 import numpy as np
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 from gdec.language.ir import ProblemIR
 from gdec.fem.mesh import GDECMesh
@@ -22,7 +22,7 @@ class AdjointValidationReport:
     qoi_direct_agreement_abs_err: float
     qoi_direct_agreement_rel_err: float
     force_sensitivity_agreement_rel_err: float
-    stiffness_sensitivity_sample_results: List[Dict[str, any]]
+    stiffness_sensitivity_sample_results: List[Dict[str, Any]]
     mean_stiffness_sensitivity_rel_err: float
     is_mathematically_verified: bool
     summary: str
@@ -79,6 +79,7 @@ class AdjointValidator:
         u_p = fem.solve(*fem.condense(sol0.K, f_plus, D=sol0.dofs_fixed))
         J_plus = float(sol0.g @ u_p)
         dJ_df_fd = (J_plus - J0) / delta_f
+        assert sol0.z is not None
         dJ_df_adj = sol0.z[test_dof]
         rel_err_force = abs(dJ_df_fd - dJ_df_adj) / max(abs(dJ_df_adj), 1e-14)
 
@@ -86,7 +87,7 @@ class AdjointValidator:
         # For multiple elements across domain: root, middle, tip
         elem_indices = [0, mesh.nelements // 2, mesh.nelements - 1]
         stiff_results = []
-        rel_stiff_errs = []
+        rel_stiff_errs: List[float] = []
 
         grad_u_all = sol0.basis.interpolate(u0).grad[:, :, :, 0]
         grad_z_all = sol0.basis.interpolate(z0).grad[:, :, :, 0]

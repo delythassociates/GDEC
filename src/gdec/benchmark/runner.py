@@ -8,7 +8,7 @@ and rigorously tests the central research hypothesis.
 from __future__ import annotations
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable, Any
 import numpy as np
 
 from gdec.language.ir import ProblemIR
@@ -57,7 +57,7 @@ class BenchmarkSuiteResult:
     timestamp: str
     reference: ReferenceSolution
     strategies: Dict[str, StrategyBenchmarkResult]
-    hypothesis_evaluation: Dict[str, any] = field(default_factory=dict)
+    hypothesis_evaluation: Dict[str, Any] = field(default_factory=dict)
     equal_accuracy_comparisons: List[EqualAccuracyComparison] = field(default_factory=list)
 
 
@@ -68,7 +68,7 @@ class BenchmarkRunner:
         self.planner = ExecutionPlanner()
 
     def run_all(
-        self, progress_callback: Optional[callable] = None
+        self, progress_callback: Optional[Callable[[str, float], None]] = None
     ) -> BenchmarkSuiteResult:
         """Run high-res reference solve followed by Uniform, Recovery, and Goal-Aware simulations."""
         if progress_callback:
@@ -164,13 +164,13 @@ class BenchmarkRunner:
         results: Dict[str, StrategyBenchmarkResult],
         ref: ReferenceSolution,
         equal_acc: List[EqualAccuracyComparison],
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Evaluate research hypothesis on equal-accuracy criteria:
         Does Goal-Aware reach target reference error with lower computational cost (DOFs & time)
         than Uniform and Conventional Recovery baselines?
         """
-        eval_data = {}
+        eval_data: Dict[str, Any] = {}
         for name, res in results.items():
             eval_data[name] = {
                 "converged": res.target_achieved,
