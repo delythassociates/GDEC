@@ -140,6 +140,25 @@ The README advertises 42 passing tests and benchmark outcomes. Those are reposit
 **Impact:** For plane strain, the out-of-plane stress component is generally nonzero; using a plane-stress Von Mises expression can misreport equivalent stress.  
 **Required action:** Implement the correct 3D stress invariant for plane strain (including `sigma_zz`) or clearly restrict/label the output. Add analytical stress-state tests.
 
+## 4A. First remediation increment — committed, not yet executed
+
+The audit branch now contains an initial remediation increment for the language/IR boundary:
+
+- Reject unsupported `point_displacement` and constrain the typed IR objective to the implemented average-boundary displacement.
+- Reject unknown top-level declarations and duplicate singleton declarations.
+- Reject unknown named arguments and duplicate named arguments.
+- Validate finite numeric values for geometry, material, traction, accuracy and refinement parameters; the Pydantic IR also rejects non-finite numeric fields.
+- Reject fractional DOF and iteration budgets instead of truncating them.
+- Reject conflicting positional/named budget values and invalid boundary-call arity.
+- Preserve the literal `cost_aware=false` value and reject numeric truthy substitutes.
+- Return Pydantic IR validation failures as compiler diagnostics.
+- Correct plane-strain Von Mises stress using the out-of-plane stress.
+- Require DOF and wall-clock advantages against both comparison baselines before setting the combined benchmark-efficiency claim.
+- Include refinement time in benchmark time-to-observation accounting.
+- Add regression tests for the above behaviors and a GitHub Actions workflow for Python 3.10–3.12.
+
+**Evidence status:** These edits and tests are committed on `audit/v0.2.2-deep-review`. The test suite has not been executed. No CI run has been observed for the branch yet. Treat the changes as unverified until the workflow runs and all regressions pass. The audit branch is not merged.
+
 ## 5. Benchmark and research protocol redesign
 
 The central research question should be split into measurable claims:
