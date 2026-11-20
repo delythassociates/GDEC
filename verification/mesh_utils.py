@@ -109,20 +109,26 @@ def create_perturbed_mesh(
     domain: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 1.0)
 ) -> Tuple[skfem.MeshTri, Dict[str, Any]]:
     """
-    Create perturbed triangular mesh on domain [x0, x1, y0, y1] strictly per A0-1:
+    Create perturbed triangular mesh on domain [x0, x1, y0, y1] strictly per frozen A0-1:
     - rng = numpy.random.default_rng(seed) re-created per level
     - h_loc = minimum incident edge length of that node on unperturbed mesh
-    - Displace interior nodes only by r * (cos(theta), sin(theta)), where r ~ U(0, 0.2)*h_loc, theta ~ U(0, 2pi)
-    - Boundary nodes fixed
+    - Full-array generation:
+        theta = rng.uniform(0.0, 2.0 * np.pi, Nnodes)
+        r = rng.uniform(0.0, 0.2, Nnodes) * h_loc
+        delta = r[:, None] * np.column_stack((np.cos(theta), np.sin(theta)))
+    - Apply displacement ONLY to interior nodes:
+        p[:, interior_indices] += delta[interior_indices].T
+    - Boundary nodes remain unchanged
     - Reject if non-positive element area
     """
-    base_mesh, _ = create_structured_mesh(n, domain)
+    base_mesh, _ = create_structured_mesh(n, domain=domain)
+    base_p = base_mesh.p.copy()
     p = base_mesh.p.copy()
     t = base_mesh.t
     nnodes = p.shape[1]
     x0, x1, y0, y1 = domain
 
-    # Identify interior nodes: not on boundary x=x0, x=x1, y=y0, y=y1
+    # Identify interior and boundary nodes
     tol = 1e-12
     is_boundary = (
         (np.abs(p[0] - x0) < tol) |
@@ -130,11 +136,11 @@ def create_perturbed_mesh(
         (np.abs(p[1] - y0) < tol) |
         (np.abs(p[1] - y1) < tol)
     )
+    boundary_indices = np.where(is_boundary)[0]
     interior_indices = np.where(~is_boundary)[0]
     n_interior = len(interior_indices)
 
-    # Compute h_loc: minimum incident edge length for each node
-    # Find all edges incident to each node
+    # Compute h_loc: minimum incident edge length for each node on unperturbed mesh
     h_loc = np.full(nnodes, np.inf)
     p0 = p[:, t[0]]
     p1 = p[:, t[1]]
@@ -149,27 +155,74 @@ def create_perturbed_mesh(
         h_loc[v1] = min(h_loc[v1], l01[i], l12[i])
         h_loc[v2] = min(h_loc[v2], l12[i], l20[i])
 
-    # Re-create RNG independently
+    # Re-create RNG independently per level
     rng = np.random.default_rng(seed)
 
-    # Perturb interior nodes
-    theta = rng.uniform(0.0, 2.0 * np.pi, n_interior)
-    r = rng.uniform(0.0, 0.2, n_interior) * h_loc[interior_indices]
+    # Generate arrays of length Nnodes, not Ninterior (frozen preregistration A0-1)
+    theta = rng.uniform(0.0, 2.0 * np.pi, nnodes)
+    r = rng.uniform(0.0, 0.2, nnodes) * h_loc
 
-    dx = r * np.cos(theta)
-    dy = r * np.sin(theta)
+    delta = r[:, None] * np.column_stack((np.cos(theta), np.sin(theta)))
 
-    p[0, interior_indices] += dx
-    p[1, interior_indices] += dy
+    # Apply displacement ONLY to interior nodes
+    p[:, interior_indices] += delta[interior_indices].T
+
+    # Verify boundary nodes are strictly unchanged
+    boundary_unchanged = bool(np.all(p[:, boundary_indices] == base_p[:, boundary_indices]))
 
     perturbed_mesh = skfem.MeshTri(p, t)
     metrics = compute_mesh_metrics(perturbed_mesh)
+    metrics["n"] = n
     metrics["refinement_level_n"] = n
     metrics["type"] = "perturbed"
     metrics["random_seed"] = seed
-    metrics["accepted"] = metrics["all_areas_positive"]
+    metrics["interior_node_count"] = n_interior
+    metrics["boundary_nodes_unchanged"] = boundary_unchanged
+    metrics["accepted"] = metrics["all_areas_positive"] and boundary_unchanged
 
     if not metrics["all_areas_positive"]:
         metrics["rejection_reason"] = "Non-positive element area detected"
 
     return perturbed_mesh, metrics
+
+
+def generate_perturbed_mesh_metadata_report(
+    levels: list[int] = [5, 8, 16, 32, 64, 128],
+    seed: int = 12345,
+    output_paths: list[str] = [
+        "results/phase_a_completion/perturbed_mesh_metadata.json",
+        "results/verification/perturbed_mesh_metadata.json",
+    ]
+) -> list[dict[str, Any]]:
+    """Generate and record exact mesh metadata per A0-1 and Section 3 brief."""
+    import json
+    from pathlib import Path
+
+    report = []
+    for n in levels:
+        mesh, metrics = create_perturbed_mesh(n, seed=seed)
+        entry = {
+            "n": n,
+            "node_count": int(metrics["node_count"]),
+            "element_count": int(metrics["element_count"]),
+            "interior_node_count": int(metrics["interior_node_count"]),
+            "random_seed": seed,
+            "max_diameter_h": float(metrics["max_diameter_h"]),
+            "min_angle_deg": float(metrics["min_angle_deg"]),
+            "max_angle_deg": float(metrics["max_angle_deg"]),
+            "max_aspect_ratio": float(metrics["max_aspect_ratio"]),
+            "min_element_area": float(metrics["min_element_area"]),
+            "max_element_area": float(metrics["max_element_area"]),
+            "boundary_nodes_unchanged": bool(metrics["boundary_nodes_unchanged"]),
+            "all_areas_positive": bool(metrics["all_areas_positive"]),
+            "accepted": bool(metrics["accepted"]),
+        }
+        report.append(entry)
+
+    for out_str in output_paths:
+        p = Path(out_str)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+
+    return report
