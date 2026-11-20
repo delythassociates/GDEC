@@ -56,22 +56,26 @@ class AccuracyTarget:
                 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class MeshLevelEvidence:
     """
     Typed, immutable evidence representation for a single mesh level in a verification hierarchy.
     Captures verifiable topological, geometric, and provenance data.
+    Enforces immutability via frozen=True (AM31-06).
     """
     level_id: str
     mesh_hash: str
     element_count: int
     node_count: int
-    characteristic_h: float
+    characteristic_h: float  # Maximum element diameter h_max = max_{K} diam(K) (AM31-02)
+    characteristic_h_avg: Optional[float] = None  # Separate diagnostic area-average size
     parent_mesh_hash: Optional[str] = None
     refinement_ratio: Optional[float] = None
-    nestedness_verified: bool = True
+    nestedness_verified: bool = False  # NEVER True by default without proof (AM31-01)
+    topology_verified: bool = False  # True only if genuine topological check executed
     refinement_method: str = "uniform_midpoint"
     provenance: Optional[Dict[str, Any]] = None
+    refinement_evidence: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -80,11 +84,14 @@ class MeshLevelEvidence:
             "element_count": int(self.element_count),
             "node_count": int(self.node_count),
             "characteristic_h": float(self.characteristic_h),
+            "characteristic_h_avg": float(self.characteristic_h_avg) if self.characteristic_h_avg is not None else None,
             "parent_mesh_hash": self.parent_mesh_hash,
             "refinement_ratio": float(self.refinement_ratio) if self.refinement_ratio is not None else None,
             "nestedness_verified": bool(self.nestedness_verified),
+            "topology_verified": bool(self.topology_verified),
             "refinement_method": str(self.refinement_method),
             "provenance": self.provenance,
+            "refinement_evidence": self.refinement_evidence,
         }
 
 
@@ -339,10 +346,12 @@ class ProblemAnalyser:
         self,
         evidence_list: List[MeshLevelEvidence],
         verification_mode: str = "three_grid",
+        meshes: Optional[List[fem.MeshTri]] = None,
     ) -> Tuple[bool, Optional[RefusalCode], str]:
         """
         Validates typed mesh hierarchy evidence against verified parent-child links,
-        monotonic characteristic h, actual refinement ratios, and protocol level counts.
+        monotonic characteristic h_max, actual refinement ratios, and protocol level counts (AM31-01, AM31-02).
+        Rejects unproven assertions where nestedness is merely claimed without proof.
         Fail-closed on missing, corrupted, or contradictory evidence.
         """
         if verification_mode not in ("three_grid", "four_grid"):
@@ -357,6 +366,34 @@ class ProblemAnalyser:
                 RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
                 f"Mesh hierarchy contains {len(evidence_list)} levels; at least {min_levels} required for mode '{verification_mode}'.",
             )
+
+        # If actual meshes are supplied, verify them directly
+        if meshes is not None:
+            if len(meshes) != len(evidence_list):
+                return (
+                    False,
+                    RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                    f"Supplied mesh count ({len(meshes)}) does not match evidence level count ({len(evidence_list)}).",
+                )
+            from gdec.runtime.mesh_evidence import verify_mesh_refinement_topology, compute_mesh_hash
+
+            for i in range(1, len(meshes)):
+                m_hash = compute_mesh_hash(meshes[i])
+                if m_hash != evidence_list[i].mesh_hash:
+                    return (
+                        False,
+                        RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                        f"Mesh level '{evidence_list[i].level_id}' hash mismatch with supplied mesh.",
+                    )
+                ok_top, msg_top, _ = verify_mesh_refinement_topology(
+                    meshes[i - 1], meshes[i], refinement_method=evidence_list[i].refinement_method
+                )
+                if not ok_top:
+                    return (
+                        False,
+                        RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                        f"Topological verification failed between level '{evidence_list[i-1].level_id}' and '{evidence_list[i].level_id}': {msg_top}",
+                    )
 
         seen_hashes = set()
         for i, ev in enumerate(evidence_list):
@@ -382,14 +419,6 @@ class ProblemAnalyser:
                 )
             seen_hashes.add(ev.mesh_hash)
 
-            # Check nestedness requirement if claimed
-            if not ev.nestedness_verified and ev.refinement_method in ("uniform_midpoint", "bisection"):
-                return (
-                    False,
-                    RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
-                    f"Mesh level '{ev.level_id}' fails nestedness verification under refinement method '{ev.refinement_method}'.",
-                )
-
             if i > 0:
                 prev = evidence_list[i - 1]
                 # Check parent hash pointer
@@ -400,7 +429,7 @@ class ProblemAnalyser:
                         f"Mesh level '{ev.level_id}' parent hash ({str(ev.parent_mesh_hash)[:8]}...) does not match previous level '{prev.level_id}' hash ({prev.mesh_hash[:8]}...).",
                     )
 
-                # Check strict monotonic decrease in characteristic h
+                # Check strict monotonic decrease in characteristic h (h_max)
                 if ev.characteristic_h >= prev.characteristic_h:
                     return (
                         False,
@@ -411,14 +440,6 @@ class ProblemAnalyser:
                 # Independently calculated refinement ratio from characteristic h
                 calc_ratio = prev.characteristic_h / ev.characteristic_h
 
-                # Check independently calculated ratio against required uniform doubling (r = 2.0 +/- 10%)
-                if not np.isclose(calc_ratio, 2.0, rtol=0.10):
-                    return (
-                        False,
-                        RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
-                        f"Independently calculated refinement ratio h_{prev.level_id}/h_{ev.level_id} = {calc_ratio:.2f} deviates from required uniform doubling r=2.0.",
-                    )
-
                 # Check claimed refinement ratio against actual evidence
                 if ev.refinement_ratio is not None:
                     if not np.isclose(ev.refinement_ratio, calc_ratio, rtol=0.05):
@@ -426,6 +447,60 @@ class ProblemAnalyser:
                             False,
                             RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
                             f"Level '{ev.level_id}' claimed refinement ratio ({ev.refinement_ratio:.2f}) contradicts independently calculated ratio ({calc_ratio:.2f}).",
+                        )
+
+                # Check refinement method support and genuine topological proof (AM31-01)
+                if ev.refinement_method in ("uniform_midpoint", "bisection"):
+                    # Must have actual topological proof recorded, not just unverified claimed Boolean
+                    if not ev.topology_verified or ev.refinement_evidence is None:
+                        return (
+                            False,
+                            RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                            f"Mesh level '{ev.level_id}' lacks independent topological verification evidence under refinement method '{ev.refinement_method}'.",
+                        )
+                    if not ev.nestedness_verified:
+                        return (
+                            False,
+                            RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                            f"Mesh level '{ev.level_id}' fails nestedness verification under refinement method '{ev.refinement_method}'.",
+                        )
+                elif ev.refinement_method == "independent_conforming":
+                    # Supported non-nested method: does not demand nestedness, but requires hierarchy verification
+                    if not ev.topology_verified or ev.refinement_evidence is None:
+                        return (
+                            False,
+                            RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                            f"Mesh level '{ev.level_id}' lacks hierarchy verification under non-nested method '{ev.refinement_method}'.",
+                        )
+                else:
+                    # Unknown/unsupported refinement method fails closed
+                    return (
+                        False,
+                        RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                        f"Unsupported or unverified refinement method '{ev.refinement_method}' on level '{ev.level_id}'.",
+                    )
+
+                # Ratio tolerance check depending on refinement method
+                if ev.refinement_method == "uniform_midpoint":
+                    if not np.isclose(calc_ratio, 2.0, rtol=0.10):
+                        return (
+                            False,
+                            RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                            f"Independently calculated refinement ratio h_{prev.level_id}/h_{ev.level_id} = {calc_ratio:.2f} deviates from required uniform doubling r=2.0.",
+                        )
+                elif ev.refinement_method == "bisection":
+                    if not np.isclose(calc_ratio, np.sqrt(2.0), rtol=0.15):
+                        return (
+                            False,
+                            RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                            f"Independently calculated refinement ratio h_{prev.level_id}/h_{ev.level_id} = {calc_ratio:.2f} deviates from bisection ratio sqrt(2).",
+                        )
+                elif ev.refinement_method == "independent_conforming":
+                    if calc_ratio <= 1.0:
+                        return (
+                            False,
+                            RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                            f"Non-nested refinement ratio h_{prev.level_id}/h_{ev.level_id} = {calc_ratio:.2f} must be strictly > 1.0.",
                         )
 
         return (
@@ -514,6 +589,7 @@ class ProblemAnalyser:
         refinement_ratio: Optional[float] = None,
         reference_uncertainty: Optional[float] = None,
         mesh_hierarchy: Optional[List[MeshLevelEvidence]] = None,
+        meshes: Optional[List[fem.MeshTri]] = None,
     ) -> ContractResult:
         """
         Evaluates the verification contract for computed QoIs on nested levels.
@@ -617,7 +693,7 @@ class ProblemAnalyser:
         # Priority 6: Sequence length and refinement ratio (minimum 3 levels, r = 2)
         if mesh_hierarchy is not None:
             hier_valid, hier_refusal, hier_reason = self.validate_mesh_hierarchy(
-                mesh_hierarchy, verification_mode=verification_mode
+                mesh_hierarchy, verification_mode=verification_mode, meshes=meshes
             )
             if not hier_valid and hier_refusal is not None:
                 return ContractResult(
