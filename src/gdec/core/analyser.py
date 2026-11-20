@@ -4,7 +4,7 @@ Implements:
 1. Problem analysis, geometry inspection, and QoI suitability validation.
 2. Deterministic refusal mechanics for ill-posed or unsupported engineering requests.
 3. Nested uniform refinement (r = 2) spatial discretisation uncertainty estimation (GCI).
-4. Four-grid observed order stability validation (M0, M1, M2, M3).
+4. Four-grid observed order stability validation (M0, M1, M2, M3) with strict mode enforcement.
 5. Structured accuracy contract output schema conforming to Phase C specifications.
 """
 
@@ -36,10 +36,23 @@ class AccuracyTarget:
     qoi_scale: Optional[float] = None  # Scale S_J for relative comparison
 
     def __post_init__(self) -> None:
+        if self.target_type not in ["relative", "absolute"]:
+            raise ValueError(
+                f"Invalid target_type '{self.target_type}'; must be 'relative' or 'absolute'."
+            )
+        if not np.isfinite(self.tolerance) or self.tolerance <= 0.0:
+            raise ValueError(
+                f"Tolerance must be a positive finite float (got {self.tolerance})."
+            )
         if self.target_type == "relative":
             if self.qoi_scale is None or self.qoi_scale <= 0.0 or not np.isfinite(self.qoi_scale):
                 raise ValueError(
                     f"Explicit positive finite qoi_scale is strictly required for relative accuracy targets (got {self.qoi_scale})."
+                )
+        elif self.target_type == "absolute":
+            if self.qoi_scale is not None and (self.qoi_scale <= 0.0 or not np.isfinite(self.qoi_scale)):
+                raise ValueError(
+                    f"qoi_scale must be positive and finite if provided for absolute target (got {self.qoi_scale})."
                 )
 
 
@@ -86,6 +99,7 @@ class ProblemAnalyser:
         numerical_floor: float = 1e-13,
         min_angle_threshold_deg: float = 10.0,
         solver_residual_tol: float = 1e-10,
+        reference_uncertainty_gate: float = 0.0005,
     ):
         self.Fs = safety_factor_Fs
         self.p_cap = order_cap_p_cap
@@ -93,6 +107,7 @@ class ProblemAnalyser:
         self.numerical_floor = numerical_floor
         self.min_angle_threshold_deg = min_angle_threshold_deg
         self.solver_residual_tol = solver_residual_tol
+        self.reference_uncertainty_gate = reference_uncertainty_gate
 
     def check_mesh_quality(self, mesh: fem.MeshTri) -> Tuple[bool, float]:
         """
@@ -109,7 +124,12 @@ class ProblemAnalyser:
         # Area check: det( [v1-v0, v2-v0] )
         det = (v1[0] - v0[0]) * (v2[1] - v0[1]) - (v2[0] - v0[0]) * (v1[1] - v0[1])
         areas = 0.5 * np.abs(det)
-        if np.any(areas <= 1e-14):
+        total_area = float(np.sum(areas))
+        if total_area <= 0.0 or np.any(areas <= 1e-14):
+            return False, 0.0
+
+        # Relative dimensionless area check to prevent scale dependence
+        if np.any(areas / total_area <= 1e-14):
             return False, 0.0
 
         # Edge lengths
@@ -138,6 +158,7 @@ class ProblemAnalyser:
     ) -> Tuple[bool, Optional[RefusalCode], str]:
         """
         Validates geometry definition and coordinates before meshing or execution.
+        Distinguishes invalid geometry from poor-quality but geometrically valid meshes.
         """
         if isinstance(geometry, fem.MeshTri):
             if not np.all(np.isfinite(geometry.p)):
@@ -152,6 +173,35 @@ class ProblemAnalyser:
                     RefusalCode.INVALID_GEOMETRY,
                     "Mesh has invalid or empty element topology.",
                 )
+            if np.any(geometry.t < 0) or np.max(geometry.t) >= geometry.p.shape[1]:
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Mesh topology references out-of-bounds vertex index.",
+                )
+
+            # Jacobian determinant / inverted element check
+            p = geometry.p
+            t = geometry.t
+            v0 = p[:, t[0]]
+            v1 = p[:, t[1]]
+            v2 = p[:, t[2]]
+            det = (v1[0] - v0[0]) * (v2[1] - v0[1]) - (v2[0] - v0[0]) * (v1[1] - v0[1])
+            if np.any(det < 0.0):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Mesh contains inverted elements with negative Jacobian determinant.",
+                )
+            areas = 0.5 * np.abs(det)
+            total_area = float(np.sum(areas))
+            if total_area <= 0.0 or np.any(areas <= 1e-14):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Mesh contains degenerate zero-area elements.",
+                )
+
             valid_angle, min_angle = self.check_mesh_quality(geometry)
             if not valid_angle:
                 return (
@@ -161,18 +211,76 @@ class ProblemAnalyser:
                 )
             return True, None, "Valid geometry and mesh quality."
 
+        if isinstance(geometry, dict):
+            if geometry.get("has_nan", False) or geometry.get("has_inf", False):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Geometry coordinates contain non-finite values (NaN or Inf).",
+                )
+            if geometry.get("zero_area", False):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Geometry definition produces degenerate zero-area domain.",
+                )
+            if geometry.get("inverted", False):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Element orientation is inverted (negative Jacobian determinant).",
+                )
+            if geometry.get("invalid_topology", False) or geometry.get("empty_topology", False):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Mesh element topology table is invalid or empty.",
+                )
+            if geometry.get("self_intersecting", False):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Outer boundary polygon is self-intersecting.",
+                )
+            if geometry.get("disconnected_nodes", False):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Mesh contains unreferenced floating disconnected vertices.",
+                )
+            if geometry.get("degenerate_1d", False):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    "Domain has zero thickness (degenerate 1D line element in 2D space).",
+                )
+            if not geometry.get("valid", True):
+                return (
+                    False,
+                    RefusalCode.INVALID_GEOMETRY,
+                    geometry.get("reason", "Invalid geometric specification."),
+                )
+            return True, None, "Valid geometry."
+
         if isinstance(geometry, bool):
             if not geometry:
                 return False, RefusalCode.INVALID_GEOMETRY, "Invalid geometric domain specification."
             return True, None, "Valid geometry."
 
-        return True, None, "Geometry valid."
+        if geometry is None:
+            return True, None, "Valid geometry (unspecified default)."
+
+        return (
+            False,
+            RefusalCode.INVALID_GEOMETRY,
+            f"Unsupported geometry specification type: {type(geometry).__name__}.",
+        )
 
     def validate_sequence(
-        self, levels: List[float]
+        self, levels: List[float], refinement_ratios: Optional[List[float]] = None
     ) -> Tuple[bool, Optional[RefusalCode], str]:
         """
-        Validates whether sufficient mesh levels are provided for GCI estimation.
+        Validates whether sufficient mesh levels are provided and refinement ratios match r = 2.
         """
         if len(levels) < 3:
             return (
@@ -180,18 +288,26 @@ class ProblemAnalyser:
                 RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
                 f"Grid sequence has {len(levels)} levels; at least 3 nested grid levels required for verification.",
             )
-        return True, None, "Sufficient grid levels available."
+        if refinement_ratios is not None:
+            for r in refinement_ratios:
+                if not np.isclose(r, 2.0, atol=1e-3):
+                    return (
+                        False,
+                        RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                        f"Refinement ratio r={r:.2f} does not match required uniform doubling r=2.0.",
+                    )
+        return True, None, "Sufficient grid levels and valid refinement ratio available."
 
     def check_qoi_support(
         self, qoi_spec: Dict[str, Any]
     ) -> Tuple[bool, Optional[RefusalCode], str]:
         """
         Validates whether the requested QoI is mathematically supported in the current H^1 setting.
-        Strictly refuses patch_average_stress as unsupported.
+        Strictly refuses point stresses, point displacements, and stress functionals.
         """
         qtype = qoi_spec.get("type", "").lower()
         location = qoi_spec.get("location")
-        is_singular_point = qoi_spec.get("is_singular_point", False)
+        is_singular_point = bool(qoi_spec.get("is_singular_point", False))
 
         if qtype == "point_stress":
             if is_singular_point or (
@@ -223,11 +339,18 @@ class ProblemAnalyser:
         ]:
             return True, None, "Supported displacement functional."
 
-        if qtype in ["patch_average_stress", "patch_stress"]:
+        if qtype in [
+            "patch_average_stress",
+            "patch_stress",
+            "maximum_boundary_stress",
+            "sif_k1",
+            "j_integral_unregularized",
+            "point_strain",
+        ]:
             return (
                 False,
                 RefusalCode.UNSUPPORTED_QOI,
-                "Patch-average stress is currently unsupported in H^1 setting. Only displacement functionals are supported.",
+                f"Functional type '{qtype}' is currently unsupported in H^1 setting. Only displacement functionals are supported.",
             )
 
         return (
@@ -247,14 +370,36 @@ class ProblemAnalyser:
         solver_relative_residual: Optional[float] = None,
         qoi_spec: Optional[Dict[str, Any]] = None,
         budget_exhausted: bool = False,
+        verification_mode: str = "three_grid",
         require_m3_stability: bool = False,
-        geometry_valid: bool = True,
+        geometry: Any = True,
+        geometry_valid: Optional[bool] = None,
         mesh_levels: Optional[int] = None,
+        refinement_ratio: Optional[float] = None,
+        reference_uncertainty: Optional[float] = None,
     ) -> ContractResult:
         """
-        Evaluates the verification contract for computed QoIs on nested levels M0, M1, M2.
-        Enforces deterministic refusal priority.
+        Evaluates the verification contract for computed QoIs on nested levels.
+        Enforces deterministic refusal priority (Priority 1 through 10).
         """
+        # Validate finite QoI inputs
+        for val, name in [(J0, "J0"), (J1, "J1"), (J2, "J2")]:
+            if not np.isfinite(val):
+                raise ValueError(f"QoI value {name} must be finite (got {val}).")
+        if J3 is not None and not np.isfinite(J3):
+            raise ValueError(f"QoI value J3 must be finite (got {J3}).")
+
+        # Validate solver residual parameter if provided
+        if solver_relative_residual is not None:
+            if not np.isfinite(solver_relative_residual) or solver_relative_residual < 0.0:
+                raise ValueError(
+                    f"solver_relative_residual must be a non-negative finite float (got {solver_relative_residual})."
+                )
+
+        # Reconcile geometry specification
+        geom_input = geometry if geometry_valid is None else geometry_valid
+        is_four_grid_mode = (verification_mode == "four_grid") or require_m3_stability
+
         qoi_meta = qoi_spec or {"type": "displacement", "units": "m"}
         base_qoi = {
             "kind": qoi_meta.get("type", "displacement"),
@@ -281,16 +426,14 @@ class ProblemAnalyser:
                 )
 
         # Priority 3: Geometry validity
-        if not geometry_valid:
+        geom_valid, geom_refusal, geom_reason = self.validate_geometry(geom_input)
+        if not geom_valid and geom_refusal is not None:
+            p_val = 3 if geom_refusal == RefusalCode.INVALID_GEOMETRY else 4
             return ContractResult(
                 issued=False,
-                status=RefusalCode.INVALID_GEOMETRY.value,
+                status=geom_refusal.value,
                 qoi=base_qoi,
-                refusal={
-                    "code": RefusalCode.INVALID_GEOMETRY.value,
-                    "reason": "Geometry definition or coordinate bounds are invalid.",
-                    "priority": 3,
-                },
+                refusal={"code": geom_refusal.value, "reason": geom_reason, "priority": p_val},
                 limitations=limitations,
             )
 
@@ -328,7 +471,7 @@ class ProblemAnalyser:
                 limitations=limitations,
             )
 
-        # Priority 6: Sequence length (minimum 3 levels)
+        # Priority 6: Sequence length and refinement ratio (minimum 3 levels, r = 2)
         if mesh_levels is not None and mesh_levels < 3:
             return ContractResult(
                 issued=False,
@@ -337,6 +480,32 @@ class ProblemAnalyser:
                 refusal={
                     "code": RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value,
                     "reason": f"Mesh levels ({mesh_levels}) insufficient for verification (minimum 3 required).",
+                    "priority": 6,
+                },
+                limitations=limitations,
+            )
+
+        if refinement_ratio is not None and not np.isclose(refinement_ratio, 2.0, atol=1e-3):
+            return ContractResult(
+                issued=False,
+                status=RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value,
+                qoi=base_qoi,
+                refusal={
+                    "code": RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value,
+                    "reason": f"Refinement ratio r={refinement_ratio:.2f} does not match required uniform doubling r=2.0.",
+                    "priority": 6,
+                },
+                limitations=limitations,
+            )
+
+        if is_four_grid_mode and J3 is None:
+            return ContractResult(
+                issued=False,
+                status=RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value,
+                qoi=base_qoi,
+                refusal={
+                    "code": RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value,
+                    "reason": "Four-grid verification mode requires level M3 (J3) to be provided.",
                     "priority": 6,
                 },
                 limitations=limitations,
@@ -392,7 +561,7 @@ class ProblemAnalyser:
                 limitations=limitations,
             )
 
-        # Four-grid M3 asymptotic stability validation (if M3 available)
+        # Four-grid M3 asymptotic stability validation (always calculate diagnostics if J3 provided)
         m3_stable: Optional[bool] = None
         p_123: Optional[float] = None
         delta_p: Optional[float] = None
@@ -415,8 +584,8 @@ class ProblemAnalyser:
                 m3_stable = False
                 four_grid_status = "four_grid_non_monotonic"
 
-            # AM1-01 & AM1-10: If require_m3_stability is enabled and M3 fails, refuse
-            if require_m3_stability and not m3_stable:
+            # In four-grid mode, stability failure strictly refuses
+            if is_four_grid_mode and not m3_stable:
                 return ContractResult(
                     issued=False,
                     status=RefusalCode.UNVERIFIED_NON_ASYMPTOTIC.value,
@@ -429,12 +598,29 @@ class ProblemAnalyser:
                     limitations=limitations,
                 )
 
+        # Priority 10: Reference solution uncertainty gate
+        if (
+            reference_uncertainty is not None
+            and reference_uncertainty > self.reference_uncertainty_gate
+        ):
+            return ContractResult(
+                issued=False,
+                status=RefusalCode.REFERENCE_UNCERTAIN.value,
+                qoi=base_qoi,
+                refusal={
+                    "code": RefusalCode.REFERENCE_UNCERTAIN.value,
+                    "reason": f"Reference solution numerical uncertainty ({reference_uncertainty:.3e}) exceeds frozen verification gate ({self.reference_uncertainty_gate:.3e}).",
+                    "priority": 10,
+                },
+                limitations=limitations,
+            )
+
         # Order cap and coarse-grid uncertainty calculation
         p_used = float(min(p_obs, self.p_cap))
         factor = (2.0**p_used) / (2.0**p_used - 1.0)
         U0 = float(self.Fs * abs(d01) * factor)
 
-        # Accuracy target check (AM1-11 & AM1-12)
+        # Accuracy target check (AM2-03: Budget exhaustion does NOT overturn an achieved target!)
         accuracy_meta = None
         if target is not None:
             if target.target_type == "absolute":
@@ -451,10 +637,11 @@ class ProblemAnalyser:
                 metric_val = U0 / target.qoi_scale
 
             target_met = bool(metric_val <= target.tolerance)
-            estimated_target_met = target_met and not budget_exhausted
+            # Budget exhaustion does not invalidate an achieved accuracy target
+            estimated_target_met = target_met
             accuracy_status = (
                 "estimated_target_met"
-                if estimated_target_met
+                if target_met
                 else "estimated_target_not_met"
             )
 
@@ -488,6 +675,7 @@ class ProblemAnalyser:
             "m3_stability": m3_stable,
             "p_obs_123": p_123,
             "delta_p": delta_p,
+            "verification_mode": "four_grid" if is_four_grid_mode else "three_grid",
         }
 
         # Contract status: distinguish 4-grid verified from standard 3-grid verified

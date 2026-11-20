@@ -1,0 +1,2186 @@
+[
+  {
+    "case_id": "T3_01",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 1,
+    "description": "Singular point stress at re-entrant corner vertex [0.0, 0.0] (notch angle 270.0 deg)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_stress",
+        "location": [
+          0.0,
+          0.0
+        ],
+        "is_singular_point": true,
+        "notch_angle_deg": 270.0
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_02",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 2,
+    "description": "Singular point stress at re-entrant corner vertex [0.0, 0.0] (notch angle 255.0 deg)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_stress",
+        "location": [
+          0.0,
+          0.0
+        ],
+        "is_singular_point": true,
+        "notch_angle_deg": 255.0
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_03",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 3,
+    "description": "Singular point stress at re-entrant corner vertex [0.5, 0.0] (notch angle 240.0 deg)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_stress",
+        "location": [
+          0.5,
+          0.0
+        ],
+        "is_singular_point": true,
+        "notch_angle_deg": 240.0
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_04",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 4,
+    "description": "Singular point stress at re-entrant corner vertex [0.0, 0.5] (notch angle 225.0 deg)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_stress",
+        "location": [
+          0.0,
+          0.5
+        ],
+        "is_singular_point": true,
+        "notch_angle_deg": 225.0
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_05",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 5,
+    "description": "Singular point stress at re-entrant corner vertex [0.0, 0.0] (notch angle 210.0 deg)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_stress",
+        "location": [
+          0.0,
+          0.0
+        ],
+        "is_singular_point": true,
+        "notch_angle_deg": 210.0
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_06",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 6,
+    "description": "Singular point stress at re-entrant corner vertex [0.25, 0.0] (notch angle 195.0 deg)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_stress",
+        "location": [
+          0.25,
+          0.0
+        ],
+        "is_singular_point": true,
+        "notch_angle_deg": 195.0
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_07",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 7,
+    "description": "Singular point stress at re-entrant corner vertex [0.0, 0.0] (notch angle 180.0 deg)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_stress",
+        "location": [
+          0.0,
+          0.0
+        ],
+        "is_singular_point": true,
+        "notch_angle_deg": 180.0
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_08",
+    "category": "ill_posed_qoi",
+    "priority": 1,
+    "sub_index": 8,
+    "description": "Singular point stress at re-entrant corner vertex [0.0, 0.0] (notch angle 165.0 deg)",
+    "expected_refusal_code": "ill_posed_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_stress",
+        "location": [
+          0.0,
+          0.0
+        ],
+        "is_singular_point": true,
+        "notch_angle_deg": 165.0
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_09",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 1,
+    "description": "Unsupported functional request of type 'point_displacement'",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_displacement",
+        "location": [
+          0.5,
+          0.5
+        ]
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_10",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 2,
+    "description": "Unsupported functional request of type 'patch_average_stress'",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "patch_average_stress",
+        "location": [
+          0.5,
+          0.5
+        ]
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_11",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 3,
+    "description": "Unsupported functional request of type 'maximum_boundary_stress'",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "maximum_boundary_stress",
+        "location": [
+          0.5,
+          0.5
+        ]
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_12",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 4,
+    "description": "Unsupported functional request of type 'sif_k1'",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "sif_k1",
+        "location": [
+          0.5,
+          0.5
+        ]
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_13",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 5,
+    "description": "Unsupported functional request of type 'j_integral_unregularized'",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "j_integral_unregularized",
+        "location": [
+          0.5,
+          0.5
+        ]
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_14",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 6,
+    "description": "Unsupported functional request of type 'point_strain'",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "point_strain",
+        "location": [
+          0.5,
+          0.5
+        ]
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_15",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 7,
+    "description": "Unsupported functional request of type 'patch_stress'",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "patch_stress",
+        "location": [
+          0.5,
+          0.5
+        ]
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_16",
+    "category": "unsupported_qoi",
+    "priority": 2,
+    "sub_index": 8,
+    "description": "Unsupported functional request of type 'unsupported_custom_energy_norm'",
+    "expected_refusal_code": "unsupported_qoi",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "unsupported_custom_energy_norm",
+        "location": [
+          0.5,
+          0.5
+        ]
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_17",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 1,
+    "description": "Invalid geometry: NaN vertex coordinates",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": {
+        "has_nan": true,
+        "description": "NaN vertex coordinates"
+      },
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_18",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 2,
+    "description": "Invalid geometry: Inf vertex coordinates",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": {
+        "has_inf": true,
+        "description": "Inf vertex coordinates"
+      },
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_19",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 3,
+    "description": "Invalid geometry: Zero-area degenerate element",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": {
+        "zero_area": true,
+        "description": "Zero-area degenerate element"
+      },
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_20",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 4,
+    "description": "Invalid geometry: Invalid out-of-bounds topology indexing",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": {
+        "invalid_topology": true,
+        "description": "Invalid out-of-bounds topology indexing"
+      },
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_21",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 5,
+    "description": "Invalid geometry: Inverted element orientation (det J < 0)",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": {
+        "inverted": true,
+        "description": "Inverted element orientation (det J < 0)"
+      },
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_22",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 6,
+    "description": "Invalid geometry: Self-intersecting boundary polygon",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": {
+        "self_intersecting": true,
+        "description": "Self-intersecting boundary polygon"
+      },
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_23",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 7,
+    "description": "Invalid geometry: Disconnected floating nodes",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": {
+        "disconnected_nodes": true,
+        "description": "Disconnected floating nodes"
+      },
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_24",
+    "category": "invalid_geometry",
+    "priority": 3,
+    "sub_index": 8,
+    "description": "Invalid geometry: Zero-thickness 1D degenerate element",
+    "expected_refusal_code": "invalid_geometry",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": {
+        "degenerate_1d": true,
+        "description": "Zero-thickness 1D degenerate element"
+      },
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_25",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 1,
+    "description": "Mesh quality violation: minimum interior angle 4.2 deg (< 10.0 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 4.2,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_26",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 2,
+    "description": "Mesh quality violation: minimum interior angle 5.5 deg (< 10.0 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 5.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_27",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 3,
+    "description": "Mesh quality violation: minimum interior angle 6.8 deg (< 10.0 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 6.8,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_28",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 4,
+    "description": "Mesh quality violation: minimum interior angle 7.8 deg (< 10.0 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 7.8,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_29",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 5,
+    "description": "Mesh quality violation: minimum interior angle 8.5 deg (< 10.0 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 8.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_30",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 6,
+    "description": "Mesh quality violation: minimum interior angle 9.1 deg (< 10.0 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 9.1,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_31",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 7,
+    "description": "Mesh quality violation: minimum interior angle 9.5 deg (< 10.0 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 9.5,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_32",
+    "category": "mesh_quality_failure",
+    "priority": 4,
+    "sub_index": 8,
+    "description": "Mesh quality violation: minimum interior angle 9.8 deg (< 10.0 deg)",
+    "expected_refusal_code": "mesh_quality_failure",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 9.8,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_33",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 1,
+    "description": "Linear solver convergence failure: relative residual 1.50e-06 (> 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1.5e-06,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_34",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 2,
+    "description": "Linear solver convergence failure: relative residual 3.20e-07 (> 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 3.2e-07,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_35",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 3,
+    "description": "Linear solver convergence failure: relative residual 1.00e-05 (> 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-05,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_36",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 4,
+    "description": "Linear solver convergence failure: relative residual 4.80e-08 (> 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 4.8e-08,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_37",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 5,
+    "description": "Linear solver convergence failure: relative residual 2.10e-09 (> 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 2.1e-09,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_38",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 6,
+    "description": "Linear solver convergence failure: relative residual 8.50e-04 (> 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 0.00085,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_39",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 7,
+    "description": "Linear solver convergence failure: relative residual 5.00e-02 (> 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 0.05,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_40",
+    "category": "solver_not_converged",
+    "priority": 5,
+    "sub_index": 8,
+    "description": "Linear solver convergence failure: relative residual 1.20e-06 (> 1e-10)",
+    "expected_refusal_code": "solver_not_converged",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1.2e-06,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_41",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 1,
+    "description": "Insufficient grid sequence: Single coarse grid M0 provided",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 1,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_42",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 2,
+    "description": "Insufficient grid sequence: Two mesh levels (M0, M1) provided",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_43",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 3,
+    "description": "Insufficient grid sequence: Refinement ratio r=1.50 != 2.0",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 1.5,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_44",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 4,
+    "description": "Insufficient grid sequence: Missing intermediate level (r=4.0 != 2.0)",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 4.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_45",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 5,
+    "description": "Insufficient grid sequence: Non-uniform adaptive refinement r=1.75",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 1.75,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_46",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 6,
+    "description": "Insufficient grid sequence: Four-grid mode requested but J3 omitted",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "four_grid"
+    }
+  },
+  {
+    "case_id": "T3_47",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 7,
+    "description": "Insufficient grid sequence: Two levels with non-standard ratio r=1.5",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 2,
+      "refinement_ratio": 1.5,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_48",
+    "category": "unverified_insufficient_levels",
+    "priority": 6,
+    "sub_index": 8,
+    "description": "Insufficient grid sequence: Non-standard refinement ratio r=2.50",
+    "expected_refusal_code": "unverified_insufficient_levels",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.5,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_49",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 1,
+    "description": "Sub-floor differences: |d01|=1.80e-14, |d12|=6.00e-15 (< 1e-13 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.000000000000024,
+      "J1": 1.000000000000006,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_50",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 2,
+    "description": "Sub-floor differences: |d01|=7.55e-15, |d12|=2.44e-15 (< 1e-13 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.00000000000001,
+      "J1": 1.0000000000000024,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_51",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 3,
+    "description": "Sub-floor differences: |d01|=0.00e+00, |d12|=0.00e+00 (< 1e-13 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.0,
+      "J1": 1.0,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_52",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 4,
+    "description": "Sub-floor differences: |d01|=4.00e-15, |d12|=1.11e-15 (< 1e-13 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.000000000000005,
+      "J1": 1.000000000000001,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_53",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 5,
+    "description": "Sub-floor differences: |d01|=6.00e-14, |d12|=2.00e-14 (< 1e-13 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.00000000000008,
+      "J1": 1.00000000000002,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_54",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 6,
+    "description": "Sub-floor differences: |d01|=2.66e-15, |d12|=8.88e-16 (< 1e-13 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.0000000000000036,
+      "J1": 1.0000000000000009,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_55",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 7,
+    "description": "Sub-floor differences: |d01|=5.40e-14, |d12|=1.80e-14 (< 1e-13 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.000000000000072,
+      "J1": 1.000000000000018,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_56",
+    "category": "unverified_difference_below_numerical_floor",
+    "priority": 7,
+    "sub_index": 8,
+    "description": "Sub-floor differences: |d01|=8.22e-15, |d12|=2.89e-15 (< 1e-13 m)",
+    "expected_refusal_code": "unverified_difference_below_numerical_floor",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.000000000000011,
+      "J1": 1.0000000000000029,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_57",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 1,
+    "description": "Observed order failure: p_obs = 0.25 (outside window [0.5, 3.5])",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.0218920711500272,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_58",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 2,
+    "description": "Observed order failure: p_obs = 0.35 (outside window [0.5, 3.5])",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.0227456062731926,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_59",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 3,
+    "description": "Observed order failure: p_obs = 0.45 (outside window [0.5, 3.5])",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.023660402567544,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_60",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 4,
+    "description": "Observed order failure: p_obs = 3.80 (outside window [0.5, 3.5])",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.1492880901273799,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_61",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 5,
+    "description": "Observed order failure: p_obs = 4.20 (outside window [0.5, 3.5])",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.1937917367995257,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_62",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 6,
+    "description": "Observed order failure: p_obs = 4.80 (outside window [0.5, 3.5])",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.2885761802547597,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_63",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 7,
+    "description": "Observed order failure: p_obs = 0.15 (outside window [0.5, 3.5])",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.0210956947206784,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_64",
+    "category": "unverified_order",
+    "priority": 8,
+    "sub_index": 8,
+    "description": "Observed order failure: p_obs = 5.50 (outside window [0.5, 3.5])",
+    "expected_refusal_code": "unverified_order",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.4625483399593904,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_65",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 1,
+    "description": "Non-asymptotic convergence: Oscillating sequence (d01 > 0, d12 < 0)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.02,
+      "J1": 1.0,
+      "J2": 1.01,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_66",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 2,
+    "description": "Non-asymptotic convergence: Diverging sequence (q = 0.50 < 1.0)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.01,
+      "J1": 1.0,
+      "J2": 0.98,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_67",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 3,
+    "description": "Non-asymptotic convergence: Stagnant sequence (q = 1.0)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.02,
+      "J1": 1.01,
+      "J2": 1.0,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_68",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 4,
+    "description": "Non-asymptotic convergence: Oscillating sequence (d01 < 0, d12 > 0)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 0.98,
+      "J1": 1.0,
+      "J2": 0.99,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_69",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 5,
+    "description": "Non-asymptotic convergence: Diverging sequence (q = 0.33 < 1.0)",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.005,
+      "J1": 1.0,
+      "J2": 0.985,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_70",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 6,
+    "description": "Non-asymptotic convergence: Four-grid mode with non-monotonic M3",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": 1.0045,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "four_grid"
+    }
+  },
+  {
+    "case_id": "T3_71",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 7,
+    "description": "Non-asymptotic convergence: Four-grid mode with delta_p = 1.0 > 0.50",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": 0.9987499999999999,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "four_grid"
+    }
+  },
+  {
+    "case_id": "T3_72",
+    "category": "unverified_non_asymptotic",
+    "priority": 9,
+    "sub_index": 8,
+    "description": "Non-asymptotic convergence: Four-grid mode with delta_p = 1.42 > 0.50",
+    "expected_refusal_code": "unverified_non_asymptotic",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": 0.9974999999999999,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0001,
+      "verification_mode": "four_grid"
+    }
+  },
+  {
+    "case_id": "T3_73",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 1,
+    "description": "Reference solution uncertainty 0.12% exceeds frozen gate 0.05%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0012,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_74",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 2,
+    "description": "Reference solution uncertainty 0.08% exceeds frozen gate 0.05%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0008,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_75",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 3,
+    "description": "Reference solution uncertainty 0.25% exceeds frozen gate 0.05%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0025,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_76",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 4,
+    "description": "Reference solution uncertainty 0.50% exceeds frozen gate 0.05%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.005,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_77",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 5,
+    "description": "Reference solution uncertainty 0.07% exceeds frozen gate 0.05%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0007,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_78",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 6,
+    "description": "Reference solution uncertainty 0.15% exceeds frozen gate 0.05%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.0015,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_79",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 7,
+    "description": "Reference solution uncertainty 0.30% exceeds frozen gate 0.05%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.003,
+      "verification_mode": "three_grid"
+    }
+  },
+  {
+    "case_id": "T3_80",
+    "category": "reference_uncertain",
+    "priority": 10,
+    "sub_index": 8,
+    "description": "Reference solution uncertainty 1.00% exceeds frozen gate 0.05%",
+    "expected_refusal_code": "reference_uncertain",
+    "expected_contract_issued": false,
+    "verification_stage": "ProblemAnalyser.evaluate_contract",
+    "test_inputs": {
+      "J0": 1.04,
+      "J1": 1.01,
+      "J2": 1.0025,
+      "J3": null,
+      "qoi_spec": {
+        "type": "boundary_average_displacement"
+      },
+      "geometry": true,
+      "mesh_min_angle_deg": 35.0,
+      "solver_relative_residual": 1e-12,
+      "mesh_levels": 3,
+      "refinement_ratio": 2.0,
+      "reference_uncertainty": 0.01,
+      "verification_mode": "three_grid"
+    }
+  }
+]

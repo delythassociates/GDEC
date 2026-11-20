@@ -46,7 +46,7 @@ jobs:
 
       - name: Unit and Integration Tests (pytest)
         run: |
-          pytest tests -v --durations=10
+          pytest tests -v --durations=10 -m "not confirmatory"
 
       - name: Numerical Verification Suite
         run: |

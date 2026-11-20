@@ -1,0 +1,42 @@
+{
+  "j_exact": 0.2838096843988563,
+  "e_smallest_m3": 5.2849e-05,
+  "mesh_evaluations": {
+    "M1": {
+      "elements": 200,
+      "j_values": {
+        "Order 14": 0.28465220639469524,
+        "Order 18": 0.2846530599597299,
+        "Order 22": 0.28465343316646385,
+        "Order 26": 0.2846536229775617
+      },
+      "delta_14_18": 8.535650346530588e-07,
+      "delta_18_22": 3.7320673396123993e-07,
+      "delta_22_26": 1.8981109783933192e-07,
+      "convergence_ratio_1": 0.43723292169873623,
+      "convergence_ratio_2": 0.5085950508573758,
+      "is_monotonically_converging": true,
+      "quad_error_estimate": 1.8981109783933192e-07,
+      "error_ratio_against_m3": 0.003591574066478683,
+      "target_met_le_1pct": true
+    },
+    "M2": {
+      "elements": 800,
+      "j_values": {
+        "Order 14": 0.2840203201049536,
+        "Order 18": 0.2840206430999671,
+        "Order 22": 0.28402078431762545,
+        "Order 26": 0.28402085613902545
+      },
+      "delta_14_18": 3.2299501351307214e-07,
+      "delta_18_22": 1.412176583448499e-07,
+      "delta_22_26": 7.182139999395432e-08,
+      "convergence_ratio_1": 0.4372131222983558,
+      "convergence_ratio_2": 0.508586538225753,
+      "is_monotonically_converging": true,
+      "quad_error_estimate": 7.182139999395432e-08,
+      "error_ratio_against_m3": 0.001358992601448548,
+      "target_met_le_1pct": true
+    }
+  }
+}

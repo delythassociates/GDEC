@@ -245,18 +245,108 @@ def test_accuracy_target_requires_explicit_positive_scale():
         AccuracyTarget(target_type="relative", tolerance=0.01, qoi_scale=-1.0)
 
 
-def test_budget_exhaustion_accuracy_status_consistency():
-    """AM1-12: If budget is exhausted, status is 'estimated_target_not_met' and estimated_target_met is False."""
+def test_budget_exhaustion_semantics_am2_03():
+    """AM2-03: Budget exhaustion must not overturn an achieved accuracy target."""
     analyser = ProblemAnalyser()
-    # U0 = 0.05, tolerance = 0.10 -> U0 <= tolerance, but budget_exhausted=True
-    target = AccuracyTarget(target_type="relative", tolerance=0.10, qoi_scale=1.0)
-    res = analyser.evaluate_contract(1.04, 1.01, 1.0025, target=target, budget_exhausted=True)
+    # U0 = 0.05, tolerance = 0.10 -> U0 <= tolerance
+    target_met_spec = AccuracyTarget(target_type="relative", tolerance=0.10, qoi_scale=1.0)
+    # U0 = 0.05, tolerance = 0.02 -> U0 > tolerance
+    target_unmet_spec = AccuracyTarget(target_type="relative", tolerance=0.02, qoi_scale=1.0)
 
-    assert res.issued is True
-    assert res.accuracy is not None
-    assert res.accuracy["estimated_target_met"] is False
-    assert res.accuracy["status"] == "estimated_target_not_met"
-    assert res.accuracy["budget_exhausted"] is True
+    # 1. Budget exhausted before target attainment (target unmet)
+    res1 = analyser.evaluate_contract(1.04, 1.01, 1.0025, target=target_unmet_spec, budget_exhausted=True)
+    assert res1.issued is True
+    assert res1.accuracy["estimated_target_met"] is False
+    assert res1.accuracy["status"] == "estimated_target_not_met"
+    assert res1.accuracy["budget_exhausted"] is True
+
+    # 2. Budget exhausted after target attainment (target met)
+    res2 = analyser.evaluate_contract(1.04, 1.01, 1.0025, target=target_met_spec, budget_exhausted=True)
+    assert res2.issued is True
+    assert res2.accuracy["estimated_target_met"] is True
+    assert res2.accuracy["status"] == "estimated_target_met"
+    assert res2.accuracy["budget_exhausted"] is True
+
+    # 3. Budget not exhausted and target met
+    res3 = analyser.evaluate_contract(1.04, 1.01, 1.0025, target=target_met_spec, budget_exhausted=False)
+    assert res3.issued is True
+    assert res3.accuracy["estimated_target_met"] is True
+    assert res3.accuracy["status"] == "estimated_target_met"
+    assert res3.accuracy["budget_exhausted"] is False
+
+    # 4. Budget not exhausted and target not met
+    res4 = analyser.evaluate_contract(1.04, 1.01, 1.0025, target=target_unmet_spec, budget_exhausted=False)
+    assert res4.issued is True
+    assert res4.accuracy["estimated_target_met"] is False
+    assert res4.accuracy["status"] == "estimated_target_not_met"
+    assert res4.accuracy["budget_exhausted"] is False
+
+    # 5. Valid uncertainty available but target unmet
+    assert res4.uncertainty is not None
+    assert np.isclose(res4.uncertainty["value"], 0.05, atol=1e-6)
+    assert np.isclose(res4.accuracy["evaluated_uncertainty_metric"], 0.05, atol=1e-6)
+
+
+def test_verification_mode_four_grid_enforcement_am2_04():
+    """AM2-04: verification_mode='four_grid' requires M3 and strictly enforces stability."""
+    analyser = ProblemAnalyser()
+    J0 = 1.04
+    J1 = 1.01
+    J2 = 1.0025
+
+    # Missing J3 in four_grid mode must refuse with UNVERIFIED_INSUFFICIENT_LEVELS
+    res_no_m3 = analyser.evaluate_contract(J0, J1, J2, verification_mode="four_grid")
+    assert res_no_m3.issued is False
+    assert res_no_m3.status == RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value
+
+    # J3 with stability failure in four_grid mode must refuse with UNVERIFIED_NON_ASYMPTOTIC
+    J3_bad = 1.0025 - 0.00375  # delta_p = 1.0 > 0.50
+    res_bad = analyser.evaluate_contract(J0, J1, J2, J3=J3_bad, verification_mode="four_grid")
+    assert res_bad.issued is False
+    assert res_bad.status == RefusalCode.UNVERIFIED_NON_ASYMPTOTIC.value
+
+    # J3 with passing stability in four_grid mode issues four_grid_verified_contract_issued
+    J3_good = 1.000625  # p123 = 2.0 -> delta_p = 0.0
+    res_good = analyser.evaluate_contract(J0, J1, J2, J3=J3_good, verification_mode="four_grid")
+    assert res_good.issued is True
+    assert res_good.status == "four_grid_verified_contract_issued"
+    assert res_good.verification["four_grid_status"] == "four_grid_stability_passed"
+
+
+def test_reference_uncertainty_refusal_gate_am2_05():
+    """AM2-05 & AM2-07: Reference uncertainty exceeding frozen gate (0.05%) must be refused."""
+    analyser = ProblemAnalyser(reference_uncertainty_gate=0.0005)
+    # reference_uncertainty = 0.0012 (0.12% > 0.05%)
+    res = analyser.evaluate_contract(1.04, 1.01, 1.0025, reference_uncertainty=0.0012)
+    assert res.issued is False
+    assert res.status == RefusalCode.REFERENCE_UNCERTAIN.value
+    assert res.refusal["priority"] == 10
+
+    # reference_uncertainty = 0.0003 (0.03% <= 0.05%)
+    res_ok = analyser.evaluate_contract(1.04, 1.01, 1.0025, reference_uncertainty=0.0003)
+    assert res_ok.issued is True
+
+
+def test_numerical_input_validation_am2_05():
+    """AM2-05: Non-finite values or negative residuals must raise ValueError."""
+    analyser = ProblemAnalyser()
+    with pytest.raises(ValueError, match="QoI value J0 must be finite"):
+        analyser.evaluate_contract(np.nan, 1.01, 1.0025)
+
+    with pytest.raises(ValueError, match="solver_relative_residual must be a non-negative finite float"):
+        analyser.evaluate_contract(1.04, 1.01, 1.0025, solver_relative_residual=-1e-5)
+
+    with pytest.raises(ValueError, match="solver_relative_residual must be a non-negative finite float"):
+        analyser.evaluate_contract(1.04, 1.01, 1.0025, solver_relative_residual=np.nan)
+
+
+def test_refinement_ratio_validation_am2_05():
+    """AM2-05: Inconsistent refinement ratio (e.g. r=1.5 instead of 2.0) must refuse."""
+    analyser = ProblemAnalyser()
+    res = analyser.evaluate_contract(1.04, 1.01, 1.0025, refinement_ratio=1.5)
+    assert res.issued is False
+    assert res.status == RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS.value
+    assert "r=1.50" in res.refusal["reason"]
 
 
 def test_m3_stability_refusal_when_required():

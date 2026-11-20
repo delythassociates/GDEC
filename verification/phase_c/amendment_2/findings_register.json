@@ -1,0 +1,82 @@
+{
+  "amendment": "Phase C Amendment 2",
+  "base_tag": "prereg-c-amendment-1",
+  "base_commit": "8c25ff0905a4fc45734c199490ffff1250a980bd",
+  "target_tag": "prereg-c-amendment-2",
+  "target_branch": "phase-c/amendment-2",
+  "total_findings": 9,
+  "findings": [
+    {
+      "id": "AM2-01",
+      "category": "Manufactured BVP Integrity",
+      "severity": "CRITICAL",
+      "summary": "Tier 1 manufactured body forces and exact QoI references mathematically incomplete or inconsistent",
+      "status": "REMEDIATED",
+      "remediation": "Corrected Family 1 fx formula, derived full exact body force for Family 3 Gaussian, redesigned Family 4 as isotropic mixed shear, verified symbolic equilibrium across all 40 configs, and verified exact QoIs against numerical quadrature."
+    },
+    {
+      "id": "AM2-02",
+      "category": "Tier 3 Refusal System",
+      "severity": "CRITICAL",
+      "summary": "Tier 3 refusal manifest used repeated category templates rather than 80 distinct executable test cases",
+      "status": "REMEDIATED",
+      "remediation": "Rebuilt Tier 3 with 80 unique executable test cases (8 per category across all 10 priority categories), verified via dedicated execution harness achieving 100% refusal accuracy."
+    },
+    {
+      "id": "AM2-03",
+      "category": "Accuracy Contract Engine",
+      "severity": "HIGH",
+      "summary": "Budget exhaustion negated estimated_target_met even when computed uncertainty met requested tolerance",
+      "status": "REMEDIATED",
+      "remediation": "Decoupled budget exhaustion from target attainment: estimated_target_met is True whenever metric <= tolerance, with budget_exhausted recorded as an independent flag."
+    },
+    {
+      "id": "AM2-04",
+      "category": "Four-Grid Validation",
+      "severity": "HIGH",
+      "summary": "require_m3_stability was optional/lax allowing four-grid configurations to bypass M3 stability checks",
+      "status": "REMEDIATED",
+      "remediation": "Added explicit verification_mode parameter; four-grid mode strictly requires M3 and enforces stability criterion |p_012 - p_123| <= 0.50, refusing with UNVERIFIED_NON_ASYMPTOTIC on failure."
+    },
+    {
+      "id": "AM2-05",
+      "category": "Input Validation",
+      "severity": "MEDIUM",
+      "summary": "Weak numerical input validation for non-finite values, negative residuals, and unverified refinement ratios",
+      "status": "REMEDIATED",
+      "remediation": "Added strict input validation: finite QoI checks, non-negative finite residual validation, refinement ratio r=2 validation, and scale-independent degenerate area checks."
+    },
+    {
+      "id": "AM2-06",
+      "category": "Quadrature Verification",
+      "severity": "HIGH",
+      "summary": "Two-order quadrature comparison (order 14 vs 18) was insufficient to prove convergence",
+      "status": "REMEDIATED",
+      "remediation": "Executed systematic 4-order quadrature study (orders 14, 18, 22, 26) on Case B using Duffy tensor Gauss-Legendre quadrature, proving geometric convergence and error ratio < 0.36% <= 1.0%."
+    },
+    {
+      "id": "AM2-07",
+      "category": "Tier 2 & Reference Gate",
+      "severity": "MEDIUM",
+      "summary": "Reference uncertainty gate was an enum description without an executable evaluation path",
+      "status": "REMEDIATED",
+      "remediation": "Implemented functional reference_uncertainty evaluation gate (Priority 10) in ProblemAnalyser.evaluate_contract() and reconciled Tier 2 eigenfunction specs."
+    },
+    {
+      "id": "AM2-08",
+      "category": "Statistical Protocol",
+      "severity": "MEDIUM",
+      "summary": "H5b allowed low denominator passes and sampling model lacked explicit statistical qualification",
+      "status": "REMEDIATED",
+      "remediation": "Updated thresholds: H5b requires N_claims >= 10, otherwise classified as INCONCLUSIVE; documented non-IID sampling nature of deterministic benchmark families."
+    },
+    {
+      "id": "AM2-09",
+      "category": "CI & Reproducibility",
+      "severity": "LOW",
+      "summary": "CI evidence reported local Windows execution without hosted GitHub Actions verification evidence",
+      "status": "REMEDIATED",
+      "remediation": "Separated local vs hosted CI documentation and linked GitHub Actions execution evidence in reports/phase_c_amendment_2/CI_EVIDENCE.md."
+    }
+  ]
+}

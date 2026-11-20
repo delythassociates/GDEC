@@ -48,6 +48,10 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "confirmatory: Confirmatory experiment runs (Tier 1, Tier 2, Tier 3) - excluded from standard CI",
+]
+addopts = "-m 'not confirmatory'"
 
 [tool.mypy]
 python_version = "3.10"

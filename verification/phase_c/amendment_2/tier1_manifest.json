@@ -1,0 +1,3292 @@
+[
+  {
+    "config_id": "T1_01",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "item_index": 0,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.001 * x^2 + -0.0004 * y^2",
+        "uy": "0.001 * x * y"
+      },
+      "body_force": {
+        "fx": "-0.001 * (2 * c11 + c12) - c33 * (0.001 + 2 * -0.0004)",
+        "fy": "0.0",
+        "fx_constant_value": -241488020.17654473,
+        "fy_constant_value": 0.0
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "a": 0.001,
+      "b": -0.0004,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 105086170659.94115,
+      "c12": 23118957545.187054,
+      "c33": 40983606557.377045
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 0.0005,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 2042,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_02",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "item_index": 1,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.002 * x^2 + -0.0008 * y^2",
+        "uy": "0.002 * x * y"
+      },
+      "body_force": {
+        "fx": "-0.002 * (2 * c11 + c12) - c33 * (0.002 + 2 * -0.0008)",
+        "fy": "0.0",
+        "fx_constant_value": -565237691.0016978,
+        "fy_constant_value": 0.0
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "a": 0.002,
+      "b": -0.0008,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 122028862478.77759,
+      "c12": 29286926994.90662,
+      "c33": 46370967741.935486
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 0.000325,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 2142,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_03",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "item_index": 2,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.003 * x^2 + -0.0012000000000000001 * y^2",
+        "uy": "0.003 * x * y"
+      },
+      "body_force": {
+        "fx": "-0.003 * (2 * c11 + c12) - c33 * (0.003 + 2 * -0.0012000000000000001)",
+        "fy": "0.0",
+        "fx_constant_value": -1152976190.4761906,
+        "fy_constant_value": 0.0
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "a": 0.003,
+      "b": -0.0012000000000000001,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.26
+    },
+    "elasticity_tensor": {
+      "c11": 159060846560.84656,
+      "c12": 55886243386.243385,
+      "c33": 51587301587.30159
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 0.0015,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 2242,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_04",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "item_index": 3,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.004 * x^2 + -0.0016 * y^2",
+        "uy": "0.004 * x * y"
+      },
+      "body_force": {
+        "fx": "-0.004 * (2 * c11 + c12) - c33 * (0.004 + 2 * -0.0016)",
+        "fy": "0.0",
+        "fx_constant_value": -1816619318.1818185,
+        "fy_constant_value": 0.0
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "a": 0.004,
+      "b": -0.0016,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 145000000000.0,
+      "nu": 0.28
+    },
+    "elasticity_tensor": {
+      "c11": 185369318181.8182,
+      "c12": 72088068181.8182,
+      "c33": 56640625000.0
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 0.00065,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 2342,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_05",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "item_index": 4,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.005 * x^2 + -0.002 * y^2",
+        "uy": "0.005 * x * y"
+      },
+      "body_force": {
+        "fx": "-0.005 * (2 * c11 + c12) - c33 * (0.005 + 2 * -0.002)",
+        "fy": "0.0",
+        "fx_constant_value": -2083516483.5164833,
+        "fy_constant_value": 0.0
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "a": 0.005,
+      "b": -0.002,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.3
+    },
+    "elasticity_tensor": {
+      "c11": 175824175824.1758,
+      "c12": 52747252747.25275,
+      "c33": 61538461538.46153
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 0.0025,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 2442,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_06",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "item_index": 5,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.006 * x^2 + -0.0024000000000000002 * y^2",
+        "uy": "0.006 * x * y"
+      },
+      "body_force": {
+        "fx": "-0.006 * (2 * c11 + c12) - c33 * (0.006 + 2 * -0.0024000000000000002)",
+        "fy": "0.0",
+        "fx_constant_value": -1596256684.491979,
+        "fy_constant_value": 0.0
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "a": 0.006,
+      "b": -0.0024000000000000002,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.32
+    },
+    "elasticity_tensor": {
+      "c11": 111408199643.49377,
+      "c12": 35650623885.91801,
+      "c33": 37878787878.78789
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 0.000975,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 2542,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_07",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "item_index": 6,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.007 * x^2 + -0.0028 * y^2",
+        "uy": "0.007 * x * y"
+      },
+      "body_force": {
+        "fx": "-0.007 * (2 * c11 + c12) - c33 * (0.007 + 2 * -0.0028)",
+        "fy": "0.0",
+        "fx_constant_value": -2163319672.1311474,
+        "fy_constant_value": 0.0
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "a": 0.007,
+      "b": -0.0028,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 131293911007.02576,
+      "c12": 37031615925.05855,
+      "c33": 47131147540.983604
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 0.0035,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 2642,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_08",
+    "family": "family_1_polynomial",
+    "family_index": 1,
+    "item_index": 7,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.008 * x^2 + -0.0032 * y^2",
+        "uy": "0.008 * x * y"
+      },
+      "body_force": {
+        "fx": "-0.008 * (2 * c11 + c12) - c33 * (0.008 + 2 * -0.0032)",
+        "fy": "0.0",
+        "fx_constant_value": -2922580645.1612897,
+        "fy_constant_value": 0.0
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "a": 0.008,
+      "b": -0.0032,
+      "p_order": 2
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 153225806451.61288,
+      "c12": 48387096774.19354,
+      "c33": 52419354838.70967
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 0.0013,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 2742,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_09",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "item_index": 0,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "8e-05 * sin(0.5 * pi * x) * cos(0.5 * pi * y)",
+        "uy": "8e-05 * cos(0.5 * pi * x) * sin(0.5 * pi * y)"
+      },
+      "body_force": {
+        "fx": "2 * c11 * (0.5 * pi)^2 * 8e-05 * sin(0.5 * pi * x) * cos(0.5 * pi * y)",
+        "fy": "2 * c11 * (0.5 * pi)^2 * 8e-05 * cos(0.5 * pi * x) * sin(0.5 * pi * y)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "freq": 0.5,
+      "amp": 8e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 105086170659.94115,
+      "c12": 23118957545.187054,
+      "c33": 40983606557.377045
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 5.092958178940651e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 4042,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_10",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "item_index": 1,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "9e-05 * sin(1.25 * pi * x) * cos(1.25 * pi * y)",
+        "uy": "9e-05 * cos(1.25 * pi * x) * sin(1.25 * pi * y)"
+      },
+      "body_force": {
+        "fx": "2 * c11 * (1.25 * pi)^2 * 9e-05 * sin(1.25 * pi * x) * cos(1.25 * pi * y)",
+        "fy": "2 * c11 * (1.25 * pi)^2 * 9e-05 * cos(1.25 * pi * x) * sin(1.25 * pi * y)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "freq": 1.25,
+      "amp": 9e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 122028862478.77759,
+      "c12": 29286926994.90662,
+      "c33": 46370967741.935486
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": -2.2823933358196085e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 4142,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_11",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "item_index": 2,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0001 * sin(1.5 * pi * x) * cos(1.5 * pi * y)",
+        "uy": "0.0001 * cos(1.5 * pi * x) * sin(1.5 * pi * y)"
+      },
+      "body_force": {
+        "fx": "2 * c11 * (1.5 * pi)^2 * 0.0001 * sin(1.5 * pi * x) * cos(1.5 * pi * y)",
+        "fy": "2 * c11 * (1.5 * pi)^2 * 0.0001 * cos(1.5 * pi * x) * sin(1.5 * pi * y)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "freq": 1.5,
+      "amp": 0.0001
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.26
+    },
+    "elasticity_tensor": {
+      "c11": 159060846560.84656,
+      "c12": 55886243386.243385,
+      "c33": 51587301587.30159
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 2.122065907891938e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 4242,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_12",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "item_index": 3,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.00011000000000000002 * sin(2.25 * pi * x) * cos(2.25 * pi * y)",
+        "uy": "0.00011000000000000002 * cos(2.25 * pi * x) * sin(2.25 * pi * y)"
+      },
+      "body_force": {
+        "fx": "2 * c11 * (2.25 * pi)^2 * 0.00011000000000000002 * sin(2.25 * pi * x) * cos(2.25 * pi * y)",
+        "fy": "2 * c11 * (2.25 * pi)^2 * 0.00011000000000000002 * cos(2.25 * pi * x) * sin(2.25 * pi * y)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "freq": 2.25,
+      "amp": 0.00011000000000000002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 145000000000.0,
+      "nu": 0.28
+    },
+    "elasticity_tensor": {
+      "c11": 185369318181.8182,
+      "c12": 72088068181.8182,
+      "c33": 56640625000.0
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 1.1979833204303258e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 4342,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_13",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "item_index": 4,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.00012000000000000003 * sin(2.5 * pi * x) * cos(2.5 * pi * y)",
+        "uy": "0.00012000000000000003 * cos(2.5 * pi * x) * sin(2.5 * pi * y)"
+      },
+      "body_force": {
+        "fx": "2 * c11 * (2.5 * pi)^2 * 0.00012000000000000003 * sin(2.5 * pi * x) * cos(2.5 * pi * y)",
+        "fy": "2 * c11 * (2.5 * pi)^2 * 0.00012000000000000003 * cos(2.5 * pi * x) * sin(2.5 * pi * y)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "freq": 2.5,
+      "amp": 0.00012000000000000003
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.3
+    },
+    "elasticity_tensor": {
+      "c11": 175824175824.1758,
+      "c12": 52747252747.25275,
+      "c33": 61538461538.46153
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 1.5278874536821956e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 4442,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_14",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "item_index": 5,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.00013000000000000002 * sin(3.25 * pi * x) * cos(3.25 * pi * y)",
+        "uy": "0.00013000000000000002 * cos(3.25 * pi * x) * sin(3.25 * pi * y)"
+      },
+      "body_force": {
+        "fx": "2 * c11 * (3.25 * pi)^2 * 0.00013000000000000002 * sin(3.25 * pi * x) * cos(3.25 * pi * y)",
+        "fy": "2 * c11 * (3.25 * pi)^2 * 0.00013000000000000002 * cos(3.25 * pi * x) * sin(3.25 * pi * y)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "freq": 3.25,
+      "amp": 0.00013000000000000002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.32
+    },
+    "elasticity_tensor": {
+      "c11": 111408199643.49377,
+      "c12": 35650623885.91801,
+      "c33": 37878787878.78789
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": -2.1773578489417656e-06,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 4542,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.01,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_15",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "item_index": 6,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.00014000000000000001 * sin(3.5 * pi * x) * cos(3.5 * pi * y)",
+        "uy": "0.00014000000000000001 * cos(3.5 * pi * x) * sin(3.5 * pi * y)"
+      },
+      "body_force": {
+        "fx": "2 * c11 * (3.5 * pi)^2 * 0.00014000000000000001 * sin(3.5 * pi * x) * cos(3.5 * pi * y)",
+        "fy": "2 * c11 * (3.5 * pi)^2 * 0.00014000000000000001 * cos(3.5 * pi * x) * sin(3.5 * pi * y)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "freq": 3.5,
+      "amp": 0.00014000000000000001
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 131293911007.02576,
+      "c12": 37031615925.05855,
+      "c33": 47131147540.983604
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 1.2732395447351628e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 4642,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_16",
+    "family": "family_2_trigonometric",
+    "family_index": 2,
+    "item_index": 7,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.00015000000000000001 * sin(4.25 * pi * x) * cos(4.25 * pi * y)",
+        "uy": "0.00015000000000000001 * cos(4.25 * pi * x) * sin(4.25 * pi * y)"
+      },
+      "body_force": {
+        "fx": "2 * c11 * (4.25 * pi)^2 * 0.00015000000000000001 * sin(4.25 * pi * x) * cos(4.25 * pi * y)",
+        "fy": "2 * c11 * (4.25 * pi)^2 * 0.00015000000000000001 * cos(4.25 * pi * x) * sin(4.25 * pi * y)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "freq": 4.25,
+      "amp": 0.00015000000000000001
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 153225806451.61288,
+      "c12": 48387096774.19354,
+      "c33": 52419354838.70967
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 1.8115907473781278e-07,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 4742,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_17",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "item_index": 0,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0002 * exp(-((x - 0.35)^2 + (y - 0.45)^2) / 0.0144)",
+        "uy": "0.5 * 0.0002 * exp(-((x - 0.35)^2 + (y - 0.45)^2) / 0.0144)"
+      },
+      "body_force": {
+        "fx": "-(c11 * phi_xx + c33 * phi_yy + 0.5 * (c12 + c33) * phi_xy)",
+        "fy": "-(0.5 * c11 * phi_yy + 0.5 * c33 * phi_xx + (c12 + c33) * phi_xy)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "x0": 0.35,
+      "y0": 0.45,
+      "sigma": 0.12,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 105086170659.94115,
+      "c12": 23118957545.187054,
+      "c33": 40983606557.377045
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 1.6015779121267996e-14,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 6042,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_18",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "item_index": 1,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0002 * exp(-((x - 0.38999999999999996)^2 + (y - 0.48)^2) / 0.019599999999999996)",
+        "uy": "0.5 * 0.0002 * exp(-((x - 0.38999999999999996)^2 + (y - 0.48)^2) / 0.019599999999999996)"
+      },
+      "body_force": {
+        "fx": "-(c11 * phi_xx + c33 * phi_yy + 0.5 * (c12 + c33) * phi_xy)",
+        "fy": "-(0.5 * c11 * phi_yy + 0.5 * c33 * phi_xx + (c12 + c33) * phi_xy)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "x0": 0.38999999999999996,
+      "y0": 0.48,
+      "sigma": 0.13999999999999999,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 122028862478.77759,
+      "c12": 29286926994.90662,
+      "c33": 46370967741.935486
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 4.477681112188549e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 6142,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_19",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "item_index": 2,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0002 * exp(-((x - 0.43)^2 + (y - 0.51)^2) / 0.0256)",
+        "uy": "0.5 * 0.0002 * exp(-((x - 0.43)^2 + (y - 0.51)^2) / 0.0256)"
+      },
+      "body_force": {
+        "fx": "-(c11 * phi_xx + c33 * phi_yy + 0.5 * (c12 + c33) * phi_xy)",
+        "fy": "-(0.5 * c11 * phi_yy + 0.5 * c33 * phi_xx + (c12 + c33) * phi_xy)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "x0": 0.43,
+      "y0": 0.51,
+      "sigma": 0.16,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.26
+    },
+    "elasticity_tensor": {
+      "c11": 159060846560.84656,
+      "c12": 55886243386.243385,
+      "c33": 51587301587.30159
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 2.395831404135129e-09,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 6242,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_20",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "item_index": 3,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0002 * exp(-((x - 0.47)^2 + (y - 0.54)^2) / 0.0324)",
+        "uy": "0.5 * 0.0002 * exp(-((x - 0.47)^2 + (y - 0.54)^2) / 0.0324)"
+      },
+      "body_force": {
+        "fx": "-(c11 * phi_xx + c33 * phi_yy + 0.5 * (c12 + c33) * phi_xy)",
+        "fy": "-(0.5 * c11 * phi_yy + 0.5 * c33 * phi_xx + (c12 + c33) * phi_xy)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "x0": 0.47,
+      "y0": 0.54,
+      "sigma": 0.18,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 145000000000.0,
+      "nu": 0.28
+    },
+    "elasticity_tensor": {
+      "c11": 185369318181.8182,
+      "c12": 72088068181.8182,
+      "c33": 56640625000.0
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 7.220485074512924e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 6342,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_21",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "item_index": 4,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0002 * exp(-((x - 0.35)^2 + (y - 0.45)^2) / 0.0144)",
+        "uy": "0.5 * 0.0002 * exp(-((x - 0.35)^2 + (y - 0.45)^2) / 0.0144)"
+      },
+      "body_force": {
+        "fx": "-(c11 * phi_xx + c33 * phi_yy + 0.5 * (c12 + c33) * phi_xy)",
+        "fy": "-(0.5 * c11 * phi_yy + 0.5 * c33 * phi_xx + (c12 + c33) * phi_xy)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "x0": 0.35,
+      "y0": 0.45,
+      "sigma": 0.12,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.3
+    },
+    "elasticity_tensor": {
+      "c11": 175824175824.1758,
+      "c12": 52747252747.25275,
+      "c33": 61538461538.46153
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 1.6015779121267996e-14,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 6442,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_22",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "item_index": 5,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0002 * exp(-((x - 0.38999999999999996)^2 + (y - 0.48)^2) / 0.019599999999999996)",
+        "uy": "0.5 * 0.0002 * exp(-((x - 0.38999999999999996)^2 + (y - 0.48)^2) / 0.019599999999999996)"
+      },
+      "body_force": {
+        "fx": "-(c11 * phi_xx + c33 * phi_yy + 0.5 * (c12 + c33) * phi_xy)",
+        "fy": "-(0.5 * c11 * phi_yy + 0.5 * c33 * phi_xx + (c12 + c33) * phi_xy)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "x0": 0.38999999999999996,
+      "y0": 0.48,
+      "sigma": 0.13999999999999999,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.32
+    },
+    "elasticity_tensor": {
+      "c11": 111408199643.49377,
+      "c12": 35650623885.91801,
+      "c33": 37878787878.78789
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 4.477681112188549e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 6542,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_23",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "item_index": 6,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0002 * exp(-((x - 0.43)^2 + (y - 0.51)^2) / 0.0256)",
+        "uy": "0.5 * 0.0002 * exp(-((x - 0.43)^2 + (y - 0.51)^2) / 0.0256)"
+      },
+      "body_force": {
+        "fx": "-(c11 * phi_xx + c33 * phi_yy + 0.5 * (c12 + c33) * phi_xy)",
+        "fy": "-(0.5 * c11 * phi_yy + 0.5 * c33 * phi_xx + (c12 + c33) * phi_xy)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "x0": 0.43,
+      "y0": 0.51,
+      "sigma": 0.16,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 131293911007.02576,
+      "c12": 37031615925.05855,
+      "c33": 47131147540.983604
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 2.395831404135129e-09,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 6642,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_24",
+    "family": "family_3_localized_gaussian",
+    "family_index": 3,
+    "item_index": 7,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0002 * exp(-((x - 0.47)^2 + (y - 0.54)^2) / 0.0324)",
+        "uy": "0.5 * 0.0002 * exp(-((x - 0.47)^2 + (y - 0.54)^2) / 0.0324)"
+      },
+      "body_force": {
+        "fx": "-(c11 * phi_xx + c33 * phi_yy + 0.5 * (c12 + c33) * phi_xy)",
+        "fy": "-(0.5 * c11 * phi_yy + 0.5 * c33 * phi_xx + (c12 + c33) * phi_xy)",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "x0": 0.47,
+      "y0": 0.54,
+      "sigma": 0.18,
+      "amp": 0.0002
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 153225806451.61288,
+      "c12": 48387096774.19354,
+      "c33": 52419354838.70967
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 7.220485074512924e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 6742,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_25",
+    "family": "family_4_mixed_shear",
+    "family_index": 4,
+    "item_index": 0,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0015 * x * y + 0.0006 * y^2",
+        "uy": "-0.0006 * x^2 + 0.0015 * x * y"
+      },
+      "body_force": {
+        "fx": "-2 * c33 * 0.0006 - (c12 + c33) * 0.0015",
+        "fy": "2 * c33 * 0.0006 - (c12 + c33) * 0.0015",
+        "fx_constant_value": -145334174.0226986,
+        "fy_constant_value": -46973518.28499371
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "kx": 0.0015,
+      "ky": 0.0006
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 105086170659.94115,
+      "c12": 23118957545.187054,
+      "c33": 40983606557.377045
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 0.00055,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 8042,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_26",
+    "family": "family_4_mixed_shear",
+    "family_index": 4,
+    "item_index": 1,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.003 * x * y + 0.0012 * y^2",
+        "uy": "-0.0012 * x^2 + 0.003 * x * y"
+      },
+      "body_force": {
+        "fx": "-2 * c33 * 0.0012 - (c12 + c33) * 0.003",
+        "fy": "2 * c33 * 0.0012 - (c12 + c33) * 0.003",
+        "fx_constant_value": -338264006.7911715,
+        "fy_constant_value": -115683361.62988116
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "kx": 0.003,
+      "ky": 0.0012
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 122028862478.77759,
+      "c12": 29286926994.90662,
+      "c33": 46370967741.935486
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 0.001075,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 8142,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_27",
+    "family": "family_4_mixed_shear",
+    "family_index": 4,
+    "item_index": 2,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0045000000000000005 * x * y + 0.0018 * y^2",
+        "uy": "-0.0018 * x^2 + 0.0045000000000000005 * x * y"
+      },
+      "body_force": {
+        "fx": "-2 * c33 * 0.0018 - (c12 + c33) * 0.0045000000000000005",
+        "fy": "2 * c33 * 0.0018 - (c12 + c33) * 0.0045000000000000005",
+        "fx_constant_value": -669345238.0952382,
+        "fy_constant_value": -297916666.66666675
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "kx": 0.0045000000000000005,
+      "ky": 0.0018
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.26
+    },
+    "elasticity_tensor": {
+      "c11": 159060846560.84656,
+      "c12": 55886243386.243385,
+      "c33": 51587301587.30159
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 0.0016500000000000004,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 8242,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.005,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_28",
+    "family": "family_4_mixed_shear",
+    "family_index": 4,
+    "item_index": 3,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.006 * x * y + 0.0024 * y^2",
+        "uy": "-0.0024 * x^2 + 0.006 * x * y"
+      },
+      "body_force": {
+        "fx": "-2 * c33 * 0.0024 - (c12 + c33) * 0.006",
+        "fy": "2 * c33 * 0.0024 - (c12 + c33) * 0.006",
+        "fx_constant_value": -1044247159.0909092,
+        "fy_constant_value": -500497159.09090924
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "kx": 0.006,
+      "ky": 0.0024
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 145000000000.0,
+      "nu": 0.28
+    },
+    "elasticity_tensor": {
+      "c11": 185369318181.8182,
+      "c12": 72088068181.8182,
+      "c33": 56640625000.0
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 0.00215,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 8342,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_29",
+    "family": "family_4_mixed_shear",
+    "family_index": 4,
+    "item_index": 4,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0075 * x * y + 0.0029999999999999996 * y^2",
+        "uy": "-0.0029999999999999996 * x^2 + 0.0075 * x * y"
+      },
+      "body_force": {
+        "fx": "-2 * c33 * 0.0029999999999999996 - (c12 + c33) * 0.0075",
+        "fy": "2 * c33 * 0.0029999999999999996 - (c12 + c33) * 0.0075",
+        "fx_constant_value": -1226373626.3736262,
+        "fy_constant_value": -487912087.9120879
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "kx": 0.0075,
+      "ky": 0.0029999999999999996
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.3
+    },
+    "elasticity_tensor": {
+      "c11": 175824175824.1758,
+      "c12": 52747252747.25275,
+      "c33": 61538461538.46153
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 0.00275,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 8442,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_30",
+    "family": "family_4_mixed_shear",
+    "family_index": 4,
+    "item_index": 5,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.009000000000000001 * x * y + 0.0036 * y^2",
+        "uy": "-0.0036 * x^2 + 0.009000000000000001 * x * y"
+      },
+      "body_force": {
+        "fx": "-2 * c33 * 0.0036 - (c12 + c33) * 0.009000000000000001",
+        "fy": "2 * c33 * 0.0036 - (c12 + c33) * 0.009000000000000001",
+        "fx_constant_value": -934491978.609626,
+        "fy_constant_value": -389037433.1550804
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "kx": 0.009000000000000001,
+      "ky": 0.0036
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.32
+    },
+    "elasticity_tensor": {
+      "c11": 111408199643.49377,
+      "c12": 35650623885.91801,
+      "c33": 37878787878.78789
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 0.0032250000000000004,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 8542,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_31",
+    "family": "family_4_mixed_shear",
+    "family_index": 4,
+    "item_index": 6,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.0105 * x * y + 0.0042 * y^2",
+        "uy": "-0.0042 * x^2 + 0.0105 * x * y"
+      },
+      "body_force": {
+        "fx": "-2 * c33 * 0.0042 - (c12 + c33) * 0.0105",
+        "fy": "2 * c33 * 0.0042 - (c12 + c33) * 0.0105",
+        "fx_constant_value": -1279610655.7377048,
+        "fy_constant_value": -487807377.0491804
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "kx": 0.0105,
+      "ky": 0.0042
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 131293911007.02576,
+      "c12": 37031615925.05855,
+      "c33": 47131147540.983604
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 0.0001,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 0.00385,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 8642,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_32",
+    "family": "family_4_mixed_shear",
+    "family_index": 4,
+    "item_index": 7,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "0.012 * x * y + 0.0048 * y^2",
+        "uy": "-0.0048 * x^2 + 0.012 * x * y"
+      },
+      "body_force": {
+        "fx": "-2 * c33 * 0.0048 - (c12 + c33) * 0.012",
+        "fy": "2 * c33 * 0.0048 - (c12 + c33) * 0.012",
+        "fx_constant_value": -1712903225.8064513,
+        "fy_constant_value": -706451612.9032259
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "kx": 0.012,
+      "ky": 0.0048
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 153225806451.61288,
+      "c12": 48387096774.19354,
+      "c33": 52419354838.70967
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 0.0001,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 0.0043,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 8742,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_33",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "item_index": 0,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "5e-05 * (sin(2 * pi * x) + 0.25 * sin(6 * pi * x))",
+        "uy": "5e-05 * (cos(2 * pi * y) + 0.25 * cos(6 * pi * y))"
+      },
+      "body_force": {
+        "fx": "c11 * (pi^2) * 5e-05 * (2^2 * sin(2*pi*x) + 0.25 * 6^2 * sin(6*pi*x))",
+        "fy": "c11 * (pi^2) * 5e-05 * (2^2 * cos(2*pi*y) + 0.25 * 6^2 * cos(6*pi*y))",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "k1": 2,
+      "k2": 6,
+      "beta": 0.25,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 105086170659.94115,
+      "c12": 23118957545.187054,
+      "c33": 40983606557.377045
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 5e-05,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 6.25e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 10042,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_34",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "item_index": 1,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "5e-05 * (sin(3 * pi * x) + 0.25 * sin(8 * pi * x))",
+        "uy": "5e-05 * (cos(3 * pi * y) + 0.25 * cos(8 * pi * y))"
+      },
+      "body_force": {
+        "fx": "c11 * (pi^2) * 5e-05 * (3^2 * sin(3*pi*x) + 0.25 * 8^2 * sin(8*pi*x))",
+        "fy": "c11 * (pi^2) * 5e-05 * (3^2 * cos(3*pi*y) + 0.25 * 8^2 * cos(8*pi*y))",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "k1": 3,
+      "k2": 8,
+      "beta": 0.25,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 122028862478.77759,
+      "c12": 29286926994.90662,
+      "c33": 46370967741.935486
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 5e-05,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": -1.500527193595177e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 10142,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_35",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "item_index": 2,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "5e-05 * (sin(4 * pi * x) + 0.25 * sin(10 * pi * x))",
+        "uy": "5e-05 * (cos(4 * pi * y) + 0.25 * cos(10 * pi * y))"
+      },
+      "body_force": {
+        "fx": "c11 * (pi^2) * 5e-05 * (4^2 * sin(4*pi*x) + 0.25 * 10^2 * sin(10*pi*x))",
+        "fy": "c11 * (pi^2) * 5e-05 * (4^2 * cos(4*pi*y) + 0.25 * 10^2 * cos(10*pi*y))",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "k1": 4,
+      "k2": 10,
+      "beta": 0.25,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.26
+    },
+    "elasticity_tensor": {
+      "c11": 159060846560.84656,
+      "c12": 55886243386.243385,
+      "c33": 51587301587.30159
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 5e-05,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 6.25e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 10242,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_36",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "item_index": 3,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "5e-05 * (sin(5 * pi * x) + 0.25 * sin(12 * pi * x))",
+        "uy": "5e-05 * (cos(5 * pi * y) + 0.25 * cos(12 * pi * y))"
+      },
+      "body_force": {
+        "fx": "c11 * (pi^2) * 5e-05 * (5^2 * sin(5*pi*x) + 0.25 * 12^2 * sin(12*pi*x))",
+        "fy": "c11 * (pi^2) * 5e-05 * (5^2 * cos(5*pi*y) + 0.25 * 12^2 * cos(12*pi*y))",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "k1": 5,
+      "k2": 12,
+      "beta": 0.25,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 145000000000.0,
+      "nu": 0.28
+    },
+    "elasticity_tensor": {
+      "c11": 185369318181.8182,
+      "c12": 72088068181.8182,
+      "c33": 56640625000.0
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 5e-05,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": -9.003163161571058e-06,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 10342,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_37",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "item_index": 4,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "5e-05 * (sin(3 * pi * x) + 0.25 * sin(7 * pi * x))",
+        "uy": "5e-05 * (cos(3 * pi * y) + 0.25 * cos(7 * pi * y))"
+      },
+      "body_force": {
+        "fx": "c11 * (pi^2) * 5e-05 * (3^2 * sin(3*pi*x) + 0.25 * 7^2 * sin(7*pi*x))",
+        "fy": "c11 * (pi^2) * 5e-05 * (3^2 * cos(3*pi*y) + 0.25 * 7^2 * cos(7*pi*y))",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "k1": 3,
+      "k2": 7,
+      "beta": 0.25,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 160000000000.0,
+      "nu": 0.3
+    },
+    "elasticity_tensor": {
+      "c11": 175824175824.1758,
+      "c12": 52747252747.25275,
+      "c33": 61538461538.46153
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 5e-05,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": -6.25e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 10442,
+      "coarse_elements": 32
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_38",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "item_index": 5,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "5e-05 * (sin(4 * pi * x) + 0.25 * sin(9 * pi * x))",
+        "uy": "5e-05 * (cos(4 * pi * y) + 0.25 * cos(9 * pi * y))"
+      },
+      "body_force": {
+        "fx": "c11 * (pi^2) * 5e-05 * (4^2 * sin(4*pi*x) + 0.25 * 9^2 * sin(9*pi*x))",
+        "fy": "c11 * (pi^2) * 5e-05 * (4^2 * cos(4*pi*y) + 0.25 * 9^2 * cos(9*pi*y))",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "k1": 4,
+      "k2": 9,
+      "beta": 0.25,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_stress",
+    "material": {
+      "E": 100000000000.0,
+      "nu": 0.32
+    },
+    "elasticity_tensor": {
+      "c11": 111408199643.49377,
+      "c12": 35650623885.91801,
+      "c33": 37878787878.78789
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 5e-05,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": 1.2504393279959798e-06,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 10542,
+      "coarse_elements": 40
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_39",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "item_index": 6,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "5e-05 * (sin(2 * pi * x) + 0.25 * sin(8 * pi * x))",
+        "uy": "5e-05 * (cos(2 * pi * y) + 0.25 * cos(8 * pi * y))"
+      },
+      "body_force": {
+        "fx": "c11 * (pi^2) * 5e-05 * (2^2 * sin(2*pi*x) + 0.25 * 8^2 * sin(8*pi*x))",
+        "fy": "c11 * (pi^2) * 5e-05 * (2^2 * cos(2*pi*y) + 0.25 * 8^2 * cos(8*pi*y))",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "k1": 2,
+      "k2": 8,
+      "beta": 0.25,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 115000000000.0,
+      "nu": 0.22
+    },
+    "elasticity_tensor": {
+      "c11": 131293911007.02576,
+      "c12": 37031615925.05855,
+      "c33": 47131147540.983604
+    },
+    "qoi": {
+      "type": "boundary_average_displacement",
+      "component": "y",
+      "scale": 5e-05,
+      "target_region": "top edge y=1.0, x in [0, 1]",
+      "exact_analytical_value": 6.25e-05,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "structured",
+      "seed": 10642,
+      "coarse_elements": 48
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2",
+      "M3"
+    ],
+    "m3_validation_level": true,
+    "verification_mode": "four_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  },
+  {
+    "config_id": "T1_40",
+    "family": "family_5_multiscale_oscillatory",
+    "family_index": 5,
+    "item_index": 7,
+    "domain": {
+      "x_bounds": [
+        0.0,
+        1.0
+      ],
+      "y_bounds": [
+        0.0,
+        1.0
+      ],
+      "dimension": 2
+    },
+    "bvp_specification": {
+      "displacement_field": {
+        "ux": "5e-05 * (sin(5 * pi * x) + 0.25 * sin(15 * pi * x))",
+        "uy": "5e-05 * (cos(5 * pi * y) + 0.25 * cos(15 * pi * y))"
+      },
+      "body_force": {
+        "fx": "c11 * (pi^2) * 5e-05 * (5^2 * sin(5*pi*x) + 0.25 * 15^2 * sin(15*pi*x))",
+        "fy": "c11 * (pi^2) * 5e-05 * (5^2 * cos(5*pi*y) + 0.25 * 15^2 * cos(15*pi*y))",
+        "fx_constant_value": null,
+        "fy_constant_value": null
+      },
+      "boundary_conditions": {
+        "dirichlet_boundaries": [
+          "bottom (y=0)",
+          "top (y=1)",
+          "left (x=0)",
+          "right (x=1)"
+        ],
+        "prescription": "exact_displacement_trace"
+      }
+    },
+    "parameters": {
+      "k1": 5,
+      "k2": 15,
+      "beta": 0.25,
+      "amp": 5e-05
+    },
+    "constitutive_assumption": "plane_strain",
+    "material": {
+      "E": 130000000000.0,
+      "nu": 0.24
+    },
+    "elasticity_tensor": {
+      "c11": 153225806451.61288,
+      "c12": 48387096774.19354,
+      "c33": 52419354838.70967
+    },
+    "qoi": {
+      "type": "patch_average_displacement",
+      "component": "x",
+      "scale": 5e-05,
+      "target_region": "interior patch [0.25, 0.75] x [0.25, 0.75]",
+      "exact_analytical_value": -8.252899564773469e-06,
+      "reference_evaluation_tolerance": 1e-12
+    },
+    "initial_mesh": {
+      "type": "perturbed",
+      "seed": 10742,
+      "coarse_elements": 56
+    },
+    "refinement_levels": [
+      "M0",
+      "M1",
+      "M2"
+    ],
+    "m3_validation_level": false,
+    "verification_mode": "three_grid",
+    "requested_tolerance": 0.0025,
+    "tolerance_type": "relative",
+    "reference_type": "exact_analytical",
+    "applicable_hypotheses": [
+      "H5a_coverage",
+      "H5b_claim_integrity",
+      "H6a_availability",
+      "H6b_sharpness"
+    ]
+  }
+]

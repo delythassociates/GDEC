@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GDEC Phase C Amendment 2 Refusal Schema & Priority Matrix",
+  "version": "2.0.0",
+  "date_frozen": "2026-11-21",
+  "amendment": "Phase C Amendment 2",
+  "priority_order": [
+    {
+      "priority": 1,
+      "code": "ill_posed_qoi",
+      "meaning": "Requested QoI is mathematically divergent or undefined in the continuous H1 elasticity formulation (e.g. singular point stress at re-entrant corner or notch tip)"
+    },
+    {
+      "priority": 2,
+      "code": "unsupported_qoi",
+      "meaning": "GDEC does not currently support the requested functional in H1 elasticity (e.g. unregularized point displacement, patch stress, SIF direct nodal extraction)"
+    },
+    {
+      "priority": 3,
+      "code": "invalid_geometry",
+      "meaning": "Geometric domain contains non-finite coordinates (NaN/Inf), degenerate topology, zero-area elements, inverted elements (det J < 0), or self-intersecting boundaries"
+    },
+    {
+      "priority": 4,
+      "code": "mesh_quality_failure",
+      "meaning": "Mesh contains triangles with minimum interior angle below validated threshold (< 10.0 deg)"
+    },
+    {
+      "priority": 5,
+      "code": "solver_not_converged",
+      "meaning": "Linear solver relative backward error / residual exceeds validated tolerance (> 1e-10)"
+    },
+    {
+      "priority": 6,
+      "code": "unverified_insufficient_levels",
+      "meaning": "Fewer than 3 valid nested mesh levels available, inconsistent refinement ratio (r != 2.0), or missing M3 level in four-grid verification mode"
+    },
+    {
+      "priority": 7,
+      "code": "unverified_difference_below_numerical_floor",
+      "meaning": "Consecutive mesh QoI differences are unresolved relative to numerical precision floor (< 1e-13 m)"
+    },
+    {
+      "priority": 8,
+      "code": "unverified_order",
+      "meaning": "Observed convergence order p_obs is outside the validated plausibility window [0.5, 3.5]"
+    },
+    {
+      "priority": 9,
+      "code": "unverified_non_asymptotic",
+      "meaning": "Convergence sequence violates monotonicity (d01 * d12 <= 0) or divergence criteria (q <= 1), or four-grid stability fails (|p_012 - p_123| > 0.50)"
+    },
+    {
+      "priority": 10,
+      "code": "reference_uncertain",
+      "meaning": "Reference solution numerical uncertainty exceeds frozen 0.05% verification gate"
+    },
+    {
+      "priority": 11,
+      "code": "budget_exhausted",
+      "meaning": "Computational resource limit reached before estimated uncertainty satisfied requested tolerance"
+    }
+  ],
+  "thresholds": {
+    "min_interior_angle_deg": 10.0,
+    "solver_residual_tol": 1e-10,
+    "numerical_difference_floor": 1e-13,
+    "observed_order_window": [0.5, 3.5],
+    "order_cap_p_cap": 2.0,
+    "safety_factor_Fs": 1.25,
+    "m3_stability_max_delta_p": 0.50,
+    "reference_uncertainty_gate": 0.0005
+  }
+}
