@@ -148,6 +148,43 @@ class LinearElasticitySolver:
 
         return fem.asm(qoi_form, fbasis)
 
+    def assemble_point_qoi_adjoint_vector(
+        self, gdec_mesh: GDECMesh, px: float, py: float, component: str = "y"
+    ) -> np.ndarray:
+        r"""
+        Assemble the discrete representation g of the point displacement functional:
+        J(v) = v_component(px, py).
+        Evaluated via P1 triangular finite element shape functions.
+        """
+        basis = self.create_basis(gdec_mesh)
+        p = gdec_mesh.mesh.p
+        t = gdec_mesh.mesh.t
+        comp_idx = 0 if component.lower() == "x" else 1
+
+        v0, v1, v2 = t[0, :], t[1, :], t[2, :]
+        x1, y1 = p[0, v0], p[1, v0]
+        x2, y2 = p[0, v1], p[1, v1]
+        x3, y3 = p[0, v2], p[1, v2]
+
+        detT = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
+        l1 = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / detT
+        l2 = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / detT
+        l3 = 1.0 - l1 - l2
+
+        inside = np.where((l1 >= -1e-10) & (l2 >= -1e-10) & (l3 >= -1e-10))[0]
+        if len(inside) == 0:
+            raise ValueError(f"Point ({px}, {py}) is outside computational mesh boundaries.")
+        elem = inside[0]
+        weights = np.maximum(np.array([l1[elem], l2[elem], l3[elem]]), 0.0)
+        weights /= np.sum(weights)
+        elem_nodes = t[:, elem]
+
+        g = np.zeros(basis.N)
+        for i in range(3):
+            dof = basis.nodal_dofs[comp_idx, elem_nodes[i]]
+            g[dof] += weights[i]
+        return g
+
     def find_dirichlet_dofs(
         self, basis: fem.Basis, gdec_mesh: GDECMesh, boundary_name: str, components: List[str]
     ) -> np.ndarray:
@@ -178,6 +215,7 @@ class LinearElasticitySolver:
         gdec_mesh: GDECMesh,
         loads: List[Tuple[str, float, float]],
         fixed_boundaries: List[Tuple[str, List[str]]],
+        objective: Optional[Any] = None,
         qoi_boundary: str = "right",
         qoi_component: str = "y",
         solve_adjoint: bool = True,
@@ -199,7 +237,17 @@ class LinearElasticitySolver:
             f += self.assemble_traction(gdec_mesh, bnd, tx, ty)
 
         # QoI adjoint load vector
-        g = self.assemble_qoi_adjoint_vector(gdec_mesh, qoi_boundary, qoi_component)
+        obj_type = getattr(objective, "type", None) or getattr(objective, "kind", None)
+        if objective is not None and obj_type == "point_displacement":
+            if objective.point_x is None or objective.point_y is None:
+                raise ValueError("Point displacement objective requires point_x and point_y coordinates.")
+            g = self.assemble_point_qoi_adjoint_vector(
+                gdec_mesh, objective.point_x, objective.point_y, objective.component
+            )
+        else:
+            bnd = getattr(objective, "boundary", None) or qoi_boundary
+            comp = getattr(objective, "component", None) or qoi_component
+            g = self.assemble_qoi_adjoint_vector(gdec_mesh, bnd, comp)
 
         # Dirichlet boundary condition DOFs
         dofs_fixed_list = []

@@ -150,7 +150,22 @@ class BenchmarkRunner:
         equal_acc = EqualAccuracyEvaluator.evaluate_suite(temp_suite)
 
         # Evaluate hypothesis on equal-accuracy criteria
-        hyp = self._evaluate_hypothesis(results, ref, equal_acc)
+        hyp_eval = EqualAccuracyEvaluator.evaluate_hypothesis_rigorous(equal_acc)
+        hyp = hyp_eval.to_dict()
+        for name, res in results.items():
+            hyp[name] = {
+                "converged": res.target_achieved,
+                "final_dofs": res.final_dofs,
+                "total_time_sec": res.total_execution_time_sec,
+                "final_ref_error_pct": res.final_reference_error_pct,
+            }
+        # Backward-compatible fields
+        hyp["hypothesis_supported"] = (hyp_eval.overall_verdict == "SUPPORTED")
+        hyp["reasons"] = hyp_eval.detailed_reasons
+        if hyp_eval.dof_ratios_vs_uniform:
+            hyp["mean_dof_advantage_vs_uniform"] = float(np.mean(list(hyp_eval.dof_ratios_vs_uniform.values())))
+        if hyp_eval.runtime_ratios_vs_uniform:
+            hyp["mean_time_advantage_vs_uniform"] = float(np.mean(list(hyp_eval.runtime_ratios_vs_uniform.values())))
 
         if progress_callback:
             progress_callback("Benchmark complete!", 1.0)

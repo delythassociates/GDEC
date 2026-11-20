@@ -63,10 +63,13 @@ class GDECRuntime:
         start_wall_time = self.telemetry.now()
 
         # Step 1: Initial mesh
+        t_init0 = self.telemetry.now()
         nx, ny = self.plan.initial_mesh_shape
         current_mesh = GDECMesh.create_cantilever_mesh(
             width=self.ir.geometry.width, height=self.ir.geometry.height, nx=nx, ny=ny
         )
+        initial_mesh_time = self.telemetry.now() - t_init0
+        trace.initial_mesh_time_sec = initial_mesh_time
 
         initial_dofs = current_mesh.nnodes * 2
         if initial_dofs > self.plan.max_dofs_budget:
@@ -81,7 +84,7 @@ class GDECRuntime:
         iteration = 1
         previous_qoi: Optional[float] = None
         current_dofs = 0
-        last_refinement_time = 0.0
+        last_refinement_time = initial_mesh_time
 
         while True:
             iter_start_time = self.telemetry.now()
@@ -94,7 +97,8 @@ class GDECRuntime:
                 gdec_mesh=current_mesh,
                 loads=self.loads,
                 fixed_boundaries=self.fixed_bcs,
-                qoi_boundary=self.ir.objective.boundary,
+                objective=self.ir.objective,
+                qoi_boundary=self.ir.objective.boundary or "right",
                 qoi_component=self.ir.objective.component,
                 solve_adjoint=need_adjoint,
                 reuse_factorization=True,
@@ -129,6 +133,7 @@ class GDECRuntime:
             indicator_time = self.telemetry.now() - t_ind0
 
             # Step 6: Mark elements under budget
+            t_mark0 = self.telemetry.now()
             marked = MeshAdaptor.mark_elements(
                 indicator_result=ind_res,
                 strategy=self.plan.refinement_strategy,
@@ -136,13 +141,15 @@ class GDECRuntime:
                 current_dofs=current_dofs,
                 max_dofs_budget=self.plan.max_dofs_budget,
             )
+            marking_time = self.telemetry.now() - t_mark0
 
+            # Step 7: Controller evaluation and pre-refinement checks
+            t_val0 = self.telemetry.now()
             predicted_dofs_growth = self.cost_model.predict_additional_dofs(
                 len(marked), total_elements=current_mesh.nelements
             )
             predicted_next_dofs = current_dofs + predicted_dofs_growth
 
-            # Step 7: Controller evaluation
             decision: ControllerDecision = self.controller.evaluate(
                 iteration=iteration,
                 current_dofs=current_dofs,
@@ -150,8 +157,10 @@ class GDECRuntime:
                 successive_change_pct=successive_change,
                 marked_elements_count=len(marked),
             )
+            validation_time = self.telemetry.now() - t_val0
 
-            iter_total_time = self.telemetry.now() - iter_start_time
+            # Include the refinement/mesh generation time that produced this iteration's mesh
+            iter_total_time = (self.telemetry.now() - iter_start_time) + last_refinement_time
             peak_mem = max(mem_start, self.telemetry.get_current_memory_mb())
 
             # Populate record with exact measured stage timings
@@ -172,7 +181,9 @@ class GDECRuntime:
                 adjoint_solve_time_sec=sol.adjoint_solve_time_sec,
                 solver_time_sec=(sol.total_solver_time_sec - sol.assembly_time_sec),
                 indicator_time_sec=indicator_time,
+                marking_time_sec=marking_time,
                 refinement_time_sec=last_refinement_time,
+                validation_time_sec=validation_time,
                 postprocess_time_sec=postprocess_time,
                 total_iteration_time_sec=iter_total_time,
                 peak_memory_mb=peak_mem,
@@ -190,8 +201,20 @@ class GDECRuntime:
                 break
 
             # Step 8: Apply mesh refinement with transactional budget safety
+            # Pre-refinement memory safety check
+            import psutil
+            try:
+                avail_ram_mb = psutil.virtual_memory().available / (1024.0 * 1024.0)
+                if avail_ram_mb < 30.0:
+                    trace.converged = False
+                    trace.stop_reason = f"Memory budget protection: available system RAM ({avail_ram_mb:.1f} MB) below safe margin."
+                    break
+            except Exception:
+                pass
+
             t_ref0 = self.telemetry.now()
             old_dofs = current_dofs
+            old_elements = current_mesh.nelements
             candidate_mesh = MeshAdaptor.refine_mesh(
                 current_mesh, self.plan.refinement_strategy, marked
             )
@@ -210,10 +233,10 @@ class GDECRuntime:
             # Commit candidate mesh
             current_mesh = candidate_mesh
 
-            # Update cost model
+            # Update cost model with actual mesh elements count
             observed_delta = candidate_dofs - old_dofs
             self.cost_model.update(
-                iteration, len(marked), observed_delta, iter_total_time, total_elements=old_dofs // 2
+                iteration, len(marked), observed_delta, iter_total_time, total_elements=old_elements
             )
 
             previous_qoi = current_qoi

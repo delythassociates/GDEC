@@ -94,11 +94,12 @@ class BenchmarkReporter:
 
             timo = crep.analytical_comparison
             md.append("### Analytical Beam Theory Comparison (Timoshenko Elasticity)\n")
+            diff_pct = timo.get('fem_vs_timoshenko_diff_pct', timo.get('continuum_vs_timoshenko_diff_pct', 0.0))
             md.append(
                 f"- **Euler-Bernoulli Bending Deflection**: `{timo['delta_euler_bernoulli_mm']:.4f} mm`\n"
                 f"- **Timoshenko Shear Correction Deflection**: `{timo['delta_shear_mm']:.4f} mm`\n"
                 f"- **Total Analytical Deflection (Timoshenko)**: `{timo['delta_timoshenko_total_mm']:.4f} mm`\n"
-                f"- **Numerical FEM vs Timoshenko Difference**: `{timo['fem_vs_timoshenko_diff_pct']:.3f}%`\n"
+                f"- **Numerical FEM vs Timoshenko Difference**: `{diff_pct:.3f}%`\n"
                 f"- *Theoretical Boundary Layer Note*: The slight 0.65% stiffening in 2D FEM arises because clamping at $x=0$ ($u_x = u_y = 0$) prevents root Poisson lateral contraction, a well-known 2D continuum elasticity effect absent from 1D beam theories.\n"
             )
 
@@ -123,9 +124,29 @@ class BenchmarkReporter:
             "engineering-output accuracy with less computational cost than conventional, carefully configured simulation workflows?*\n\n"
         )
 
-        is_supp = hyp.get("hypothesis_supported", False)
-        status_badge = "**SUPPORTED ON EQUAL-ACCURACY BASIS**" if is_supp else "**NOT FULLY SUPPORTED / EQUIVOCAL**"
+        verdict = hyp.get("overall_verdict")
+        if verdict == "SUPPORTED":
+            status_badge = "**SUPPORTED (Spatial & Runtime Superiority Confirmed)**"
+        elif verdict == "PARTIALLY_SUPPORTED":
+            status_badge = "**PARTIALLY SUPPORTED (Spatial DOF Efficiency Confirmed; Wall-Clock Time Equivocal on Small Meshes)**"
+        elif verdict == "NOT_SUPPORTED":
+            status_badge = "**NOT SUPPORTED**"
+        else:
+            is_supp = hyp.get("hypothesis_supported", False)
+            status_badge = "**SUPPORTED ON EQUAL-ACCURACY BASIS**" if is_supp else "**NOT FULLY SUPPORTED / EQUIVOCAL**"
         md.append(f"### Hypothesis Status: {status_badge}\n")
+
+        if "dof_efficiency_vs_uniform" in hyp:
+            md.append(
+                "| Evaluation Dimension | Verdict |\n"
+                "| :--- | :--- |\n"
+                f"| **DOF Efficiency vs Uniform** | `{hyp.get('dof_efficiency_vs_uniform')}` |\n"
+                f"| **DOF Efficiency vs Recovery** | `{hyp.get('dof_efficiency_vs_recovery')}` |\n"
+                f"| **Runtime Efficiency vs Uniform** | `{hyp.get('runtime_efficiency_vs_uniform')}` |\n"
+                f"| **Runtime Efficiency vs Recovery** | `{hyp.get('runtime_efficiency_vs_recovery')}` |\n"
+                f"| **Combined Computational Cost** | `{hyp.get('combined_computational_cost_superiority')}` |\n"
+                f"| **Accuracy-Target Attainment** | `{hyp.get('accuracy_target_attainment')}` |\n\n"
+            )
 
         reasons = hyp.get("reasons", [])
         for r in reasons:

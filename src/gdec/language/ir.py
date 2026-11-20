@@ -43,8 +43,10 @@ class TractionLoadIR(BaseModel):
 
 class ObjectiveIR(BaseModel):
     kind: Literal["average_displacement", "point_displacement"] = "average_displacement"
-    boundary: Literal["left", "right", "top", "bottom"] = "right"
+    boundary: Optional[Literal["left", "right", "top", "bottom"]] = None
     component: Literal["x", "y"] = "y"
+    point_x: Optional[float] = Field(default=None, description="X-coordinate for point displacement")
+    point_y: Optional[float] = Field(default=None, description="Y-coordinate for point displacement")
 
 
 class AccuracyTargetIR(BaseModel):
@@ -88,4 +90,14 @@ class ProblemIR(BaseModel):
     @classmethod
     def from_json(cls, json_str: str) -> ProblemIR:
         data = json.loads(json_str)
-        return cls.model_validate(data)
+        schema_ver = data.get("schema_version")
+        if schema_ver != IR_SCHEMA_VERSION:
+            raise ValueError(
+                f"Unsupported IR schema version '{schema_ver}'. Supported version is '{IR_SCHEMA_VERSION}'."
+            )
+        instance = cls.model_validate(data)
+        if instance.backend.device != "cpu":
+            raise ValueError(
+                f"Unsupported execution backend '{instance.backend.device}'. Only 'cpu' is supported in v0.2.3."
+            )
+        return instance

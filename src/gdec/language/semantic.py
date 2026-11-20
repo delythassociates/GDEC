@@ -1,11 +1,12 @@
 """
-Semantic analysis and AST-to-IR lowering for GDEC.
-Performs strict validation and generates typed ProblemIR.
+Semantic analysis and AST-to-IR lowering for GDEC (v0.2.3).
+Performs strict validation, rejects non-physical inputs, validates point coordinates,
+and generates typed ProblemIR.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-import shutil
+import math
+from typing import Any, Dict, List, Optional, Set
 
 from gdec.language.ast import (
     ProblemNode,
@@ -45,6 +46,31 @@ class GDECSemanticError(Exception):
 class SemanticAnalyzer:
     """Validates AST and lowers it to ProblemIR."""
 
+    ALLOWED_TOP_LEVEL: Set[str] = {
+        "physics",
+        "geometry",
+        "material",
+        "fix",
+        "boundary_condition",
+        "load",
+        "objective",
+        "accuracy",
+        "budget",
+        "adaptivity",
+        "backend",
+    }
+
+    SINGLE_DECLARATION_KEYS: Set[str] = {
+        "physics",
+        "geometry",
+        "material",
+        "objective",
+        "accuracy",
+        "budget",
+        "adaptivity",
+        "backend",
+    }
+
     def __init__(self):
         pass
 
@@ -52,10 +78,23 @@ class SemanticAnalyzer:
         if not ast.name or not ast.name.isidentifier():
             raise GDECSemanticError(f"Invalid problem identifier '{ast.name}'", ast.loc)
 
-        # Collect statements
+        # Collect statements and check for unknown declarations and duplicates
         stmts: Dict[str, List[Statement]] = {}
         for s in ast.statements:
+            if s.key not in self.ALLOWED_TOP_LEVEL:
+                raise GDECSemanticError(
+                    f"Unknown top-level declaration '{s.key}'. Allowed declarations: {sorted(self.ALLOWED_TOP_LEVEL)}.",
+                    s.loc,
+                )
             stmts.setdefault(s.key, []).append(s)
+
+        for key in self.SINGLE_DECLARATION_KEYS:
+            if key in stmts and len(stmts[key]) > 1:
+                second = stmts[key][1]
+                raise GDECSemanticError(
+                    f"Duplicate declaration of '{key}'. Only one '{key}' block is permitted per problem.",
+                    second.loc,
+                )
 
         # 1. Physics
         physics = self._extract_physics(stmts.get("physics"))
@@ -72,8 +111,8 @@ class SemanticAnalyzer:
         # 5. Loads
         loads = self._extract_loads(stmts.get("load", []))
 
-        # 6. Objective
-        objective = self._extract_objective(stmts.get("objective"))
+        # 6. Objective (validated against geometry bounds)
+        objective = self._extract_objective(stmts.get("objective"), geometry)
 
         # 7. Accuracy
         accuracy = self._extract_accuracy(stmts.get("accuracy"))
@@ -103,14 +142,25 @@ class SemanticAnalyzer:
 
     def _eval_value(self, expr: Expression) -> Any:
         if isinstance(expr, NumberLiteral):
-            return expr.value
+            val = expr.value
+            if math.isnan(val) or math.isinf(val):
+                raise GDECSemanticError(f"Numeric value cannot be NaN or Infinite: {val}", expr.loc)
+            return val
         elif isinstance(expr, Identifier):
             return expr.name
         elif isinstance(expr, StringLiteral):
             return expr.value
         elif isinstance(expr, FunctionCall):
             return expr
-        raise GDECSemanticError(f"Unsupported expression type: {type(expr).__name__}", expr.loc)
+        raise GDECSemanticError(f"Unsupported expression type: {type(expr).__name__}", getattr(expr, "loc", None))
+
+    def _eval_number(self, val: Any, name: str, loc: Optional[SourceLocation] = None) -> float:
+        if not isinstance(val, (int, float)):
+            raise GDECSemanticError(f"Parameter '{name}' must be a numeric value (received {val}).", loc)
+        fval = float(val)
+        if math.isnan(fval) or math.isinf(fval):
+            raise GDECSemanticError(f"Parameter '{name}' cannot be NaN or Infinite.", loc)
+        return fval
 
     def _extract_physics(self, stmts: Optional[List[Statement]]) -> str:
         if not stmts:
@@ -119,7 +169,7 @@ class SemanticAnalyzer:
         val = self._eval_value(stmt.value)
         if val != "linear_elasticity":
             raise GDECSemanticError(
-                f"Unsupported physics model '{val}'. Version 0.1 only supports 'linear_elasticity'.",
+                f"Unsupported physics model '{val}'. GDEC v0.2.3 only supports 'linear_elasticity'.",
                 stmt.loc,
             )
         return "linear_elasticity"
@@ -134,22 +184,38 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         call = stmt.value
+        allowed_args = {"width", "height", "thickness"}
+        unknown = set(call.named_args.keys()) - allowed_args
+        if unknown:
+            raise GDECSemanticError(
+                f"Unknown arguments for 'rectangle': {sorted(unknown)}. Allowed: {sorted(allowed_args)}.",
+                call.loc,
+            )
+
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
 
-        if "width" not in args or not isinstance(args["width"], (int, float)) or args["width"] <= 0:
-            raise GDECSemanticError("Geometry 'width' must be a positive number.", call.loc)
-        if "height" not in args or not isinstance(args["height"], (int, float)) or args["height"] <= 0:
-            raise GDECSemanticError("Geometry 'height' must be a positive number.", call.loc)
+        if "width" not in args:
+            raise GDECSemanticError("Geometry requires 'width'.", call.loc)
+        width = self._eval_number(args["width"], "width", call.loc)
+        if width <= 0:
+            raise GDECSemanticError(f"Geometry 'width' must be strictly positive (received {width}).", call.loc)
 
-        thickness = args.get("thickness", 1.0)
-        if not isinstance(thickness, (int, float)) or thickness <= 0:
-            raise GDECSemanticError("Geometry 'thickness' must be a positive number.", call.loc)
+        if "height" not in args:
+            raise GDECSemanticError("Geometry requires 'height'.", call.loc)
+        height = self._eval_number(args["height"], "height", call.loc)
+        if height <= 0:
+            raise GDECSemanticError(f"Geometry 'height' must be strictly positive (received {height}).", call.loc)
+
+        thickness_val = args.get("thickness", 1.0)
+        thickness = self._eval_number(thickness_val, "thickness", call.loc)
+        if thickness <= 0:
+            raise GDECSemanticError(f"Geometry 'thickness' must be strictly positive (received {thickness}).", call.loc)
 
         return GeometryIR(
             kind="rectangle",
-            width=float(args["width"]),
-            height=float(args["height"]),
-            thickness=float(thickness),
+            width=width,
+            height=height,
+            thickness=thickness,
         )
 
     def _extract_material(self, stmts: Optional[List[Statement]]) -> MaterialIR:
@@ -162,16 +228,31 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         call = stmt.value
-        args = {k: self._eval_value(v) for k, v in call.named_args.items()}
-
-        if "E" not in args or not isinstance(args["E"], (int, float)) or args["E"] <= 0:
+        allowed_args = {"E", "nu", "assumption"}
+        unknown = set(call.named_args.keys()) - allowed_args
+        if unknown:
             raise GDECSemanticError(
-                f"Young's modulus 'E' must be a strictly positive number (received {args.get('E')}).",
+                f"Unknown arguments for 'isotropic': {sorted(unknown)}. Allowed: {sorted(allowed_args)}.",
                 call.loc,
             )
-        if "nu" not in args or not isinstance(args["nu"], (int, float)) or not (-1.0 < args["nu"] < 0.5):
+
+        args = {k: self._eval_value(v) for k, v in call.named_args.items()}
+
+        if "E" not in args:
+            raise GDECSemanticError("Material requires Young's modulus 'E'.", call.loc)
+        E = self._eval_number(args["E"], "E", call.loc)
+        if E <= 0:
             raise GDECSemanticError(
-                f"Poisson's ratio 'nu' must satisfy -1.0 < nu < 0.5 (received {args.get('nu')}).",
+                f"Young's modulus 'E' must be a strictly positive number (received {E}).",
+                call.loc,
+            )
+
+        if "nu" not in args:
+            raise GDECSemanticError("Material requires Poisson's ratio 'nu'.", call.loc)
+        nu = self._eval_number(args["nu"], "nu", call.loc)
+        if not (-1.0 < nu < 0.5):
+            raise GDECSemanticError(
+                f"Poisson's ratio 'nu' must satisfy thermodynamic stability -1.0 < nu < 0.5 (received {nu}).",
                 call.loc,
             )
 
@@ -184,8 +265,8 @@ class SemanticAnalyzer:
 
         return MaterialIR(
             kind="isotropic",
-            E=float(args["E"]),
-            nu=float(args["nu"]),
+            E=E,
+            nu=nu,
             assumption=assumption,
         )
 
@@ -199,6 +280,13 @@ class SemanticAnalyzer:
             bnd = None
             comps = ["x", "y"]
             if isinstance(call, FunctionCall) and call.func_name == "boundary":
+                allowed_args = {"boundary"}
+                unknown = set(call.named_args.keys()) - allowed_args
+                if unknown:
+                    raise GDECSemanticError(
+                        f"Unknown arguments for 'boundary': {sorted(unknown)}.",
+                        call.loc,
+                    )
                 if call.positional_args:
                     bnd = self._eval_value(call.positional_args[0])
                 elif "boundary" in call.named_args:
@@ -226,6 +314,14 @@ class SemanticAnalyzer:
                     stmt.loc,
                 )
             call = stmt.value
+            allowed_args = {"boundary", "tx", "ty"}
+            unknown = set(call.named_args.keys()) - allowed_args
+            if unknown:
+                raise GDECSemanticError(
+                    f"Unknown arguments for 'traction': {sorted(unknown)}. Allowed: {sorted(allowed_args)}.",
+                    call.loc,
+                )
+
             args = {k: self._eval_value(v) for k, v in call.named_args.items()}
 
             bnd = args.get("boundary")
@@ -234,12 +330,12 @@ class SemanticAnalyzer:
                     f"Invalid load boundary '{bnd}'. Must be one of {valid_boundaries}.",
                     call.loc,
                 )
-            tx = float(args.get("tx", 0.0))
-            ty = float(args.get("ty", 0.0))
+            tx = self._eval_number(args.get("tx", 0.0), "tx", call.loc)
+            ty = self._eval_number(args.get("ty", 0.0), "ty", call.loc)
             loads.append(TractionLoadIR(boundary=bnd, tx=tx, ty=ty))
         return loads
 
-    def _extract_objective(self, stmts: Optional[List[Statement]]) -> ObjectiveIR:
+    def _extract_objective(self, stmts: Optional[List[Statement]], geometry: GeometryIR) -> ObjectiveIR:
         if not stmts:
             raise GDECSemanticError("Missing required 'objective' declaration.")
         stmt = stmts[-1]
@@ -248,25 +344,72 @@ class SemanticAnalyzer:
             "point_displacement",
         ]:
             raise GDECSemanticError(
-                "Objective must be defined as 'average_displacement(boundary=..., component=...)'",
+                "Objective must be defined as 'average_displacement(boundary=..., component=...)' "
+                "or 'point_displacement(x=..., y=..., component=...)'",
                 stmt.loc,
             )
         call = stmt.value
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
 
-        bnd = args.get("boundary", "right")
-        if bnd not in {"left", "right", "top", "bottom"}:
-            raise GDECSemanticError(f"Objective boundary '{bnd}' is invalid.", call.loc)
+        if call.func_name == "average_displacement":
+            allowed_args = {"boundary", "component"}
+            unknown = set(call.named_args.keys()) - allowed_args
+            if unknown:
+                raise GDECSemanticError(
+                    f"Unknown arguments for 'average_displacement': {sorted(unknown)}. Allowed: {sorted(allowed_args)}.",
+                    call.loc,
+                )
+            bnd = args.get("boundary", "right")
+            if bnd not in {"left", "right", "top", "bottom"}:
+                raise GDECSemanticError(f"Objective boundary '{bnd}' is invalid.", call.loc)
 
-        comp = args.get("component", "y")
-        if comp not in {"x", "y"}:
-            raise GDECSemanticError(f"Objective component '{comp}' must be 'x' or 'y'.", call.loc)
+            comp = args.get("component", "y")
+            if comp not in {"x", "y"}:
+                raise GDECSemanticError(f"Objective component '{comp}' must be 'x' or 'y'.", call.loc)
 
-        return ObjectiveIR(
-            kind=call.func_name,  # type: ignore
-            boundary=bnd,
-            component=comp,
-        )
+            return ObjectiveIR(
+                kind="average_displacement",
+                boundary=bnd,
+                component=comp,
+            )
+
+        elif call.func_name == "point_displacement":
+            allowed_args = {"x", "y", "component"}
+            unknown = set(call.named_args.keys()) - allowed_args
+            if unknown:
+                raise GDECSemanticError(
+                    f"Unknown arguments for 'point_displacement': {sorted(unknown)}. Allowed: {sorted(allowed_args)}. "
+                    f"Note: 'point_displacement' requires explicit spatial coordinates 'x' and 'y', not a boundary name.",
+                    call.loc,
+                )
+
+            if "x" not in args or "y" not in args:
+                raise GDECSemanticError(
+                    "Point displacement objective requires coordinates 'x' and 'y'.",
+                    call.loc,
+                )
+            px = self._eval_number(args["x"], "x", call.loc)
+            py = self._eval_number(args["y"], "y", call.loc)
+
+            comp = args.get("component", "y")
+            if comp not in {"x", "y"}:
+                raise GDECSemanticError(f"Objective component '{comp}' must be 'x' or 'y'.", call.loc)
+
+            # Validate that the point lies within domain bounds
+            if px < 0.0 or px > geometry.width or py < 0.0 or py > geometry.height:
+                raise GDECSemanticError(
+                    f"Objective point ({px}, {py}) lies outside domain bounds [0, {geometry.width}] x [0, {geometry.height}].",
+                    call.loc,
+                )
+
+            return ObjectiveIR(
+                kind="point_displacement",
+                component=comp,
+                point_x=px,
+                point_y=py,
+            )
+
+        raise GDECSemanticError(f"Unsupported objective kind: {call.func_name}", call.loc)
 
     def _extract_accuracy(self, stmts: Optional[List[Statement]]) -> AccuracyTargetIR:
         if not stmts:
@@ -278,13 +421,21 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         call = stmt.value
-        args = {k: self._eval_value(v) for k, v in call.named_args.items()}
-        pct = args.get("percent", 1.0)
-        if not isinstance(pct, (int, float)) or pct <= 0:
+        allowed_args = {"percent"}
+        unknown = set(call.named_args.keys()) - allowed_args
+        if unknown:
             raise GDECSemanticError(
-                f"Accuracy percentage must be positive (received {pct}).", call.loc
+                f"Unknown arguments for 'successive_qoi_change': {sorted(unknown)}. Allowed: {sorted(allowed_args)}.",
+                call.loc,
             )
-        return AccuracyTargetIR(kind="successive_qoi_change", percent=float(pct))
+        args = {k: self._eval_value(v) for k, v in call.named_args.items()}
+        pct_val = args.get("percent", 1.0)
+        pct = self._eval_number(pct_val, "percent", call.loc)
+        if pct <= 0:
+            raise GDECSemanticError(
+                f"Accuracy percentage must be strictly positive (received {pct}).", call.loc
+            )
+        return AccuracyTargetIR(kind="successive_qoi_change", percent=pct)
 
     def _extract_budget(self, stmts: Optional[List[Statement]]) -> BudgetIR:
         if not stmts:
@@ -296,15 +447,29 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         call = stmt.value
+        allowed_args = {"value", "max_iterations"}
+        unknown = set(call.named_args.keys()) - allowed_args
+        if unknown:
+            raise GDECSemanticError(
+                f"Unknown arguments for 'max_dofs': {sorted(unknown)}. Allowed: {sorted(allowed_args)}.",
+                call.loc,
+            )
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         if call.positional_args:
             val = self._eval_value(call.positional_args[0])
         else:
             val = args.get("value", 25000)
-        if not isinstance(val, (int, float)) or int(val) <= 0:
+
+        num_val = self._eval_number(val, "value", call.loc)
+        if num_val <= 0 or not float(num_val).is_integer():
             raise GDECSemanticError(f"Budget 'value' must be a positive integer (received {val}).", call.loc)
-        max_iters = args.get("max_iterations", 15)
-        return BudgetIR(kind="max_dofs", value=int(val), max_iterations=int(max_iters))
+
+        max_iters_val = args.get("max_iterations", 15)
+        max_iters = self._eval_number(max_iters_val, "max_iterations", call.loc)
+        if max_iters <= 0 or not float(max_iters).is_integer():
+            raise GDECSemanticError(f"Budget 'max_iterations' must be a positive integer (received {max_iters_val}).", call.loc)
+
+        return BudgetIR(kind="max_dofs", value=int(num_val), max_iterations=int(max_iters))
 
     def _extract_adaptivity(self, stmts: Optional[List[Statement]]) -> AdaptivityIR:
         if not stmts:
@@ -317,8 +482,18 @@ class SemanticAnalyzer:
             cost_aware = True
         elif isinstance(val, FunctionCall):
             strategy = val.func_name
+            allowed_args = {"fraction", "cost_aware"}
+            unknown = set(val.named_args.keys()) - allowed_args
+            if unknown:
+                raise GDECSemanticError(
+                    f"Unknown arguments for adaptivity '{strategy}': {sorted(unknown)}. Allowed: {sorted(allowed_args)}.",
+                    val.loc,
+                )
             args = {k: self._eval_value(v) for k, v in val.named_args.items()}
-            frac = float(args.get("fraction", 0.3))
+            frac_val = args.get("fraction", 0.3)
+            frac = self._eval_number(frac_val, "fraction", val.loc)
+            if not (0.0 < frac <= 1.0):
+                raise GDECSemanticError(f"Adaptivity marking fraction must be in (0, 1] (received {frac}).", val.loc)
             cost_aware = bool(args.get("cost_aware", True))
         else:
             raise GDECSemanticError("Invalid adaptivity specification.", stmt.loc)
@@ -345,11 +520,9 @@ class SemanticAnalyzer:
                 stmt.loc,
             )
         if dev != "cpu":
-            # Strict Part 2.D compliance:
-            # "Do not silently route a requested GPU calculation to the CPU. If CUDA is unavailable or not implemented, explicitly report that."
             raise GDECSemanticError(
-                f"Backend '{dev}' was requested, but no GPU accelerator hardware or CUDA backend is available in GDEC v0.2.1. "
-                f"Per GDEC architecture rules, requested accelerator computations are not silently routed to CPU.",
+                f"Backend '{dev}' was requested, but no GPU accelerator hardware or CUDA backend is available in GDEC v0.2.3. "
+                f"Per GDEC architectural integrity rules, requested accelerator computations are not silently routed to CPU.",
                 stmt.loc,
             )
         return BackendIR(device="cpu")

@@ -1,0 +1,13 @@
+Target Error,Strategy,Target Achieved,Iteration,DOFs Required,Time to Target (s),Actual Ref Error (%),Runtime Change (%),Peak RAM (MB),Status Note
+<= 2.0%,Uniform,YES,3,"2,618",0.080,1.312%,3.596%,207.5,"Target reached at iteration 3 with 2,618 DOFs."
+<= 2.0%,Recovery,YES,4,"1,730",0.067,1.390%,1.869%,206.5,"Target reached at iteration 4 with 1,730 DOFs."
+<= 2.0%,Goal Aware,YES,4,"2,040",0.078,1.421%,1.783%,185.0,"Target reached at iteration 4 with 2,040 DOFs."
+<= 1.0%,Uniform,YES,4,"10,098",0.187,0.350%,0.966%,218.3,"Target reached at iteration 4 with 10,098 DOFs."
+<= 1.0%,Recovery,YES,5,"3,760",0.111,0.678%,0.716%,213.6,"Target reached at iteration 5 with 3,760 DOFs."
+<= 1.0%,Goal Aware,YES,5,"4,324",0.139,0.701%,0.725%,172.4,"Target reached at iteration 5 with 4,324 DOFs."
+<= 0.5%,Uniform,YES,4,"10,098",0.187,0.350%,0.966%,218.3,"Target reached at iteration 4 with 10,098 DOFs."
+<= 0.5%,Recovery,YES,6,"7,806",0.232,0.304%,0.376%,223.1,"Target reached at iteration 6 with 7,806 DOFs."
+<= 0.5%,Goal Aware,YES,6,"9,014",0.271,0.337%,0.365%,190.2,"Target reached at iteration 6 with 9,014 DOFs."
+<= 0.25%,Uniform,NO,N/A,N/A,N/A,0.350%,N/A,N/A,Threshold not achieved within budget (best error achieved: 0.350%).
+<= 0.25%,Recovery,NO,N/A,N/A,N/A,0.304%,N/A,N/A,Threshold not achieved within budget (best error achieved: 0.304%).
+<= 0.25%,Goal Aware,NO,N/A,N/A,N/A,0.337%,N/A,N/A,Threshold not achieved within budget (best error achieved: 0.337%).

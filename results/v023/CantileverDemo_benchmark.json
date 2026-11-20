@@ -1,0 +1,209 @@
+{
+  "problem_name": "CantileverDemo",
+  "timestamp": "2026-11-20T17:58:40.131579",
+  "reference": {
+    "qoi_meters": -0.0019095247584184907,
+    "qoi_mm": -1.9095247584184907,
+    "dofs": 45000,
+    "solve_time_sec": 1.1664691000005405,
+    "mesh_resolution": [
+      300,
+      75
+    ],
+    "discretization_uncertainty_pct": 0.09830496010042578
+  },
+  "hypothesis_evaluation": {
+    "dof_efficiency_vs_uniform": "SUPPORTED",
+    "dof_efficiency_vs_recovery": "NOT_SUPPORTED",
+    "runtime_efficiency_vs_uniform": "PARTIALLY_SUPPORTED",
+    "runtime_efficiency_vs_recovery": "NOT_SUPPORTED",
+    "combined_computational_cost_superiority": "PARTIALLY_SUPPORTED",
+    "accuracy_target_attainment": "PARTIALLY_SUPPORTED",
+    "overall_verdict": "PARTIALLY_SUPPORTED",
+    "dof_ratios_vs_uniform": {
+      "2.0%": 1.2833333333333334,
+      "1.0%": 2.3353376503237744,
+      "0.5%": 1.1202573774129132
+    },
+    "dof_ratios_vs_recovery": {
+      "2.0%": 0.8480392156862745,
+      "1.0%": 0.8695652173913043,
+      "0.5%": 0.8659862436210339
+    },
+    "runtime_ratios_vs_uniform": {
+      "2.0%": 1.0345672249309839,
+      "1.0%": 1.3373154811555905,
+      "0.5%": 0.6874843801603947
+    },
+    "runtime_ratios_vs_recovery": {
+      "2.0%": 0.8588739645291643,
+      "1.0%": 0.7983294625449223,
+      "0.5%": 0.8541861876007593
+    },
+    "reasons": [
+      "DOF efficiency vs Uniform is SUPPORTED (average 1.58x reduction across matched thresholds).",
+      "DOF efficiency vs Recovery is NOT_SUPPORTED.",
+      "Runtime efficiency vs Uniform is PARTIALLY_SUPPORTED (faster only on fine thresholds; small-mesh overhead limits speedup).",
+      "Combined computational-cost superiority is PARTIALLY_SUPPORTED: spatial DOF efficiency is demonstrated against Uniform, but wall-clock time superiority is not universally established.",
+      "Accuracy-target attainment is PARTIALLY_SUPPORTED (3/4 thresholds achieved within budget)."
+    ],
+    "hypothesis_supported": false,
+    "uniform": {
+      "converged": false,
+      "final_dofs": 10098,
+      "total_time_sec": 0.187269600000036,
+      "final_ref_error_pct": 0.34985666270902666
+    },
+    "recovery": {
+      "converged": true,
+      "final_dofs": 7806,
+      "total_time_sec": 0.2330379000004541,
+      "final_ref_error_pct": 0.3035019877316753
+    },
+    "goal_aware": {
+      "converged": true,
+      "final_dofs": 9014,
+      "total_time_sec": 0.27260610000030283,
+      "final_ref_error_pct": 0.33730747105583886
+    },
+    "mean_dof_advantage_vs_uniform": 1.5796427870233403,
+    "mean_time_advantage_vs_uniform": 1.0197890287489897
+  },
+  "equal_accuracy_comparisons": [
+    {
+      "threshold_pct": 2.0,
+      "dof_ratio_unif_over_goal": 1.2833333333333334,
+      "time_ratio_unif_over_goal": 1.0345672249309839,
+      "strategies": {
+        "uniform": {
+          "achieved": true,
+          "iteration": 3,
+          "dofs": 2618,
+          "time_sec": 0.0804584999987128,
+          "actual_ref_error_pct": 1.3121262157410323
+        },
+        "recovery": {
+          "achieved": true,
+          "iteration": 4,
+          "dofs": 1730,
+          "time_sec": 0.06679479999820614,
+          "actual_ref_error_pct": 1.3897804471162445
+        },
+        "goal_aware": {
+          "achieved": true,
+          "iteration": 4,
+          "dofs": 2040,
+          "time_sec": 0.0777702000023055,
+          "actual_ref_error_pct": 1.4207900383388377
+        }
+      }
+    },
+    {
+      "threshold_pct": 1.0,
+      "dof_ratio_unif_over_goal": 2.3353376503237744,
+      "time_ratio_unif_over_goal": 1.3373154811555905,
+      "strategies": {
+        "uniform": {
+          "achieved": true,
+          "iteration": 4,
+          "dofs": 10098,
+          "time_sec": 0.1865074999986973,
+          "actual_ref_error_pct": 0.34985666270902666
+        },
+        "recovery": {
+          "achieved": true,
+          "iteration": 5,
+          "dofs": 3760,
+          "time_sec": 0.11133829999926093,
+          "actual_ref_error_pct": 0.678157745213164
+        },
+        "goal_aware": {
+          "achieved": true,
+          "iteration": 5,
+          "dofs": 4324,
+          "time_sec": 0.13946410000244214,
+          "actual_ref_error_pct": 0.7013035654878397
+        }
+      }
+    },
+    {
+      "threshold_pct": 0.5,
+      "dof_ratio_unif_over_goal": 1.1202573774129132,
+      "time_ratio_unif_over_goal": 0.6874843801603947,
+      "strategies": {
+        "uniform": {
+          "achieved": true,
+          "iteration": 4,
+          "dofs": 10098,
+          "time_sec": 0.1865074999986973,
+          "actual_ref_error_pct": 0.34985666270902666
+        },
+        "recovery": {
+          "achieved": true,
+          "iteration": 6,
+          "dofs": 7806,
+          "time_sec": 0.2317319999992833,
+          "actual_ref_error_pct": 0.3035019877316753
+        },
+        "goal_aware": {
+          "achieved": true,
+          "iteration": 6,
+          "dofs": 9014,
+          "time_sec": 0.2712898000027053,
+          "actual_ref_error_pct": 0.33730747105583886
+        }
+      }
+    },
+    {
+      "threshold_pct": 0.25,
+      "dof_ratio_unif_over_goal": null,
+      "time_ratio_unif_over_goal": null,
+      "strategies": {
+        "uniform": {
+          "achieved": false,
+          "iteration": null,
+          "dofs": null,
+          "time_sec": null,
+          "actual_ref_error_pct": 0.34985666270902666
+        },
+        "recovery": {
+          "achieved": false,
+          "iteration": null,
+          "dofs": null,
+          "time_sec": null,
+          "actual_ref_error_pct": 0.3035019877316753
+        },
+        "goal_aware": {
+          "achieved": false,
+          "iteration": null,
+          "dofs": null,
+          "time_sec": null,
+          "actual_ref_error_pct": 0.33730747105583886
+        }
+      }
+    }
+  ],
+  "strategies": {
+    "uniform": {
+      "converged": false,
+      "final_dofs": 10098,
+      "total_time_sec": 0.187269600000036,
+      "final_reference_error_pct": 0.34985666270902666,
+      "iterations_count": 4
+    },
+    "recovery": {
+      "converged": true,
+      "final_dofs": 7806,
+      "total_time_sec": 0.2330379000004541,
+      "final_reference_error_pct": 0.3035019877316753,
+      "iterations_count": 6
+    },
+    "goal_aware": {
+      "converged": true,
+      "final_dofs": 9014,
+      "total_time_sec": 0.27260610000030283,
+      "final_reference_error_pct": 0.33730747105583886,
+      "iterations_count": 6
+    }
+  }
+}

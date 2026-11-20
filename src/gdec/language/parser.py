@@ -88,7 +88,18 @@ class _TreeToAST(Transformer):
         named_args: dict[str, Expression] = {}
         for item in items:
             if isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str):
-                named_args[item[0]] = item[1]
+                arg_name = item[0]
+                if arg_name in named_args:
+                    expr = item[1]
+                    loc = getattr(expr, "loc", None)
+                    line = loc.line if loc else 0
+                    col = loc.column if loc else 0
+                    raise GDECParseError(
+                        f"Duplicate named argument '{arg_name}' in function call.",
+                        line=line,
+                        column=col,
+                    )
+                named_args[arg_name] = item[1]
             elif isinstance(item, Expression):
                 pos_args.append(item)
         return pos_args, named_args

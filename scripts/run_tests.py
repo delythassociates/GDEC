@@ -21,7 +21,7 @@ def find_python():
 
 def main():
     print("=" * 60)
-    print("GDEC v0.2.2 — Automated Test Suite Runner")
+    print("GDEC v0.2.3 — Automated Test Suite Runner")
     print("=" * 60)
     py_exe = find_python()
     cmd = [py_exe, "-m", "pytest", "tests", "-v", "--durations=10"]

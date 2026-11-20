@@ -14,12 +14,13 @@ def test_reference_multi_resolution_convergence():
     assert ref.convergence_report is not None
     rep = ref.convergence_report
 
-    # Must contain 3 progressive levels
-    assert len(rep.levels) == 3
+    # Must contain at least 3 progressive levels (v0.2.3 uses 4-level Celik sequence)
+    assert len(rep.levels) >= 3
     # DOFs must strictly increase across levels
-    assert rep.levels[0].dofs < rep.levels[1].dofs < rep.levels[2].dofs
+    for i in range(len(rep.levels) - 1):
+        assert rep.levels[i].dofs < rep.levels[i + 1].dofs
     # Relative changes must be calculated
-    assert len(rep.relative_changes_pct) == 2
+    assert len(rep.relative_changes_pct) == len(rep.levels) - 1
     # Discretization uncertainty must be finite and positive
     assert 0.0 < rep.estimated_discretization_uncertainty_pct < 1.0
 
@@ -46,3 +47,8 @@ def test_timoshenko_analytical_comparison():
     assert timo["delta_timoshenko_total_mm"] < timo["delta_euler_bernoulli_mm"]
     # For cantilever L=2, H=0.5, t=0.02, E=70GPa, ty=-1MPa, total Timoshenko is ~ -1.92 mm
     assert -1.95 < timo["delta_timoshenko_total_mm"] < -1.88
+
+    # Compare FEM numerical reference against Timoshenko continuum deflection
+    ref = ReferenceSolver.compute_reference(comp.ir, target_dofs=15000, verify_convergence=False)
+    diff = abs(ref.qoi_mm - timo["delta_timoshenko_total_mm"]) / abs(timo["delta_timoshenko_total_mm"])
+    assert diff < 0.015

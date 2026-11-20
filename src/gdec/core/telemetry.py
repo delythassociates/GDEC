@@ -34,6 +34,8 @@ class IterationRecord:
     adjoint_solve_time_sec: float = 0.0
     refinement_time_sec: float = 0.0
     postprocess_time_sec: float = 0.0
+    marking_time_sec: float = 0.0
+    validation_time_sec: float = 0.0
 
     def to_dict(self) -> Dict[str, any]:
         return {
@@ -53,7 +55,9 @@ class IterationRecord:
             "adjoint_solve_time_sec": self.adjoint_solve_time_sec,
             "solver_time_sec": self.solver_time_sec,
             "indicator_time_sec": self.indicator_time_sec,
+            "marking_time_sec": self.marking_time_sec,
             "refinement_time_sec": self.refinement_time_sec,
+            "validation_time_sec": self.validation_time_sec,
             "postprocess_time_sec": self.postprocess_time_sec,
             "total_time_sec": self.total_iteration_time_sec,
             "peak_memory_mb": self.peak_memory_mb,
@@ -70,6 +74,7 @@ class ExecutionTrace:
     converged: bool
     stop_reason: str
     total_wall_time_sec: float
+    initial_mesh_time_sec: float = 0.0
     iterations: List[IterationRecord] = field(default_factory=list)
 
     @property

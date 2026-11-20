@@ -1,9 +1,9 @@
-# GDEC — Goal-Driven Engineering Computation (v0.2.2)
+# GDEC — Goal-Driven Engineering Computation (v0.2.3)
 ## Language, Compiler, Intelligent Runtime and Adaptive FEM Platform
 
-[![Tests](https://img.shields.io/badge/pytest-42%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/pytest-54%20passed-brightgreen.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)]()
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-informational.svg)]()
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-informational.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
 
 ---
@@ -51,21 +51,23 @@ GDEC Engineering Language (.gdc)
 ```
 
 ### Component Status: Implemented vs Planned
-- **Implemented in v0.2.2**:
-  - Lark LALR(1) parser for `.gdc` engineering DSL.
+- **Implemented in v0.2.3**:
+  - Lark LALR(1) parser for `.gdc` engineering DSL with duplicate-argument detection.
   - Strongly typed AST with full line/column diagnostic tracking.
-  - Semantic analyzer enforcing physical constraints ($E>0$, $-1<\nu<0.5$, boundary consistency).
+  - Semantic analyzer enforcing physical constraints ($E>0$, $-1<\nu<0.5$, bounding box checks, duplicate block rejection, NaN/Inf rejection).
   - Pydantic-based Intermediate Representation (`ProblemIR`, `gdec_ir_v0.1`).
   - 2D Linear Elasticity solver (plane stress and plane strain) using P1 triangular elements.
   - Vectorized sparse matrix assembly with boundary condensation.
   - Primal solve and Adjoint sensitivity solve with LU factorization reuse.
-  - Goal Quantity of Interest (QoI) boundary integration.
-  - Zienkiewicz-Zhu (ZZ) area-weighted nodal stress recovery error estimator.
+  - Goal Quantity of Interest (QoI): boundary average displacement and pointwise displacement ($u_i(x_0, y_0)$).
+  - Zienkiewicz-Zhu (ZZ) recovery error estimator with exact degree-2 Dunavant/Hammer triangle quadrature.
   - Adjoint-informed goal sensitivity refinement heuristic (`goal_heuristic_v1`).
   - Dörfler marking and conforming red-green mesh bisection (zero hanging nodes).
-  - Refinement cost model and Safe Refinement Transaction Protocol.
+  - Topological refinement cost model and Safe Refinement Transaction Protocol with RAM availability checks.
+  - Multi-level reference discretization verification via Celik et al. (ASME 2008) unequal-ratio Richardson extrapolation.
+  - Multidimensional hypothesis evaluator separating spatial DOF efficiency from wall-clock speedup.
   - Command-Line Interface (`gdec`) and Streamlit Engineering Studio.
-  - Automated test suite (42 unit and integration tests).
+  - Automated test suite (54 unit and integration tests with 100% pass rate).
 - **Planned for Future Versions**:
   - Native GPU accelerator execution backends (CUDA/HIP/SYCL).
   - Higher-order finite elements (P2 triangles, bilinear/biquadratic quads) and 3D elasticity.
@@ -134,14 +136,14 @@ streamlit run src/gdec/app.py
 - **Factorization Reuse**: Reusing primal LU factorizations for the adjoint solve provides a **$1.96\times - 2.00\times$** speedup on isolated linear solves.
 
 ### Current Limitations
-- **CPU Only**: GDEC v0.2.2 executes on CPU. Physical GPU hardware is detected for informational purposes only; requests for GPU execution are rejected at compile time.
+- **CPU Only**: GDEC v0.2.3 executes on CPU. Physical GPU hardware is detected for informational purposes only; requests for GPU execution are rejected at compile time.
 - **2D P1 Elements Only**: Implements 2D linear static elasticity with 3-node triangular elements.
 - **Heuristic Estimator**: The goal-aware indicator is an adjoint-informed ranking heuristic, not a mathematically certified DWR error bound.
 - **Python Runtime Overhead**: On small coarse meshes (< 5,000 DOFs), element sorting and mesh management in Python moderate net wall-clock speedups.
 
 ---
 
-## 6. Documentation Directory
+## 6. Documentation & Audit Reports Directory
 - [architecture.md](file:///f:/fem-edit-benchmark/docs/architecture.md): System architecture and data flow.
 - [language_specification.md](file:///f:/fem-edit-benchmark/docs/language_specification.md): `.gdc` grammar and keyword reference.
 - [compiler_design.md](file:///f:/fem-edit-benchmark/docs/compiler_design.md): Lexing, AST construction, and semantic validation.
@@ -153,3 +155,7 @@ streamlit run src/gdec/app.py
 - [benchmark_methodology.md](file:///f:/fem-edit-benchmark/docs/benchmark_methodology.md): 3-way comparative benchmark protocol.
 - [known_limitations.md](file:///f:/fem-edit-benchmark/docs/known_limitations.md): Current algorithmic and engineering boundaries.
 - [INDEPENDENT_CODE_REVIEW_GUIDE.md](file:///f:/fem-edit-benchmark/docs/INDEPENDENT_CODE_REVIEW_GUIDE.md): Technical review checklist for external auditors.
+- [GDEC_v0.2.3_Remediation_Report.md](file:///f:/fem-edit-benchmark/reports/v023/GDEC_v0.2.3_Remediation_Report.md): Full audit issue-by-issue remediation report.
+- [GDEC_v0.2.3_Scientific_Verification_Report.md](file:///f:/fem-edit-benchmark/reports/v023/GDEC_v0.2.3_Scientific_Verification_Report.md): Adjoint duality, Celik Richardson extrapolation, and Timoshenko verification.
+- [GDEC_v0.2.3_Benchmark_Report.md](file:///f:/fem-edit-benchmark/reports/v023/GDEC_v0.2.3_Benchmark_Report.md): Equal-accuracy benchmark comparisons and hypothesis evaluation.
+- [GDEC_v0.2.3_Change_Log.md](file:///f:/fem-edit-benchmark/reports/v023/GDEC_v0.2.3_Change_Log.md): Detailed changelog of changes between v0.2.2 and v0.2.3.

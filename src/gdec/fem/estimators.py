@@ -122,32 +122,40 @@ class RefinementEstimator:
         nodal_weights_sum = np.maximum(nodal_weights_sum, 1e-14)
         nodal_recovered_stresses = nodal_stresses_sum / nodal_weights_sum[None, :]
 
-        # 2. Recover element centroid stress: average of 3 vertices
+        # 2. Quadrature-based exact integration for degree-2 energy norm of linearly recovered stress
+        # Using Hammer/Dunavant 3-point midpoint rule (exact for quadratic polynomials on triangles):
         v0 = triangles[0, :]
         v1 = triangles[1, :]
         v2 = triangles[2, :]
-        recovered_elem_stresses = (
-            nodal_recovered_stresses[:, v0]
-            + nodal_recovered_stresses[:, v1]
-            + nodal_recovered_stresses[:, v2]
-        ) / 3.0
 
-        # 3. Stress difference Delta sigma = sigma* - sigma
-        delta_sig = recovered_elem_stresses - stresses
+        s0 = nodal_recovered_stresses[:, v0]
+        s1 = nodal_recovered_stresses[:, v1]
+        s2 = nodal_recovered_stresses[:, v2]
 
-        # 4. Energy norm indicator: sqrt( A_e * thickness * (delta_sig^T * C^{-1} * delta_sig) )
+        # Midpoint stresses for the linearly interpolated recovered stress field sigma*
+        s_m01 = 0.5 * (s0 + s1)
+        s_m12 = 0.5 * (s1 + s2)
+        s_m20 = 0.5 * (s2 + s0)
+
+        # Stress difference Delta sigma = sigma* - sigma_h at each midpoint
+        ds01 = s_m01 - stresses
+        ds12 = s_m12 - stresses
+        ds20 = s_m20 - stresses
+
+        # 3. Energy norm integration: sqrt( integral_Omega_e (Delta sigma^T * C^{-1} * Delta sigma) dOmega )
         C_inv = self.c.compliance_3x3
-        # delta_sig has shape (3, ne)
-        # Compute quadratic form for each column
-        # q = sum_i sum_j delta_sig[i] * C_inv[i,j] * delta_sig[j]
-        C_inv_delta = C_inv @ delta_sig  # shape (3, ne)
-        quad = np.sum(delta_sig * C_inv_delta, axis=0)  # shape (ne,)
-        quad = np.maximum(quad, 0.0)
+        q01 = np.sum(ds01 * (C_inv @ ds01), axis=0)
+        q12 = np.sum(ds12 * (C_inv @ ds12), axis=0)
+        q20 = np.sum(ds20 * (C_inv @ ds20), axis=0)
 
-        eta_zz = np.sqrt(areas * thickness * quad)
+        # Exact degree-2 quadrature: Area * (q01 + q12 + q20) / 3.0
+        quad_exact = (q01 + q12 + q20) / 3.0
+        quad_exact = np.maximum(quad_exact, 0.0)
 
-        # Estimate additional DOFs per element (local bisection adds ~2-4 DOFs per marked element)
-        est_dofs = np.full(ne, 4.0)
+        eta_zz = np.sqrt(areas * thickness * quad_exact)
+
+        # Estimate additional DOFs per element via local topology
+        est_dofs = self.estimate_element_refinement_costs(gdec_mesh)
 
         return IndicatorResult(
             name="Recovery_ZZ_NodalAveraging",
@@ -155,12 +163,51 @@ class RefinementEstimator:
             priorities=eta_zz,
             estimated_dofs_increase=est_dofs,
             details={
-                "method": "Zienkiewicz-Zhu stress recovery (area-weighted nodal averaging)",
+                "method": "Zienkiewicz-Zhu stress recovery (area-weighted nodal averaging with degree-2 triangle quadrature)",
                 "classification": "area_weighted_nodal_stress_averaging",
+                "quadrature": "degree_2_hammer_dunavant_3_point",
                 "max_indicator": float(np.max(eta_zz)),
                 "total_energy_error": float(np.sqrt(np.sum(eta_zz**2))),
             },
         )
+
+    @staticmethod
+    def estimate_element_refinement_costs(gdec_mesh: GDECMesh) -> np.ndarray:
+        """
+        Estimate element-dependent incremental refinement cost (in degrees of freedom).
+        Uses local mesh topology:
+        - Boundary facet count per element (boundary elements trigger fewer neighbor splits).
+        - Element aspect ratio (higher aspect ratio triggers longer green closure chains).
+        """
+        ne = gdec_mesh.nelements
+        mesh = gdec_mesh.mesh
+        p = mesh.p
+        t = mesh.t
+
+        # Boundary facet detection via f2t and t2f
+        if hasattr(mesh, "f2t") and hasattr(mesh, "t2f"):
+            f2t = mesh.f2t
+            t2f = mesh.t2f
+            is_bnd_facet = (f2t[0] == f2t[1]) | (f2t[1] == -1)
+            bnd_facets_per_elem = np.sum(is_bnd_facet[t2f], axis=0)
+        else:
+            bnd_facets_per_elem = np.zeros(ne, dtype=int)
+
+        # Aspect ratio of triangle edges
+        e0 = np.linalg.norm(p[:, t[1]] - p[:, t[0]], axis=0)
+        e1 = np.linalg.norm(p[:, t[2]] - p[:, t[1]], axis=0)
+        e2 = np.linalg.norm(p[:, t[0]] - p[:, t[2]], axis=0)
+        longest = np.maximum(e0, np.maximum(e1, e2))
+        shortest = np.minimum(e0, np.minimum(e1, e2))
+        aspect = longest / np.maximum(shortest, 1e-12)
+
+        # Base cost: 2.0 DOFs (1 new vertex).
+        # Neighbor propagation: +1.0 DOF per interior facet.
+        # Aspect penalty: +0.5 * (aspect - 1.0) for non-equilateral elements.
+        propagation_dofs = 2.0 - bnd_facets_per_elem.astype(float)
+        aspect_penalty = 0.5 * np.maximum(aspect - 1.0, 0.0)
+        costs = 2.0 + 1.0 * propagation_dofs + aspect_penalty
+        return costs
 
     def compute_goal_aware_indicator(
         self, gdec_mesh: GDECMesh, sol: FEMSolution, cost_aware: bool = True
@@ -188,8 +235,6 @@ class RefinementEstimator:
         eps_z, _ = self.compute_element_strains_and_stresses(gdec_mesh, sol, sol.z)
 
         # Inner product: eps(u) : C : eps(z) = sig(u) : eps(z)
-        # In engineering Voigt notation:
-        # sig_11 * eps_z_11 + sig_22 * eps_z_22 + sig_12 * (2 * eps_z_12)
         inner_prod = (
             sig_u[0, :] * eps_z[0, :]
             + sig_u[1, :] * eps_z[1, :]
@@ -199,13 +244,10 @@ class RefinementEstimator:
         # Sensitivity heuristic: eta_e = h_e^2 * A_e * | inner_prod |
         eta_goal = (he**2) * areas * np.abs(inner_prod)
 
-        # Cost model: estimate additional DOFs if element e is refined
-        # Elements in high-aspect-ratio regions or boundaries trigger green closures.
-        # Baseline predicted cost: ~4 DOFs per marked element
-        est_dofs = np.full(ne, 4.0)
+        # Cost model: calculate element-dependent estimated refinement cost based on mesh topology
+        est_dofs = self.estimate_element_refinement_costs(gdec_mesh)
 
         if cost_aware:
-            # P_e = eta_e / est_dofs
             priorities = eta_goal / np.maximum(est_dofs, 1.0)
         else:
             priorities = eta_goal.copy()

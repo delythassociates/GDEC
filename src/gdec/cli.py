@@ -22,7 +22,7 @@ from gdec.benchmark import BenchmarkRunner, BenchmarkReporter, BenchmarkMetrics
 
 def cmd_hardware(args):
     print("=" * 60)
-    print("GDEC v0.2.2 — Hardware Detection & Execution Backends")
+    print("GDEC v0.2.3 — Hardware Detection & Execution Backends")
     print("=" * 60)
     hw = BackendRegistry.detect_hardware()
     print(f"Host OS:             {hw['os']}")
@@ -40,7 +40,7 @@ def cmd_hardware(args):
     print("\n[Accelerator Hardware]")
     print(f"  GPU Hardware Present:    {acc['gpu_hardware_detected']}")
     print(f"  GPU Device:              {acc['gpu_model']}")
-    print(f"  CUDA Backend in v0.2.2:  {acc.get('cuda_backend_implemented', False)}")
+    print(f"  CUDA Backend in v0.2.3:  {acc.get('cuda_backend_implemented', False)}")
     print(f"  Status Note:             {acc['status_note']}")
     print("=" * 60)
     return 0
