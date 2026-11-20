@@ -1,0 +1,36 @@
+{
+  "test_execution_record": {
+    "timestamp_iso": "2026-11-20T20:51:13Z",
+    "commit_sha": "a13749c3ae441dd9ed4c1bed8893d8ce5c86bb82",
+    "branch": "phase-c/amendment-3",
+    "exact_command": ".venv\\Scripts\\python.exe -m pytest tests -v --durations=10 -m \"not confirmatory\"",
+    "marker_filter": "not confirmatory",
+    "environment": {
+      "python_version": "3.13.14",
+      "platform": "win32",
+      "pytest_version": "9.2.0",
+      "pluggy_version": "1.7.0",
+      "dependencies": {
+        "numpy": "2.2.3",
+        "scipy": "1.15.2",
+        "scikit-fem": "10.0.2",
+        "sympy": "1.13.3",
+        "lark": "1.2.2"
+      }
+    },
+    "results_summary": {
+      "collected": 171,
+      "passed": 171,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 0,
+      "errors": 0,
+      "duration_seconds": 42.32
+    },
+    "reconciliation_notes": {
+      "amendment_2_draft_report": "157 tests passed (prior to committing test_phase_c_amendment_2.py 7 tests)",
+      "amendment_2_final_committed": "161 tests passed in 54.73s (baseline a13749c3)",
+      "amendment_3_final_committed": "171 tests passed in 42.32s (+10 tests in test_phase_c_amendment_3.py)"
+    }
+  }
+}

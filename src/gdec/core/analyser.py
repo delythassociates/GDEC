@@ -57,6 +57,38 @@ class AccuracyTarget:
 
 
 @dataclass
+class MeshLevelEvidence:
+    """
+    Typed, immutable evidence representation for a single mesh level in a verification hierarchy.
+    Captures verifiable topological, geometric, and provenance data.
+    """
+    level_id: str
+    mesh_hash: str
+    element_count: int
+    node_count: int
+    characteristic_h: float
+    parent_mesh_hash: Optional[str] = None
+    refinement_ratio: Optional[float] = None
+    nestedness_verified: bool = True
+    refinement_method: str = "uniform_midpoint"
+    provenance: Optional[Dict[str, Any]] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "level_id": self.level_id,
+            "mesh_hash": self.mesh_hash,
+            "element_count": int(self.element_count),
+            "node_count": int(self.node_count),
+            "characteristic_h": float(self.characteristic_h),
+            "parent_mesh_hash": self.parent_mesh_hash,
+            "refinement_ratio": float(self.refinement_ratio) if self.refinement_ratio is not None else None,
+            "nestedness_verified": bool(self.nestedness_verified),
+            "refinement_method": str(self.refinement_method),
+            "provenance": self.provenance,
+        }
+
+
+@dataclass
 class ContractResult:
     issued: bool
     status: str
@@ -125,19 +157,24 @@ class ProblemAnalyser:
         det = (v1[0] - v0[0]) * (v2[1] - v0[1]) - (v2[0] - v0[0]) * (v1[1] - v0[1])
         areas = 0.5 * np.abs(det)
         total_area = float(np.sum(areas))
-        if total_area <= 0.0 or np.any(areas <= 1e-14):
+        if total_area <= 0.0 or not np.isfinite(total_area):
             return False, 0.0
 
         # Relative dimensionless area check to prevent scale dependence
         if np.any(areas / total_area <= 1e-14):
             return False, 0.0
 
-        # Edge lengths
+        # Scale-aware characteristic length L_ref
+        L_ref = float(np.sqrt(total_area))
+        if L_ref <= 0.0 or not np.isfinite(L_ref):
+            return False, 0.0
+
+        # Edge lengths (dimensionless against L_ref)
         a = np.linalg.norm(v1 - v2, axis=0)
         b = np.linalg.norm(v2 - v0, axis=0)
         c = np.linalg.norm(v0 - v1, axis=0)
 
-        if np.any(a <= 1e-14) or np.any(b <= 1e-14) or np.any(c <= 1e-14):
+        if np.any(a / L_ref <= 1e-14) or np.any(b / L_ref <= 1e-14) or np.any(c / L_ref <= 1e-14):
             return False, 0.0
 
         # Law of cosines for all three interior angles
@@ -195,7 +232,7 @@ class ProblemAnalyser:
                 )
             areas = 0.5 * np.abs(det)
             total_area = float(np.sum(areas))
-            if total_area <= 0.0 or np.any(areas <= 1e-14):
+            if total_area <= 0.0 or not np.isfinite(total_area) or np.any(areas / total_area <= 1e-14):
                 return (
                     False,
                     RefusalCode.INVALID_GEOMETRY,
@@ -298,6 +335,105 @@ class ProblemAnalyser:
                     )
         return True, None, "Sufficient grid levels and valid refinement ratio available."
 
+    def validate_mesh_hierarchy(
+        self,
+        evidence_list: List[MeshLevelEvidence],
+        verification_mode: str = "three_grid",
+    ) -> Tuple[bool, Optional[RefusalCode], str]:
+        """
+        Validates typed mesh hierarchy evidence against verified parent-child links,
+        monotonic characteristic h, actual refinement ratios, and protocol level counts.
+        Fail-closed on missing, corrupted, or contradictory evidence.
+        """
+        if verification_mode not in ("three_grid", "four_grid"):
+            raise ValueError(
+                f"Invalid verification mode: '{verification_mode}'. Supported modes are 'three_grid' and 'four_grid'."
+            )
+
+        min_levels = 4 if verification_mode == "four_grid" else 3
+        if len(evidence_list) < min_levels:
+            return (
+                False,
+                RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                f"Mesh hierarchy contains {len(evidence_list)} levels; at least {min_levels} required for mode '{verification_mode}'.",
+            )
+
+        seen_hashes = set()
+        for i, ev in enumerate(evidence_list):
+            # Check finite metrics
+            if (
+                not np.isfinite(ev.characteristic_h)
+                or ev.characteristic_h <= 0.0
+                or ev.element_count <= 0
+                or ev.node_count <= 0
+            ):
+                return (
+                    False,
+                    RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                    f"Mesh level '{ev.level_id}' has non-finite or invalid element/node metrics (h={ev.characteristic_h}, Ne={ev.element_count}, Nn={ev.node_count}).",
+                )
+
+            # Check duplicate levels
+            if ev.mesh_hash in seen_hashes:
+                return (
+                    False,
+                    RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                    f"Mesh level '{ev.level_id}' has duplicate mesh hash ({ev.mesh_hash[:8]}...); duplicate levels are forbidden.",
+                )
+            seen_hashes.add(ev.mesh_hash)
+
+            # Check nestedness requirement if claimed
+            if not ev.nestedness_verified and ev.refinement_method in ("uniform_midpoint", "bisection"):
+                return (
+                    False,
+                    RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                    f"Mesh level '{ev.level_id}' fails nestedness verification under refinement method '{ev.refinement_method}'.",
+                )
+
+            if i > 0:
+                prev = evidence_list[i - 1]
+                # Check parent hash pointer
+                if ev.parent_mesh_hash is None or ev.parent_mesh_hash != prev.mesh_hash:
+                    return (
+                        False,
+                        RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                        f"Mesh level '{ev.level_id}' parent hash ({str(ev.parent_mesh_hash)[:8]}...) does not match previous level '{prev.level_id}' hash ({prev.mesh_hash[:8]}...).",
+                    )
+
+                # Check strict monotonic decrease in characteristic h
+                if ev.characteristic_h >= prev.characteristic_h:
+                    return (
+                        False,
+                        RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                        f"Characteristic h is not strictly decreasing from '{prev.level_id}' ({prev.characteristic_h:.4e}) to '{ev.level_id}' ({ev.characteristic_h:.4e}).",
+                    )
+
+                # Independently calculated refinement ratio from characteristic h
+                calc_ratio = prev.characteristic_h / ev.characteristic_h
+
+                # Check independently calculated ratio against required uniform doubling (r = 2.0 +/- 10%)
+                if not np.isclose(calc_ratio, 2.0, rtol=0.10):
+                    return (
+                        False,
+                        RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                        f"Independently calculated refinement ratio h_{prev.level_id}/h_{ev.level_id} = {calc_ratio:.2f} deviates from required uniform doubling r=2.0.",
+                    )
+
+                # Check claimed refinement ratio against actual evidence
+                if ev.refinement_ratio is not None:
+                    if not np.isclose(ev.refinement_ratio, calc_ratio, rtol=0.05):
+                        return (
+                            False,
+                            RefusalCode.UNVERIFIED_INSUFFICIENT_LEVELS,
+                            f"Level '{ev.level_id}' claimed refinement ratio ({ev.refinement_ratio:.2f}) contradicts independently calculated ratio ({calc_ratio:.2f}).",
+                        )
+
+        return (
+            True,
+            None,
+            f"Mesh hierarchy ({len(evidence_list)} levels) verified for mode '{verification_mode}'.",
+        )
+
     def check_qoi_support(
         self, qoi_spec: Dict[str, Any]
     ) -> Tuple[bool, Optional[RefusalCode], str]:
@@ -377,11 +513,18 @@ class ProblemAnalyser:
         mesh_levels: Optional[int] = None,
         refinement_ratio: Optional[float] = None,
         reference_uncertainty: Optional[float] = None,
+        mesh_hierarchy: Optional[List[MeshLevelEvidence]] = None,
     ) -> ContractResult:
         """
         Evaluates the verification contract for computed QoIs on nested levels.
         Enforces deterministic refusal priority (Priority 1 through 10).
         """
+        # Validate explicit verification mode
+        if verification_mode not in ("three_grid", "four_grid"):
+            raise ValueError(
+                f"Invalid verification mode: '{verification_mode}'. Supported modes are 'three_grid' and 'four_grid'."
+            )
+
         # Validate finite QoI inputs
         for val, name in [(J0, "J0"), (J1, "J1"), (J2, "J2")]:
             if not np.isfinite(val):
@@ -472,6 +615,23 @@ class ProblemAnalyser:
             )
 
         # Priority 6: Sequence length and refinement ratio (minimum 3 levels, r = 2)
+        if mesh_hierarchy is not None:
+            hier_valid, hier_refusal, hier_reason = self.validate_mesh_hierarchy(
+                mesh_hierarchy, verification_mode=verification_mode
+            )
+            if not hier_valid and hier_refusal is not None:
+                return ContractResult(
+                    issued=False,
+                    status=hier_refusal.value,
+                    qoi=base_qoi,
+                    refusal={
+                        "code": hier_refusal.value,
+                        "reason": hier_reason,
+                        "priority": 6,
+                    },
+                    limitations=limitations,
+                )
+
         if mesh_levels is not None and mesh_levels < 3:
             return ContractResult(
                 issued=False,

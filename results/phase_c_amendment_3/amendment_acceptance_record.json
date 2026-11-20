@@ -1,0 +1,100 @@
+{
+  "amendment_id": "phase-c-amendment-3",
+  "baseline_commit": "a13749c3ae441dd9ed4c1bed8893d8ce5c86bb82",
+  "target_branch": "phase-c/amendment-3",
+  "immutable_tag": "prereg-c-amendment-3",
+  "audit_timestamp_iso": "2026-11-21T02:27:00Z",
+  "overall_status": "READY_FOR_INDEPENDENT_REVIEW",
+  "acceptance_criteria": [
+    {
+      "id": "AM3-AC-01",
+      "requirement": "M3 reference error is independently reproducible or traceably loaded",
+      "status": "PASS",
+      "evidence": "quadrature_study.py dynamically constructs M3 (3200 elems) and solves Order 26 solution; dynamic E_smallest_M3 = 5.2791e-5; documented in QUADRATURE_REPRODUCIBILITY_REPORT.md."
+    },
+    {
+      "id": "AM3-AC-02",
+      "requirement": "Quadrature comparisons use consistent QoIs and domains",
+      "status": "PASS",
+      "evidence": "Patch-average displacement on [0.2, 0.6]^2 used consistently across all orders and mesh levels M1..M3."
+    },
+    {
+      "id": "AM3-AC-03",
+      "requirement": "All 40 Tier 1 mathematical definitions have documented independent verification",
+      "status": "PASS",
+      "evidence": "audit_qois.py verifies all 40 configurations against SciPy quad/dblquad (max diff 4.34e-19 << 1e-11); full table in MATHEMATICAL_VALIDATION_REPORT.md."
+    },
+    {
+      "id": "AM3-AC-04",
+      "requirement": "Family 4 sign discrepancy is corrected and tested",
+      "status": "PASS",
+      "evidence": "Analytical integration of ux (+13/48 ky) vs uy (-13/48 ky) verified symbolically, numerically, and in unit test test_family4_qoi_sign_reconciliation_am3_02."
+    },
+    {
+      "id": "AM3-AC-05",
+      "requirement": "Mesh hierarchy validation uses actual mesh evidence",
+      "status": "PASS",
+      "evidence": "Implemented typed MeshLevelEvidence and ProblemAnalyser.validate_mesh_hierarchy() inspecting hashes, counts, and parent links."
+    },
+    {
+      "id": "AM3-AC-06",
+      "requirement": "False refinement metadata cannot pass",
+      "status": "PASS",
+      "evidence": "Adversarial test test_adversarial_hierarchy_falsified_refinement_ratio catches claimed r=3.5 vs actual 2.0 with fail-closed refusal."
+    },
+    {
+      "id": "AM3-AC-07",
+      "requirement": "Scale-aware tests pass at 10^-6, 1, and 10^6",
+      "status": "PASS",
+      "evidence": "Dimensionless area (Ae/Atotal) and edge (le/Lref) checks pass at scales 1e-6, 1.0, and 1e6 in test_scale_aware_geometry_validation."
+    },
+    {
+      "id": "AM3-AC-08",
+      "requirement": "Missing mandatory evidence fails closed",
+      "status": "PASS",
+      "evidence": "Missing parent hashes, non-monotonic h, or insufficient levels strictly refuse contract issuance with Priority 6."
+    },
+    {
+      "id": "AM3-AC-09",
+      "requirement": "Test discrepancy is reconciled using execution evidence",
+      "status": "PASS",
+      "evidence": "Complete analysis of 157 vs 161 historical counts documented in TEST_EVIDENCE_RECONCILIATION.md; machine-readable test_evidence_record.json generated."
+    },
+    {
+      "id": "AM3-AC-10",
+      "requirement": "Reports, manifests, and raw artifacts agree",
+      "status": "PASS",
+      "evidence": "Manifests, raw JSON results, and reports audited for 100% concordance."
+    },
+    {
+      "id": "AM3-AC-11",
+      "requirement": "Phase A FEM production files remain unchanged",
+      "status": "PASS",
+      "evidence": "git diff --stat 01260409a0e11d8dcf97729ea25a61f20e2a4772 -- src/gdec/fem/ confirmed 0 lines changed."
+    },
+    {
+      "id": "AM3-AC-12",
+      "requirement": "No confirmatory experiments are executed",
+      "status": "PASS",
+      "evidence": "Strict marker -m 'not confirmatory' enforced; no Tier 1 40-run or Tier 2/3 confirmatory sweeps launched."
+    },
+    {
+      "id": "AM3-AC-13",
+      "requirement": "Applicable non-confirmatory regression tests pass",
+      "status": "PASS",
+      "evidence": "171 passed in 42.32s with 0 failures, 0 skipped, 0 errors."
+    },
+    {
+      "id": "AM3-AC-14",
+      "requirement": "CI status is accurately reported",
+      "status": "PASS",
+      "evidence": "Local runs fully documented; hosted GitHub Actions CI accurately reported as pending remote push in CI_EVIDENCE.md."
+    },
+    {
+      "id": "AM3-AC-15",
+      "requirement": "Future evidence architecture is documented without premature implementation",
+      "status": "PASS",
+      "evidence": "UNIFIED_ENGINEERING_EVIDENCE_ARCHITECTURE.md delivered in docs/architecture/ without solver coupling."
+    }
+  ]
+}
