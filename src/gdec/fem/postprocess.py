@@ -1,7 +1,7 @@
 """
 Post-processing and field evaluation for GDEC FEM simulations.
 Calculates engineering quantities: QoI, displacement magnitudes, Cauchy stresses,
-and plane stress Von Mises stress.
+and Von Mises stress for plane stress and plane strain.
 """
 
 from __future__ import annotations
@@ -56,9 +56,19 @@ class PostProcessor:
         s_yy = c12 * eps_11 + c11 * eps_22
         s_xy = c33 * gamma_12
 
-        # Von Mises stress for plane stress:
-        # sigma_vM = sqrt(s_xx^2 - s_xx*s_yy + s_yy^2 + 3*s_xy^2)
-        vm_sq = s_xx**2 - s_xx * s_yy + s_yy**2 + 3.0 * (s_xy**2)
+        # Use the 3D invariant for both 2D assumptions. Under plane stress
+        # sigma_zz = 0; under plane strain isotropic elasticity gives
+        # sigma_zz = nu * (sigma_xx + sigma_yy).
+        if self.c.assumption == "plane_strain":
+            s_zz = self.c.nu * (s_xx + s_yy)
+        else:
+            s_zz = np.zeros_like(s_xx)
+
+        vm_sq = 0.5 * (
+            (s_xx - s_yy) ** 2
+            + (s_yy - s_zz) ** 2
+            + (s_zz - s_xx) ** 2
+        ) + 3.0 * (s_xy ** 2)
         von_mises = np.sqrt(np.maximum(vm_sq, 0.0))
 
         # Recover nodal von Mises stress for smooth rendering
