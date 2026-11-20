@@ -38,7 +38,10 @@
 - **Domain Geometry:** Rectangular domains with width $L$, height $H$.
 - **Boundary Conditions:** Strongly condensed Dirichlet DOFs via `skfem.condense`.
 - **Refinement Method:** Conforming red-green local bisection (`MeshTri.refined`).
-- **Pseudorandom Generation:** `numpy.random.default_rng(12345)` initialized explicitly per mesh generation.
+- **Pseudorandom Generation:**
+  - Perturbed mesh generator: `numpy.random.default_rng(12345)` initialized explicitly per mesh generation level with array size $N_{\text{nodes}}$.
+  - Adjoint finite-difference DOF sampling: `numpy.random.default_rng(42)` (sampling 10 free DOFs).
+  - Nested-mesh discrete identity displacement perturbation: `numpy.random.default_rng(9999)` (admissible displacement with homogeneous Dirichlet BCs).
 
 ---
 
