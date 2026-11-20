@@ -242,6 +242,12 @@ class SemanticAnalyzer:
             bnd = None
             comps = ["x", "y"]
             if isinstance(call, FunctionCall) and call.func_name == "boundary":
+                self._validate_named_args(call, {"boundary"})
+                if len(call.positional_args) > 1 or (call.positional_args and "boundary" in call.named_args):
+                    raise GDECSemanticError(
+                        "boundary accepts exactly one boundary name, either positional or named.",
+                        call.loc,
+                    )
                 if call.positional_args:
                     bnd = self._eval_value(call.positional_args[0])
                 elif "boundary" in call.named_args:
@@ -337,6 +343,11 @@ class SemanticAnalyzer:
             )
         call = stmt.value
         self._validate_named_args(call, {"value", "max_iterations"})
+        if len(call.positional_args) > 1 or (call.positional_args and "value" in call.named_args):
+            raise GDECSemanticError(
+                "max_dofs accepts one value, either positional or named, not both.",
+                call.loc,
+            )
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         if call.positional_args:
             val = self._eval_value(call.positional_args[0])
@@ -406,14 +417,14 @@ class SemanticAnalyzer:
         dev = self._eval_value(stmt.value)
         if dev not in ["cpu", "cuda", "hip", "sycl"]:
             raise GDECSemanticError(
-                f"Unknown backend device '{dev}'. Supported: 'cpu', 'cuda', 'hip', 'sycl', 'tpu'.",
+                f"Unknown backend device '{dev}'. Supported: 'cpu', 'cuda', 'hip', 'sycl'.",
                 stmt.loc,
             )
         if dev != "cpu":
             # Strict Part 2.D compliance:
             # "Do not silently route a requested GPU calculation to the CPU. If CUDA is unavailable or not implemented, explicitly report that."
             raise GDECSemanticError(
-                f"Backend '{dev}' was requested, but no GPU accelerator hardware or CUDA backend is available in GDEC v0.2.1. "
+                f"Backend '{dev}' was requested, but no accelerator backend is implemented in this GDEC release. "
                 f"Per GDEC architecture rules, requested accelerator computations are not silently routed to CPU.",
                 stmt.loc,
             )
