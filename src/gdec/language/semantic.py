@@ -5,7 +5,7 @@ Performs strict validation and generates typed ProblemIR.
 
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
-import shutil
+import math
 
 from gdec.language.ast import (
     ProblemNode,
@@ -52,10 +52,28 @@ class SemanticAnalyzer:
         if not ast.name or not ast.name.isidentifier():
             raise GDECSemanticError(f"Invalid problem identifier '{ast.name}'", ast.loc)
 
-        # Collect statements
+        # Reject misspelled declarations and duplicate singleton declarations.
+        allowed = {
+            "physics", "geometry", "material", "fix", "boundary_condition",
+            "load", "objective", "accuracy", "budget", "adaptivity", "backend",
+        }
+        singleton = {
+            "physics", "geometry", "material", "objective", "accuracy",
+            "budget", "adaptivity", "backend",
+        }
         stmts: Dict[str, List[Statement]] = {}
-        for s in ast.statements:
-            stmts.setdefault(s.key, []).append(s)
+        for statement in ast.statements:
+            if statement.key not in allowed:
+                raise GDECSemanticError(
+                    f"Unknown declaration '{statement.key}'. Supported declarations: {sorted(allowed)}.",
+                    statement.loc,
+                )
+            stmts.setdefault(statement.key, []).append(statement)
+            if statement.key in singleton and len(stmts[statement.key]) > 1:
+                raise GDECSemanticError(
+                    f"Duplicate declaration '{statement.key}'. This declaration may appear only once.",
+                    statement.loc,
+                )
 
         # 1. Physics
         physics = self._extract_physics(stmts.get("physics"))
@@ -101,6 +119,39 @@ class SemanticAnalyzer:
             backend=backend,
         )
 
+    @staticmethod
+    def _validate_named_args(
+        call: FunctionCall,
+        allowed: set[str],
+        required: Optional[set[str]] = None,
+    ) -> None:
+        unknown = set(call.named_args) - allowed
+        if unknown:
+            raise GDECSemanticError(
+                f"Unknown argument(s) for '{call.func_name}': {sorted(unknown)}. "
+                f"Supported arguments: {sorted(allowed)}.",
+                call.loc,
+            )
+        missing = (required or set()) - set(call.named_args)
+        if missing:
+            raise GDECSemanticError(
+                f"Missing required argument(s) for '{call.func_name}': {sorted(missing)}.",
+                call.loc,
+            )
+
+    @staticmethod
+    def _finite_number(value: Any, label: str, loc: Optional[SourceLocation]) -> float:
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+            raise GDECSemanticError(f"'{label}' must be a finite number (received {value}).", loc)
+        return float(value)
+
+    @classmethod
+    def _positive_number(cls, value: Any, label: str, loc: Optional[SourceLocation]) -> float:
+        result = cls._finite_number(value, label, loc)
+        if result <= 0.0:
+            raise GDECSemanticError(f"'{label}' must be strictly positive (received {value}).", loc)
+        return result
+
     def _eval_value(self, expr: Expression) -> Any:
         if isinstance(expr, NumberLiteral):
             return expr.value
@@ -133,23 +184,17 @@ class SemanticAnalyzer:
                 "Geometry must be defined as 'rectangle(width=..., height=..., [thickness=...])'",
                 stmt.loc,
             )
-        call = stmt.value
+        self._validate_named_args(call, {"width", "height", "thickness"}, {"width", "height"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
-
-        if "width" not in args or not isinstance(args["width"], (int, float)) or args["width"] <= 0:
-            raise GDECSemanticError("Geometry 'width' must be a positive number.", call.loc)
-        if "height" not in args or not isinstance(args["height"], (int, float)) or args["height"] <= 0:
-            raise GDECSemanticError("Geometry 'height' must be a positive number.", call.loc)
-
-        thickness = args.get("thickness", 1.0)
-        if not isinstance(thickness, (int, float)) or thickness <= 0:
-            raise GDECSemanticError("Geometry 'thickness' must be a positive number.", call.loc)
+        width = self._positive_number(args["width"], "geometry width", call.loc)
+        height = self._positive_number(args["height"], "geometry height", call.loc)
+        thickness = self._positive_number(args.get("thickness", 1.0), "geometry thickness", call.loc)
 
         return GeometryIR(
             kind="rectangle",
-            width=float(args["width"]),
-            height=float(args["height"]),
-            thickness=float(thickness),
+            width=width,
+            height=height,
+            thickness=thickness,
         )
 
     def _extract_material(self, stmts: Optional[List[Statement]]) -> MaterialIR:
@@ -161,17 +206,13 @@ class SemanticAnalyzer:
                 "Material must be defined as 'isotropic(E=..., nu=..., [assumption=...])'",
                 stmt.loc,
             )
-        call = stmt.value
+        self._validate_named_args(call, {"E", "nu", "assumption"}, {"E", "nu"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
-
-        if "E" not in args or not isinstance(args["E"], (int, float)) or args["E"] <= 0:
+        youngs_modulus = self._positive_number(args["E"], "Young's modulus E", call.loc)
+        poisson = self._finite_number(args["nu"], "Poisson's ratio nu", call.loc)
+        if not (-1.0 < poisson < 0.5):
             raise GDECSemanticError(
-                f"Young's modulus 'E' must be a strictly positive number (received {args.get('E')}).",
-                call.loc,
-            )
-        if "nu" not in args or not isinstance(args["nu"], (int, float)) or not (-1.0 < args["nu"] < 0.5):
-            raise GDECSemanticError(
-                f"Poisson's ratio 'nu' must satisfy -1.0 < nu < 0.5 (received {args.get('nu')}).",
+                f"Poisson's ratio 'nu' must satisfy -1.0 < nu < 0.5 (received {poisson}).",
                 call.loc,
             )
 
@@ -184,8 +225,8 @@ class SemanticAnalyzer:
 
         return MaterialIR(
             kind="isotropic",
-            E=float(args["E"]),
-            nu=float(args["nu"]),
+            E=youngs_modulus,
+            nu=poisson,
             assumption=assumption,
         )
 
@@ -226,6 +267,7 @@ class SemanticAnalyzer:
                     stmt.loc,
                 )
             call = stmt.value
+            self._validate_named_args(call, {"boundary", "tx", "ty"}, {"boundary"})
             args = {k: self._eval_value(v) for k, v in call.named_args.items()}
 
             bnd = args.get("boundary")
@@ -234,8 +276,8 @@ class SemanticAnalyzer:
                     f"Invalid load boundary '{bnd}'. Must be one of {valid_boundaries}.",
                     call.loc,
                 )
-            tx = float(args.get("tx", 0.0))
-            ty = float(args.get("ty", 0.0))
+            tx = self._finite_number(args.get("tx", 0.0), "traction tx", call.loc)
+            ty = self._finite_number(args.get("ty", 0.0), "traction ty", call.loc)
             loads.append(TractionLoadIR(boundary=bnd, tx=tx, ty=ty))
         return loads
 
@@ -249,7 +291,7 @@ class SemanticAnalyzer:
                 "point_displacement is rejected until point-evaluation semantics are implemented.",
                 stmt.loc,
             )
-        call = stmt.value
+        self._validate_named_args(call, {"boundary", "component"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
 
         bnd = args.get("boundary", "right")
@@ -275,14 +317,10 @@ class SemanticAnalyzer:
                 "Accuracy target must be 'successive_qoi_change(percent=...)'",
                 stmt.loc,
             )
-        call = stmt.value
+        self._validate_named_args(call, {"percent"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
-        pct = args.get("percent", 1.0)
-        if not isinstance(pct, (int, float)) or pct <= 0:
-            raise GDECSemanticError(
-                f"Accuracy percentage must be positive (received {pct}).", call.loc
-            )
-        return AccuracyTargetIR(kind="successive_qoi_change", percent=float(pct))
+        pct = self._positive_number(args.get("percent", 1.0), "accuracy percentage", call.loc)
+        return AccuracyTargetIR(kind="successive_qoi_change", percent=pct)
 
     def _extract_budget(self, stmts: Optional[List[Statement]]) -> BudgetIR:
         if not stmts:
@@ -293,16 +331,26 @@ class SemanticAnalyzer:
                 "Budget must be defined as 'max_dofs(value=..., [max_iterations=...])'",
                 stmt.loc,
             )
-        call = stmt.value
+        self._validate_named_args(call, {"value", "max_iterations"})
         args = {k: self._eval_value(v) for k, v in call.named_args.items()}
         if call.positional_args:
             val = self._eval_value(call.positional_args[0])
         else:
             val = args.get("value", 25000)
-        if not isinstance(val, (int, float)) or int(val) <= 0:
-            raise GDECSemanticError(f"Budget 'value' must be a positive integer (received {val}).", call.loc)
-        max_iters = args.get("max_iterations", 15)
-        return BudgetIR(kind="max_dofs", value=int(val), max_iterations=int(max_iters))
+        budget_value = self._finite_number(val, "DOF budget", call.loc)
+        if budget_value <= 0 or not budget_value.is_integer():
+            raise GDECSemanticError(
+                f"Budget 'value' must be a positive whole number (received {val}).", call.loc
+            )
+        max_iters_value = self._finite_number(args.get("max_iterations", 15), "max_iterations", call.loc)
+        if max_iters_value <= 0 or not max_iters_value.is_integer():
+            raise GDECSemanticError(
+                f"'max_iterations' must be a positive whole number (received {max_iters_value}).",
+                call.loc,
+            )
+        return BudgetIR(
+            kind="max_dofs", value=int(budget_value), max_iterations=int(max_iters_value)
+        )
 
     def _extract_adaptivity(self, stmts: Optional[List[Statement]]) -> AdaptivityIR:
         if not stmts:
@@ -315,12 +363,26 @@ class SemanticAnalyzer:
             cost_aware = True
         elif isinstance(val, FunctionCall):
             strategy = val.func_name
+            self._validate_named_args(val, {"fraction", "cost_aware"})
             args = {k: self._eval_value(v) for k, v in val.named_args.items()}
-            frac = float(args.get("fraction", 0.3))
-            cost_aware = bool(args.get("cost_aware", True))
+            frac = self._finite_number(args.get("fraction", 0.3), "adaptivity fraction", val.loc)
+            raw_cost_aware = args.get("cost_aware", True)
+            if raw_cost_aware in (True, "true"):
+                cost_aware = True
+            elif raw_cost_aware in (False, "false"):
+                cost_aware = False
+            else:
+                raise GDECSemanticError(
+                    "'cost_aware' must be the literal true or false.", val.loc
+                )
         else:
             raise GDECSemanticError("Invalid adaptivity specification.", stmt.loc)
 
+        if not (0.0 < frac <= 1.0):
+            raise GDECSemanticError(
+                f"Adaptivity fraction must satisfy 0 < fraction <= 1 (received {frac}).",
+                stmt.loc,
+            )
         if strategy not in ["goal_aware", "recovery", "uniform"]:
             raise GDECSemanticError(
                 f"Unsupported adaptivity strategy '{strategy}'. Supported are 'goal_aware', 'recovery', 'uniform'.",
@@ -337,7 +399,7 @@ class SemanticAnalyzer:
             return BackendIR(device="cpu")
         stmt = stmts[-1]
         dev = self._eval_value(stmt.value)
-        if dev not in ["cpu", "cuda", "hip", "sycl", "tpu"]:
+        if dev not in ["cpu", "cuda", "hip", "sycl"]:
             raise GDECSemanticError(
                 f"Unknown backend device '{dev}'. Supported: 'cpu', 'cuda', 'hip', 'sycl', 'tpu'.",
                 stmt.loc,
