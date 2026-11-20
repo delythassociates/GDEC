@@ -77,15 +77,27 @@ def compute_mesh_metrics(mesh: skfem.MeshTri) -> Dict[str, Any]:
     }
 
 
-def create_structured_mesh(n: int, domain: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 1.0)) -> Tuple[skfem.MeshTri, Dict[str, Any]]:
-    """Create structured tensor mesh of n x n squares (2*n^2 triangles) on domain [x0, x1, y0, y1]."""
+def create_structured_mesh(
+    nx: int,
+    ny: int | None = None,
+    domain: Tuple[float, float, float, float] = (0.0, 1.0, 0.0, 1.0)
+) -> Tuple[skfem.MeshTri, Dict[str, Any]]:
+    """Create structured tensor mesh on domain [x0, x1, y0, y1]."""
+    if ny is None:
+        ny = nx
+    elif isinstance(ny, (tuple, list)):
+        domain = tuple(ny)  # type: ignore
+        ny = nx
+
     x0, x1, y0, y1 = domain
     mesh = skfem.MeshTri.init_tensor(
-        np.linspace(x0, x1, n + 1),
-        np.linspace(y0, y1, n + 1)
+        np.linspace(x0, x1, nx + 1),
+        np.linspace(y0, y1, ny + 1)
     )
     metrics = compute_mesh_metrics(mesh)
-    metrics["refinement_level_n"] = n
+    metrics["refinement_level_n"] = nx
+    metrics["nx"] = nx
+    metrics["ny"] = ny
     metrics["type"] = "structured"
     metrics["accepted"] = metrics["all_areas_positive"]
     return mesh, metrics
