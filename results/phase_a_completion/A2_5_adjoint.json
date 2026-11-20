@@ -1,0 +1,192 @@
+[
+  {
+    "id": "A2.5a_force_sensitivity",
+    "computed": {
+      "max_relative_difference": 2.4172292368845296e-11,
+      "sampled_dofs": [
+        {
+          "dof": 96,
+          "adjoint_z": -1.2149936766340454e-08,
+          "fd_deriv": -1.214993676634064e-08,
+          "rel_diff": 1.538631901102249e-14
+        },
+        {
+          "dof": 73,
+          "adjoint_z": 9.436265028871921e-08,
+          "fd_deriv": 9.436265028871932e-08,
+          "rel_diff": 1.1220447598789023e-15
+        },
+        {
+          "dof": 17,
+          "adjoint_z": 3.001401279803634e-09,
+          "fd_deriv": 3.00140127980136e-09,
+          "rel_diff": 7.57619036678097e-13
+        },
+        {
+          "dof": 64,
+          "adjoint_z": 1.0560894496300829e-10,
+          "fd_deriv": 1.0560894496045546e-10,
+          "rel_diff": 2.4172292368845296e-11
+        },
+        {
+          "dof": 46,
+          "adjoint_z": -8.383989764587171e-09,
+          "fd_deriv": -8.383989764588258e-09,
+          "rel_diff": 1.296417607573782e-13
+        },
+        {
+          "dof": 94,
+          "adjoint_z": 1.6525642665085574e-10,
+          "fd_deriv": 1.652564266484656e-10,
+          "rel_diff": 1.4463122344399623e-11
+        },
+        {
+          "dof": 71,
+          "adjoint_z": 9.456688020619668e-08,
+          "fd_deriv": 9.456688020619886e-08,
+          "rel_diff": 2.3092194532443756e-14
+        },
+        {
+          "dof": 18,
+          "adjoint_z": -5.008188134683582e-09,
+          "fd_deriv": -5.008188134682668e-09,
+          "rel_diff": 1.8250799885752406e-13
+        },
+        {
+          "dof": 27,
+          "adjoint_z": 1.042186961368557e-08,
+          "fd_deriv": 1.042186961368297e-08,
+          "rel_diff": 2.49379557757003e-13
+        },
+        {
+          "dof": 83,
+          "adjoint_z": 1.166240722006732e-07,
+          "fd_deriv": 1.1662407220067519e-07,
+          "rel_diff": 1.702250157830885e-14
+        }
+      ],
+      "perturbation_N": 100.0
+    },
+    "threshold": {
+      "dJ_dfk_rel_tol": 1e-06
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Central finite difference sensitivity dJ/df_k vs adjoint vector z_k (seed 42)."
+  },
+  {
+    "id": "A2.5a_material_sensitivity",
+    "computed": {
+      "relative_difference": 4.118116498231784e-08,
+      "fd_derivative": 1.9916783249922044e-14,
+      "analytical_adjoint_derivative": 1.991678242972574e-14,
+      "dE": 700000.0
+    },
+    "threshold": {
+      "dJ_dE_rel_tol": 1e-06
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Central finite difference sensitivity dJ/dE vs adjoint formula -(1/E) z^T K u."
+  },
+  {
+    "id": "A2.5b_exact_discrete_identity_manufactured_J1",
+    "computed": {
+      "qoi_type": "manufactured_J1",
+      "w1_prolonged_coarse": {
+        "Ju_minus_Jw": -0.0014646969222355394,
+        "dual_weighted_residual": -0.0014646969222355253,
+        "absolute_identity_error": 1.4094628242311558e-17,
+        "relative_identity_error": 1.9717381095505776e-16
+      },
+      "w2_random_admissible": {
+        "Ju_minus_Jw": -1.3113790305468997e-06,
+        "dual_weighted_residual": -1.3113790305877386e-06,
+        "absolute_identity_error": 4.0838846518918837e-17,
+        "relative_identity_error": 5.832464361108329e-16
+      },
+      "max_relative_identity_error": 5.832464361108329e-16
+    },
+    "threshold": {
+      "relative_tolerance": 1e-09
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Nested-mesh exact discrete algebraic identity J(u) - J(w) = z^T (f - Kw) for manufactured_J1."
+  },
+  {
+    "id": "A2.5b_exact_discrete_identity_boundary_average_displacement",
+    "computed": {
+      "qoi_type": "boundary_average_displacement",
+      "w1_prolonged_coarse": {
+        "Ju_minus_Jw": -0.00015946818340363696,
+        "dual_weighted_residual": -0.0001594681833979386,
+        "absolute_identity_error": 5.698349778149314e-15,
+        "relative_identity_error": 3.087314721125886e-12
+      },
+      "w2_random_admissible": {
+        "Ju_minus_Jw": -2.8120438395073033e-05,
+        "dual_weighted_residual": -2.8120438385736968e-05,
+        "absolute_identity_error": 9.336064907272679e-15,
+        "relative_identity_error": 5.05819610023498e-12
+      },
+      "max_relative_identity_error": 5.05819610023498e-12
+    },
+    "threshold": {
+      "relative_tolerance": 1e-09
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Nested-mesh exact discrete algebraic identity J(u) - J(w) = z^T (f - Kw) for boundary_average_displacement."
+  },
+  {
+    "id": "A2.5c_reference_comparison",
+    "computed": {
+      "mesh_hierarchy": {
+        "nx8_ny4": {
+          "dofs": 64,
+          "qoi_meters": -0.001180845294272976,
+          "qoi_mm": -1.1808452942729761
+        },
+        "nx16_ny8": {
+          "dofs": 256,
+          "qoi_meters": -0.001686261939008772,
+          "qoi_mm": -1.686261939008772
+        },
+        "nx32_ny16": {
+          "dofs": 1024,
+          "qoi_meters": -0.0018509201497261163,
+          "qoi_mm": -1.8509201497261163
+        },
+        "nx64_ny32": {
+          "dofs": 4096,
+          "qoi_meters": -0.0018943046528983598,
+          "qoi_mm": -1.8943046528983598
+        }
+      },
+      "finest_qoi_mm": -1.8943046528983598,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "report_only": true
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "Hierarchical cantilever reference QoI progression (report only, diagnostic)."
+  },
+  {
+    "id": "A2.5d_cantilever_proportionality",
+    "computed": {
+      "k_factor": -10000.0,
+      "max_displacement_inf_m": 0.0013954148541754886,
+      "max_proportionality_abs_diff_m": 8.673617379884035e-19,
+      "relative_proportionality_diff": 6.2157983727420135e-16
+    },
+    "threshold": {
+      "relative_tolerance": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Cantilever u = k*z proportionality check."
+  }
+]
