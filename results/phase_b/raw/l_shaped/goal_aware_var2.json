@@ -1,0 +1,25 @@
+[
+  {
+    "problem_id": "l_shaped",
+    "method": "goal_aware",
+    "variant_idx": 2,
+    "iteration": 0,
+    "nelements": 384,
+    "primal_dofs": 450,
+    "adjoint_dofs": 450,
+    "qoi_h": 1.2444687429801535e-06,
+    "qoi_ref": 1.26424675e-06,
+    "true_error_abs": 1.977800701984657e-08,
+    "true_error_rel": 0.0019778007019846566,
+    "estimated_error": 1.4646931391424114e-08,
+    "effectivity": null,
+    "t_primal_sec": 0.011551000001418288,
+    "t_adjoint_sec": 0.0013037999997322913,
+    "t_estimator_sec": 0.0006195999994815793,
+    "t_marking_sec": 3.1600000511389226e-05,
+    "t_refinement_sec": 0.0,
+    "t_total_iter_sec": 0.014043200000742218,
+    "peak_memory_mb": 399.33984375,
+    "marked_elements_count": 30
+  }
+]

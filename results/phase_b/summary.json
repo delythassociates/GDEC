@@ -1,0 +1,1183 @@
+{
+  "title": "GDEC Phase B Feasibility Gate Summary: DWR vs ZZ",
+  "final_classification": "FAIL",
+  "primary_hypothesis": {
+    "description": "S_DOF >= 1.30 at 1.0% error on >= 3 problems, geomean >= 1.30",
+    "passed": false,
+    "problems_meeting_target": 0,
+    "total_problems": 4,
+    "geometric_mean_S_DOF": 0.9646803993166584,
+    "target_threshold": 1.3
+  },
+  "secondary_reliability": {
+    "description": "Effectivity in [0.5, 2.0] for >= 90% of eligible runs",
+    "passed": false,
+    "fraction_in_bounds": 0.4,
+    "target_fraction": 0.9,
+    "total_evaluated_runs": 75,
+    "mean_signed_effectivity": 1.1342521143611126,
+    "median_absolute_effectivity": 0.4445448134784338,
+    "fraction_below_one": 0.7733333333333333,
+    "max_underestimation": 0.9950788287456956
+  },
+  "problems": {
+    "cantilever": {
+      "median_S_DOF": 0.8379277566539924,
+      "mean_S_DOF": 1.064442691877753,
+      "meets_30pct_savings": false,
+      "median_S_T_speedup": 0.10252007102161842,
+      "variant_ratios": [
+        0.7783094098883573,
+        1.577090909090909,
+        0.8379277566539924
+      ]
+    },
+    "plate_with_hole": {
+      "median_S_DOF": 0.8855799373040752,
+      "mean_S_DOF": 1.3176375857963962,
+      "meets_30pct_savings": false,
+      "median_S_T_speedup": 0.1370699146753551,
+      "variant_ratios": [
+        0.8855799373040752,
+        2.547635850388144,
+        0.5196969696969697
+      ]
+    },
+    "notched_bar": {
+      "median_S_DOF": 1.1277372262773722,
+      "mean_S_DOF": 1.3627628941960175,
+      "meets_30pct_savings": false,
+      "median_S_T_speedup": 0.1964129618669554,
+      "variant_ratios": [
+        2.3349514563106797,
+        1.1277372262773722,
+        0.6256
+      ]
+    },
+    "l_shaped": {
+      "median_S_DOF": 1.0348837209302326,
+      "mean_S_DOF": 2.8600391597595816,
+      "meets_30pct_savings": false,
+      "median_S_T_speedup": 0.28257186915068777,
+      "variant_ratios": [
+        1.0348837209302326,
+        6.5452337583485125,
+        1.0
+      ]
+    }
+  },
+  "target_level_evaluations": {
+    "cantilever": {
+      "2.0%": {
+        "uniform": [
+          {
+            "iteration": 2,
+            "primal_dofs": 1722,
+            "true_error_rel": 0.01843310358468464,
+            "t_total_cumulative_sec": 0.0346464999984164
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 3362,
+            "true_error_rel": 0.016911913477383234,
+            "t_total_cumulative_sec": 0.12884609999855456
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 4290,
+            "true_error_rel": 0.007465100520305034,
+            "t_total_cumulative_sec": 0.07067599999754748
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 4,
+            "primal_dofs": 1952,
+            "true_error_rel": 0.0131270670407099,
+            "t_total_cumulative_sec": 0.06203740000091784
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 3914,
+            "true_error_rel": 0.014549950346367434,
+            "t_total_cumulative_sec": 0.11579750000055355
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 1854,
+            "true_error_rel": 0.013605564932935082,
+            "t_total_cumulative_sec": 0.05841679999866756
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 6,
+            "primal_dofs": 1936,
+            "true_error_rel": 0.018571776579101175,
+            "t_total_cumulative_sec": 0.11486479999803123
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 3212,
+            "true_error_rel": 0.016155797618990008,
+            "t_total_cumulative_sec": 0.2130051000021922
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 2266,
+            "true_error_rel": 0.01434729192246084,
+            "t_total_cumulative_sec": 0.11557290000382636
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 5,
+            "primal_dofs": 1596,
+            "true_error_rel": 0.01678464626675093,
+            "t_total_cumulative_sec": 0.3718888999992487
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 3030,
+            "true_error_rel": 0.017564936472084056,
+            "t_total_cumulative_sec": 0.6587005000019417
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 2250,
+            "true_error_rel": 0.012146466573050206,
+            "t_total_cumulative_sec": 0.5319340000023658
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          1.2230576441102756,
+          1.2917491749174916,
+          0.824
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.1668170251950063,
+          0.1757968910001013,
+          0.10981963927556379
+        ]
+      },
+      "1.0%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 6642,
+            "true_error_rel": 0.004827456681281805,
+            "t_total_cumulative_sec": 0.10245869999744173
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 13122,
+            "true_error_rel": 0.004408845081058293,
+            "t_total_cumulative_sec": 0.3626050999992003
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 4290,
+            "true_error_rel": 0.007465100520305034,
+            "t_total_cumulative_sec": 0.07067599999754748
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 5,
+            "primal_dofs": 3904,
+            "true_error_rel": 0.0062776905731074415,
+            "t_total_cumulative_sec": 0.10764060000110476
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 8674,
+            "true_error_rel": 0.006282649026595524,
+            "t_total_cumulative_sec": 0.21652499999981956
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 3526,
+            "true_error_rel": 0.006779758645579707,
+            "t_total_cumulative_sec": 0.10053809999953955
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 8,
+            "primal_dofs": 4846,
+            "true_error_rel": 0.006835307003428095,
+            "t_total_cumulative_sec": 0.2352644999991753
+          },
+          {
+            "iteration": 10,
+            "primal_dofs": 8004,
+            "true_error_rel": 0.007038929909319701,
+            "t_total_cumulative_sec": 0.46981810000215773
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 3636,
+            "true_error_rel": 0.00845709326512726,
+            "t_total_cumulative_sec": 0.17137900000307127
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 7,
+            "primal_dofs": 5016,
+            "true_error_rel": 0.005334470676361717,
+            "t_total_cumulative_sec": 1.049946600001931
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 5500,
+            "true_error_rel": 0.009836310376205786,
+            "t_total_cumulative_sec": 1.2076869000011357
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 4208,
+            "true_error_rel": 0.006506573638933985,
+            "t_total_cumulative_sec": 1.0082880000027217
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.7783094098883573,
+          1.577090909090909,
+          0.8379277566539924
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.10252007102161842,
+          0.17928901936388972,
+          0.09971168951655496
+        ]
+      },
+      "0.5%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 6642,
+            "true_error_rel": 0.004827456681281805,
+            "t_total_cumulative_sec": 0.10245869999744173
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 13122,
+            "true_error_rel": 0.004408845081058293,
+            "t_total_cumulative_sec": 0.3626050999992003
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 16770,
+            "true_error_rel": 0.001873400068191636,
+            "t_total_cumulative_sec": 0.2901984999971319
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 6,
+            "primal_dofs": 8364,
+            "true_error_rel": 0.0029313481182237098,
+            "t_total_cumulative_sec": 0.20436420000078215
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 18972,
+            "true_error_rel": 0.002651375909893394,
+            "t_total_cumulative_sec": 0.5020277999992686
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 6930,
+            "true_error_rel": 0.003522593861640925,
+            "t_total_cumulative_sec": 0.18201020000014978
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 9,
+            "primal_dofs": 7522,
+            "true_error_rel": 0.004689798247393767,
+            "t_total_cumulative_sec": 0.3518573000001197
+          },
+          {
+            "iteration": 11,
+            "primal_dofs": 12822,
+            "true_error_rel": 0.004672092555809442,
+            "t_total_cumulative_sec": 0.7066021000027831
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 8022,
+            "true_error_rel": 0.004271863307100931,
+            "t_total_cumulative_sec": 0.40325400000438094
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 8,
+            "primal_dofs": 9018,
+            "true_error_rel": 0.0033129564847990357,
+            "t_total_cumulative_sec": 2.153939800002263
+          },
+          {
+            "iteration": 10,
+            "primal_dofs": 18514,
+            "true_error_rel": 0.002960434617084805,
+            "t_total_cumulative_sec": 4.964193800002249
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 7242,
+            "true_error_rel": 0.003951251162666864,
+            "t_total_cumulative_sec": 1.6907647000025463
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.927478376580173,
+          1.0247380360808038,
+          0.9569179784589892
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.09487925335729784,
+          0.10112977458676999,
+          0.10764963332856173
+        ]
+      }
+    },
+    "plate_with_hole": {
+      "2.0%": {
+        "uniform": [
+          {
+            "iteration": 2,
+            "primal_dofs": 4664,
+            "true_error_rel": 0.010125706968993346,
+            "t_total_cumulative_sec": 0.07285749999937252
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 27184,
+            "true_error_rel": 0.01590148069665229,
+            "t_total_cumulative_sec": 0.5249429000014061
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 9592,
+            "true_error_rel": 0.004167593666373645,
+            "t_total_cumulative_sec": 0.15522599999894737
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 2,
+            "primal_dofs": 1130,
+            "true_error_rel": 0.0006608429629890002,
+            "t_total_cumulative_sec": 0.04379710000284831
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 7220,
+            "true_error_rel": 0.006574257207144358,
+            "t_total_cumulative_sec": 0.16677969999909692
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 2058,
+            "true_error_rel": 0.007849945669726811,
+            "t_total_cumulative_sec": 0.061344499999904656
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 408,
+            "true_error_rel": 0.0006813673541547071,
+            "t_total_cumulative_sec": 0.025568499999280903
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 808,
+            "true_error_rel": 0.017982976434966536,
+            "t_total_cumulative_sec": 0.06215689999771712
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 1666,
+            "true_error_rel": 0.01427447965110588,
+            "t_total_cumulative_sec": 0.08866350000062084
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 3,
+            "primal_dofs": 1276,
+            "true_error_rel": 0.0006378224466477061,
+            "t_total_cumulative_sec": 0.3195238000007521
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 616,
+            "true_error_rel": 0.01314656242054995,
+            "t_total_cumulative_sec": 0.14554299999872455
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 2198,
+            "true_error_rel": 0.015079849196781207,
+            "t_total_cumulative_sec": 0.5157845999983692
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.8855799373040752,
+          11.720779220779221,
+          0.9363057324840764
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.1370699146753551,
+          1.1459135788087265,
+          0.11893433809403889
+        ]
+      },
+      "1.0%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 18096,
+            "true_error_rel": 0.002336872815541873,
+            "t_total_cumulative_sec": 0.3200176999998803
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 107360,
+            "true_error_rel": 0.002253348134885442,
+            "t_total_cumulative_sec": 3.1333929000029457
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 9592,
+            "true_error_rel": 0.004167593666373645,
+            "t_total_cumulative_sec": 0.15522599999894737
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 2,
+            "primal_dofs": 1130,
+            "true_error_rel": 0.0006608429629890002,
+            "t_total_cumulative_sec": 0.04379710000284831
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 7220,
+            "true_error_rel": 0.006574257207144358,
+            "t_total_cumulative_sec": 0.16677969999909692
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 2058,
+            "true_error_rel": 0.007849945669726811,
+            "t_total_cumulative_sec": 0.061344499999904656
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 408,
+            "true_error_rel": 0.0006813673541547071,
+            "t_total_cumulative_sec": 0.025568499999280903
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 7104,
+            "true_error_rel": 0.007756333995464001,
+            "t_total_cumulative_sec": 0.4275251999970351
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 2456,
+            "true_error_rel": 0.007138981722506089,
+            "t_total_cumulative_sec": 0.1351425000011659
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 3,
+            "primal_dofs": 1276,
+            "true_error_rel": 0.0006378224466477061,
+            "t_total_cumulative_sec": 0.3195238000007521
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 2834,
+            "true_error_rel": 0.004841847640187454,
+            "t_total_cumulative_sec": 0.6354291999978159
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 3960,
+            "true_error_rel": 0.004676869459099532,
+            "t_total_cumulative_sec": 0.8861462999975629
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.8855799373040752,
+          2.547635850388144,
+          0.5196969696969697
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.1370699146753551,
+          0.26246779342162774,
+          0.06922615374015935
+        ]
+      },
+      "0.5%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 18096,
+            "true_error_rel": 0.002336872815541873,
+            "t_total_cumulative_sec": 0.3200176999998803
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 107360,
+            "true_error_rel": 0.002253348134885442,
+            "t_total_cumulative_sec": 3.1333929000029457
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 9592,
+            "true_error_rel": 0.004167593666373645,
+            "t_total_cumulative_sec": 0.15522599999894737
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 2,
+            "primal_dofs": 1130,
+            "true_error_rel": 0.0006608429629890002,
+            "t_total_cumulative_sec": 0.04379710000284831
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 34954,
+            "true_error_rel": 0.00323824202717174,
+            "t_total_cumulative_sec": 0.9015106999995623
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 4574,
+            "true_error_rel": 0.0024559765732838036,
+            "t_total_cumulative_sec": 0.11408159999882628
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 408,
+            "true_error_rel": 0.0006813673541547071,
+            "t_total_cumulative_sec": 0.025568499999280903
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 10844,
+            "true_error_rel": 0.0025308649091342937,
+            "t_total_cumulative_sec": 0.6823923999982071
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 9216,
+            "true_error_rel": 0.0024704154282422027,
+            "t_total_cumulative_sec": 0.547021100001075
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 3,
+            "primal_dofs": 1276,
+            "true_error_rel": 0.0006378224466477061,
+            "t_total_cumulative_sec": 0.3195238000007521
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 2834,
+            "true_error_rel": 0.004841847640187454,
+            "t_total_cumulative_sec": 0.6354291999978159
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 3960,
+            "true_error_rel": 0.004676869459099532,
+            "t_total_cumulative_sec": 0.8861462999975629
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.8855799373040752,
+          12.333803810868032,
+          1.155050505050505
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.1370699146753551,
+          1.4187429535857985,
+          0.12873901295885343
+        ]
+      }
+    },
+    "notched_bar": {
+      "2.0%": {
+        "uniform": [
+          {
+            "iteration": 2,
+            "primal_dofs": 3482,
+            "true_error_rel": 0.012565331994908356,
+            "t_total_cumulative_sec": 0.09588249999796972
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 1374,
+            "true_error_rel": 0.00899205151837981,
+            "t_total_cumulative_sec": 0.02861520000078599
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 504,
+            "true_error_rel": 0.019137713607186357,
+            "t_total_cumulative_sec": 0.007820099999662489
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 1,
+            "primal_dofs": 468,
+            "true_error_rel": 0.01680931160215785,
+            "t_total_cumulative_sec": 0.018723700000919052
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 618,
+            "true_error_rel": 0.009340002176185138,
+            "t_total_cumulative_sec": 0.017189099999086466
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 504,
+            "true_error_rel": 0.019137713607186357,
+            "t_total_cumulative_sec": 0.008518499998899642
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 3,
+            "primal_dofs": 848,
+            "true_error_rel": 0.01182285539369279,
+            "t_total_cumulative_sec": 0.04312280000340252
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 1202,
+            "true_error_rel": 0.014740329673886724,
+            "t_total_cumulative_sec": 0.05062940000243543
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 504,
+            "true_error_rel": 0.019137713607186357,
+            "t_total_cumulative_sec": 0.011322700000164332
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 2,
+            "primal_dofs": 640,
+            "true_error_rel": 0.014490462742757582,
+            "t_total_cumulative_sec": 0.12152530000093975
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 548,
+            "true_error_rel": 4.491746288822184e-05,
+            "t_total_cumulative_sec": 0.08751510000001872
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 504,
+            "true_error_rel": 0.019137713607186357,
+            "t_total_cumulative_sec": 0.043082399999548215
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          0.73125,
+          1.1277372262773722,
+          1.0
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.15407244418054727,
+          0.1964129618669554,
+          0.19772575341645246
+        ]
+      },
+      "1.0%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 13362,
+            "true_error_rel": 0.0018229934356689096,
+            "t_total_cumulative_sec": 0.25688419999823964
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 1374,
+            "true_error_rel": 0.00899205151837981,
+            "t_total_cumulative_sec": 0.02861520000078599
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 6978,
+            "true_error_rel": 0.004082798225617284,
+            "t_total_cumulative_sec": 0.09256920000007085
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 4,
+            "primal_dofs": 4810,
+            "true_error_rel": 0.004507039960186909,
+            "t_total_cumulative_sec": 0.11241880000125093
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 618,
+            "true_error_rel": 0.009340002176185138,
+            "t_total_cumulative_sec": 0.017189099999086466
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 782,
+            "true_error_rel": 0.007370078484986283,
+            "t_total_cumulative_sec": 0.019199399999706657
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 4,
+            "primal_dofs": 1334,
+            "true_error_rel": 0.008785658405321925,
+            "t_total_cumulative_sec": 0.06524300000273797
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 1896,
+            "true_error_rel": 0.005777544202545842,
+            "t_total_cumulative_sec": 0.07775840000249445
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 654,
+            "true_error_rel": 0.004170266686813213,
+            "t_total_cumulative_sec": 0.02300880000075267
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 4,
+            "primal_dofs": 2060,
+            "true_error_rel": 0.001121031991167546,
+            "t_total_cumulative_sec": 0.3929701000015484
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 548,
+            "true_error_rel": 4.491746288822184e-05,
+            "t_total_cumulative_sec": 0.08751510000001872
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 1250,
+            "true_error_rel": 0.005388340383222188,
+            "t_total_cumulative_sec": 0.1842354999989766
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          2.3349514563106797,
+          1.1277372262773722,
+          0.6256
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.28607469118085055,
+          0.1964129618669554,
+          0.10421118622531113
+        ]
+      },
+      "0.5%": {
+        "uniform": [
+          {
+            "iteration": 3,
+            "primal_dofs": 13362,
+            "true_error_rel": 0.0018229934356689096,
+            "t_total_cumulative_sec": 0.25688419999823964
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 20082,
+            "true_error_rel": 0.0016699532447806097,
+            "t_total_cumulative_sec": 0.3723528000009537
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 6978,
+            "true_error_rel": 0.004082798225617284,
+            "t_total_cumulative_sec": 0.09256920000007085
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 4,
+            "primal_dofs": 4810,
+            "true_error_rel": 0.004507039960186909,
+            "t_total_cumulative_sec": 0.11241880000125093
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 11768,
+            "true_error_rel": 0.000975937769712588,
+            "t_total_cumulative_sec": 0.24438009999903443
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 3392,
+            "true_error_rel": 0.0011419351347802407,
+            "t_total_cumulative_sec": 0.07397870000022522
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 5,
+            "primal_dofs": 2218,
+            "true_error_rel": 0.001251550395773776,
+            "t_total_cumulative_sec": 0.09658230000241019
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 7608,
+            "true_error_rel": 0.004160563808203589,
+            "t_total_cumulative_sec": 0.3290372000028583
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 654,
+            "true_error_rel": 0.004170266686813213,
+            "t_total_cumulative_sec": 0.02300880000075267
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 4,
+            "primal_dofs": 2060,
+            "true_error_rel": 0.001121031991167546,
+            "t_total_cumulative_sec": 0.3929701000015484
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 548,
+            "true_error_rel": 4.491746288822184e-05,
+            "t_total_cumulative_sec": 0.08751510000001872
+          },
+          {
+            "iteration": 3,
+            "primal_dofs": 2178,
+            "true_error_rel": 0.0023222375755976993,
+            "t_total_cumulative_sec": 0.34234469999864814
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          2.3349514563106797,
+          21.474452554744527,
+          1.5573921028466482
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.28607469118085055,
+          2.7924335343155886,
+          0.2160941881107473
+        ]
+      }
+    },
+    "l_shaped": {
+      "2.0%": {
+        "uniform": [
+          {
+            "iteration": 0,
+            "primal_dofs": 130,
+            "true_error_rel": 0.017172742620896825,
+            "t_total_cumulative_sec": 0.005099800000607502
+          },
+          {
+            "iteration": 1,
+            "primal_dofs": 962,
+            "true_error_rel": 0.01337093247037637,
+            "t_total_cumulative_sec": 0.022521699998833355
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.007964399999764282
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 0,
+            "primal_dofs": 130,
+            "true_error_rel": 0.017172742620896825,
+            "t_total_cumulative_sec": 0.0072791000002325745
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 4888,
+            "true_error_rel": 0.012650247481095214,
+            "t_total_cumulative_sec": 0.12820949999695586
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.014495400000669179
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 0,
+            "primal_dofs": 130,
+            "true_error_rel": 0.017172742620896825,
+            "t_total_cumulative_sec": 0.006691799999316572
+          },
+          {
+            "iteration": 4,
+            "primal_dofs": 1472,
+            "true_error_rel": 0.015561171217603585,
+            "t_total_cumulative_sec": 0.06643089999852236
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.014043200000742218
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 0,
+            "primal_dofs": 130,
+            "true_error_rel": 0.017172742620896825,
+            "t_total_cumulative_sec": 0.024423299999398296
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 3294,
+            "true_error_rel": 0.006894358536877899,
+            "t_total_cumulative_sec": 0.5554507999986527
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.05129809999925783
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          1.0,
+          1.4839101396478445,
+          1.0
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.2980391675331305,
+          0.2308206235318535,
+          0.28257186915068777
+        ]
+      },
+      "1.0%": {
+        "uniform": [
+          {
+            "iteration": 1,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019843604,
+            "t_total_cumulative_sec": 0.013274099999762257
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 3650,
+            "true_error_rel": 0.0017298301955778325,
+            "t_total_cumulative_sec": 0.07044039999891538
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.007964399999764282
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 1,
+            "primal_dofs": 178,
+            "true_error_rel": 0.002322883889803306,
+            "t_total_cumulative_sec": 0.01343790000100853
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 21560,
+            "true_error_rel": 0.0076305903682626535,
+            "t_total_cumulative_sec": 0.5779374999965512
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.014495400000669179
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 172,
+            "true_error_rel": 0.0031899064348071306,
+            "t_total_cumulative_sec": 0.013508699998055818
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 2334,
+            "true_error_rel": 0.006835211115048141,
+            "t_total_cumulative_sec": 0.10304819999873871
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.014043200000742218
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 1,
+            "primal_dofs": 172,
+            "true_error_rel": 0.004649842774868946,
+            "t_total_cumulative_sec": 0.053196199998637894
+          },
+          {
+            "iteration": 5,
+            "primal_dofs": 3294,
+            "true_error_rel": 0.006894358536877899,
+            "t_total_cumulative_sec": 0.5554507999986527
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.05129809999925783
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          1.0348837209302326,
+          6.5452337583485125,
+          1.0
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.2526101488706451,
+          1.040483693601581,
+          0.28257186915068777
+        ]
+      },
+      "0.5%": {
+        "uniform": [
+          {
+            "iteration": 1,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019843604,
+            "t_total_cumulative_sec": 0.013274099999762257
+          },
+          {
+            "iteration": 2,
+            "primal_dofs": 3650,
+            "true_error_rel": 0.0017298301955778325,
+            "t_total_cumulative_sec": 0.07044039999891538
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.007964399999764282
+          }
+        ],
+        "zz": [
+          {
+            "iteration": 1,
+            "primal_dofs": 178,
+            "true_error_rel": 0.002322883889803306,
+            "t_total_cumulative_sec": 0.01343790000100853
+          },
+          {
+            "iteration": 8,
+            "primal_dofs": 45278,
+            "true_error_rel": 0.0035925977684023833,
+            "t_total_cumulative_sec": 1.4007920999974885
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.014495400000669179
+          }
+        ],
+        "goal_aware": [
+          {
+            "iteration": 1,
+            "primal_dofs": 172,
+            "true_error_rel": 0.0031899064348071306,
+            "t_total_cumulative_sec": 0.013508699998055818
+          },
+          {
+            "iteration": 7,
+            "primal_dofs": 5578,
+            "true_error_rel": 0.0008718894068020715,
+            "t_total_cumulative_sec": 0.2581856999968295
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.014043200000742218
+          }
+        ],
+        "dwr": [
+          {
+            "iteration": 1,
+            "primal_dofs": 172,
+            "true_error_rel": 0.004649842774868946,
+            "t_total_cumulative_sec": 0.053196199998637894
+          },
+          {
+            "iteration": 6,
+            "primal_dofs": 6044,
+            "true_error_rel": 0.004924257579210143,
+            "t_total_cumulative_sec": 1.0726408999980777
+          },
+          {
+            "iteration": 0,
+            "primal_dofs": 450,
+            "true_error_rel": 0.0019778007019846566,
+            "t_total_cumulative_sec": 0.05129809999925783
+          }
+        ],
+        "S_DOF_ZZ_over_DWR": [
+          1.0348837209302326,
+          7.491396426207809,
+          1.0
+        ],
+        "S_T_ZZ_over_DWR": [
+          0.2526101488706451,
+          1.3059282934297947,
+          0.28257186915068777
+        ]
+      }
+    }
+  }
+}
