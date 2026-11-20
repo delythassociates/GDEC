@@ -42,7 +42,7 @@ class TractionLoadIR(BaseModel):
 
 
 class ObjectiveIR(BaseModel):
-    kind: Literal["average_displacement", "point_displacement"] = "average_displacement"
+    kind: Literal["average_displacement"] = "average_displacement"
     boundary: Literal["left", "right", "top", "bottom"] = "right"
     component: Literal["x", "y"] = "y"
 
