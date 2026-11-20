@@ -1,0 +1,542 @@
+[
+  {
+    "id": "A2.7_quadrature_unit_test",
+    "computed": {
+      "quadratic_polynomial_integration_abs_error": 0.0,
+      "quadrature_rule": "3-point edge midpoint rule on triangle",
+      "algebraic_precision_degree": 2
+    },
+    "threshold": {
+      "absolute_error_tol": 1e-14
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Unit test verifying exact degree-2 triangle quadrature."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_stress_n8",
+    "computed": {
+      "n": 8,
+      "mesh_type": "structured",
+      "plane_type": "plane_stress",
+      "dofs": 162,
+      "elements": 128,
+      "exact_energy_norm_error": 0.36860967368482334,
+      "exact_quadrature_zz_error_op": 0.3777974956174262,
+      "production_zz_error_impl": 0.3073917985775502,
+      "plain_l2_stress_error_diagnostic": 0.37339215522806024,
+      "effectivity_index_I_op": 1.0249256126155246,
+      "effectivity_index_I_impl": 0.8339222232143128,
+      "ratio_impl_to_op_R": 0.8136417052611387,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_stress) n=8 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_stress_n8",
+    "computed": {
+      "n": 8,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_stress",
+      "dofs": 162,
+      "elements": 128,
+      "exact_energy_norm_error": 0.3772358391231028,
+      "exact_quadrature_zz_error_op": 0.3843508837527768,
+      "production_zz_error_impl": 0.31614265019794635,
+      "plain_l2_stress_error_diagnostic": 0.37922460225503346,
+      "effectivity_index_I_op": 1.0188609985896704,
+      "effectivity_index_I_impl": 0.8380504114689378,
+      "ratio_impl_to_op_R": 0.8225365507453769,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_stress) n=8 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_strain_n8",
+    "computed": {
+      "n": 8,
+      "mesh_type": "structured",
+      "plane_type": "plane_strain",
+      "dofs": 162,
+      "elements": 128,
+      "exact_energy_norm_error": 0.39622413038823756,
+      "exact_quadrature_zz_error_op": 0.4065929146002121,
+      "production_zz_error_impl": 0.3292739409795397,
+      "plain_l2_stress_error_diagnostic": 0.46388975785758035,
+      "effectivity_index_I_op": 1.0261689872391535,
+      "effectivity_index_I_impl": 0.8310295000380286,
+      "ratio_impl_to_op_R": 0.8098368888284803,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_strain) n=8 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_strain_n8",
+    "computed": {
+      "n": 8,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_strain",
+      "dofs": 162,
+      "elements": 128,
+      "exact_energy_norm_error": 0.40509410123273387,
+      "exact_quadrature_zz_error_op": 0.4133919642277159,
+      "production_zz_error_impl": 0.3384692539997082,
+      "plain_l2_stress_error_diagnostic": 0.4705164408170109,
+      "effectivity_index_I_op": 1.0204837912221654,
+      "effectivity_index_I_impl": 0.8355324181954737,
+      "ratio_impl_to_op_R": 0.8187610870279599,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_strain) n=8 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_stress_n16",
+    "computed": {
+      "n": 16,
+      "mesh_type": "structured",
+      "plane_type": "plane_stress",
+      "dofs": 578,
+      "elements": 512,
+      "exact_energy_norm_error": 0.18584803146054296,
+      "exact_quadrature_zz_error_op": 0.1885509330308508,
+      "production_zz_error_impl": 0.1430484577082644,
+      "plain_l2_stress_error_diagnostic": 0.18628299621415997,
+      "effectivity_index_I_op": 1.0145436115145599,
+      "effectivity_index_I_impl": 0.769706606973853,
+      "ratio_impl_to_op_R": 0.7586727650128294,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_stress) n=16 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_stress_n16",
+    "computed": {
+      "n": 16,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_stress",
+      "dofs": 578,
+      "elements": 512,
+      "exact_energy_norm_error": 0.18911677628944404,
+      "exact_quadrature_zz_error_op": 0.19009191730087524,
+      "production_zz_error_impl": 0.14528536571902664,
+      "plain_l2_stress_error_diagnostic": 0.18756525280275824,
+      "effectivity_index_I_op": 1.0051562903649476,
+      "effectivity_index_I_impl": 0.7682309764876003,
+      "ratio_impl_to_op_R": 0.7642900749381716,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_stress) n=16 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_strain_n16",
+    "computed": {
+      "n": 16,
+      "mesh_type": "structured",
+      "plane_type": "plane_strain",
+      "dofs": 578,
+      "elements": 512,
+      "exact_energy_norm_error": 0.19987050541695744,
+      "exact_quadrature_zz_error_op": 0.202863012069248,
+      "production_zz_error_impl": 0.15285524137803305,
+      "plain_l2_stress_error_diagnostic": 0.23131592163829917,
+      "effectivity_index_I_op": 1.0149722273731574,
+      "effectivity_index_I_impl": 0.7647713756422236,
+      "ratio_impl_to_op_R": 0.7534899527463162,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_strain) n=16 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_strain_n16",
+    "computed": {
+      "n": 16,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_strain",
+      "dofs": 578,
+      "elements": 512,
+      "exact_energy_norm_error": 0.203261664765343,
+      "exact_quadrature_zz_error_op": 0.20437105186176205,
+      "production_zz_error_impl": 0.1550812914359535,
+      "plain_l2_stress_error_diagnostic": 0.2325546524047592,
+      "effectivity_index_I_op": 1.0054579258597522,
+      "effectivity_index_I_impl": 0.7629637965180907,
+      "ratio_impl_to_op_R": 0.7588222012031897,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_strain) n=16 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_stress_n32",
+    "computed": {
+      "n": 32,
+      "mesh_type": "structured",
+      "plane_type": "plane_stress",
+      "dofs": 2178,
+      "elements": 2048,
+      "exact_energy_norm_error": 0.09312635133483534,
+      "exact_quadrature_zz_error_op": 0.09376858903834849,
+      "production_zz_error_impl": 0.06841773289804126,
+      "plain_l2_stress_error_diagnostic": 0.09261218614570982,
+      "effectivity_index_I_op": 1.0068964121788042,
+      "effectivity_index_I_impl": 0.7346764038037488,
+      "ratio_impl_to_op_R": 0.7296444747618043,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_stress) n=32 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_stress_n32",
+    "computed": {
+      "n": 32,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_stress",
+      "dofs": 2178,
+      "elements": 2048,
+      "exact_energy_norm_error": 0.09497196848027672,
+      "exact_quadrature_zz_error_op": 0.09486497409948395,
+      "production_zz_error_impl": 0.07006438684662768,
+      "plain_l2_stress_error_diagnostic": 0.0935032641281186,
+      "effectivity_index_I_op": 0.9988734109389867,
+      "effectivity_index_I_impl": 0.7377375447490938,
+      "ratio_impl_to_op_R": 0.7385696091916059,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_stress) n=32 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_strain_n32",
+    "computed": {
+      "n": 32,
+      "mesh_type": "structured",
+      "plane_type": "plane_strain",
+      "dofs": 2178,
+      "elements": 2048,
+      "exact_energy_norm_error": 0.10016893833821226,
+      "exact_quadrature_zz_error_op": 0.1008792097273585,
+      "production_zz_error_impl": 0.07299694120900628,
+      "plain_l2_stress_error_diagnostic": 0.11497179514413201,
+      "effectivity_index_I_op": 1.0070907349217186,
+      "effectivity_index_I_impl": 0.7287382937267245,
+      "ratio_impl_to_op_R": 0.7236073855682621,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_strain) n=32 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_strain_n32",
+    "computed": {
+      "n": 32,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_strain",
+      "dofs": 2178,
+      "elements": 2048,
+      "exact_energy_norm_error": 0.10207398700414003,
+      "exact_quadrature_zz_error_op": 0.1019766253973504,
+      "production_zz_error_impl": 0.07467561975647757,
+      "plain_l2_stress_error_diagnostic": 0.11590004457570122,
+      "effectivity_index_I_op": 0.9990461663186951,
+      "effectivity_index_I_impl": 0.7315832559126823,
+      "ratio_impl_to_op_R": 0.732281730891811,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_strain) n=32 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_stress_n64",
+    "computed": {
+      "n": 64,
+      "mesh_type": "structured",
+      "plane_type": "plane_stress",
+      "dofs": 8450,
+      "elements": 8192,
+      "exact_energy_norm_error": 0.04658882541245716,
+      "exact_quadrature_zz_error_op": 0.046739250017617494,
+      "production_zz_error_impl": 0.033455790605654734,
+      "plain_l2_stress_error_diagnostic": 0.04615542134606429,
+      "effectivity_index_I_op": 1.0032287700715483,
+      "effectivity_index_I_impl": 0.7181076215050735,
+      "ratio_impl_to_op_R": 0.7157964792555335,
+      "classification": "GATED_CRITERION"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": [
+        0.7,
+        1.3
+      ]
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_stress) n=64 (Gated: True)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_stress_n64",
+    "computed": {
+      "n": 64,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_stress",
+      "dofs": 8450,
+      "elements": 8192,
+      "exact_energy_norm_error": 0.047494346475890514,
+      "exact_quadrature_zz_error_op": 0.047302909333936355,
+      "production_zz_error_impl": 0.03430224747985423,
+      "plain_l2_stress_error_diagnostic": 0.04662492954104989,
+      "effectivity_index_I_op": 0.9959692646355006,
+      "effectivity_index_I_impl": 0.7222385404811713,
+      "ratio_impl_to_op_R": 0.7251614744813357,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_stress) n=64 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_strain_n64",
+    "computed": {
+      "n": 64,
+      "mesh_type": "structured",
+      "plane_type": "plane_strain",
+      "dofs": 8450,
+      "elements": 8192,
+      "exact_energy_norm_error": 0.05011422597717454,
+      "exact_quadrature_zz_error_op": 0.05028083365791055,
+      "production_zz_error_impl": 0.03566256861868158,
+      "plain_l2_stress_error_diagnostic": 0.057290006571224995,
+      "effectivity_index_I_op": 1.003324558595635,
+      "effectivity_index_I_impl": 0.7116256496693126,
+      "ratio_impl_to_op_R": 0.7092676478141663,
+      "classification": "GATED_CRITERION"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": [
+        0.7,
+        1.3
+      ]
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_strain) n=64 (Gated: True)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_strain_n64",
+    "computed": {
+      "n": 64,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_strain",
+      "dofs": 8450,
+      "elements": 8192,
+      "exact_energy_norm_error": 0.051049983493482325,
+      "exact_quadrature_zz_error_op": 0.05084523942663038,
+      "production_zz_error_impl": 0.03652504625479086,
+      "plain_l2_stress_error_diagnostic": 0.05777615182113175,
+      "effectivity_index_I_op": 0.9959893411742613,
+      "effectivity_index_I_impl": 0.7154761618963913,
+      "ratio_impl_to_op_R": 0.7183572477320411,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_strain) n=64 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_stress_n128",
+    "computed": {
+      "n": 128,
+      "mesh_type": "structured",
+      "plane_type": "plane_stress",
+      "dofs": 33282,
+      "elements": 32768,
+      "exact_energy_norm_error": 0.02329763089936446,
+      "exact_quadrature_zz_error_op": 0.023333590577403113,
+      "production_zz_error_impl": 0.016548883668465155,
+      "plain_l2_stress_error_diagnostic": 0.023040324614440676,
+      "effectivity_index_I_op": 1.0015434907606693,
+      "effectivity_index_I_impl": 0.7103247424576803,
+      "ratio_impl_to_op_R": 0.7092300524245739,
+      "classification": "GATED_CRITERION"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": [
+        0.7,
+        1.3
+      ]
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_stress) n=128 (Gated: True)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_stress_n128",
+    "computed": {
+      "n": 128,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_stress",
+      "dofs": 33282,
+      "elements": 32768,
+      "exact_energy_norm_error": 0.023765733516536082,
+      "exact_quadrature_zz_error_op": 0.023631813025085824,
+      "production_zz_error_impl": 0.01699720007540998,
+      "plain_l2_stress_error_diagnostic": 0.02328682123290286,
+      "effectivity_index_I_op": 0.9943649754653238,
+      "effectivity_index_I_impl": 0.7151977894384539,
+      "ratio_impl_to_op_R": 0.7192507852599791,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_stress) n=128 (Gated: False)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_structured_plane_strain_n128",
+    "computed": {
+      "n": 128,
+      "mesh_type": "structured",
+      "plane_type": "plane_strain",
+      "dofs": 33282,
+      "elements": 32768,
+      "exact_energy_norm_error": 0.02506085115004604,
+      "exact_quadrature_zz_error_op": 0.025100731132901392,
+      "production_zz_error_impl": 0.017631677688482766,
+      "plain_l2_stress_error_diagnostic": 0.02859609546397344,
+      "effectivity_index_I_op": 1.001591325953639,
+      "effectivity_index_I_impl": 0.7035546232215809,
+      "ratio_impl_to_op_R": 0.7024368172834462,
+      "classification": "GATED_CRITERION"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": [
+        0.7,
+        1.3
+      ]
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "ZZ effectivity on structured mesh (plane_strain) n=128 (Gated: True)."
+  },
+  {
+    "id": "A2.7_zz_effectivity_perturbed_plane_strain_n128",
+    "computed": {
+      "n": 128,
+      "mesh_type": "perturbed",
+      "plane_type": "plane_strain",
+      "dofs": 33282,
+      "elements": 32768,
+      "exact_energy_norm_error": 0.025543307977594118,
+      "exact_quadrature_zz_error_op": 0.02539917266462942,
+      "production_zz_error_impl": 0.018087743197282638,
+      "plain_l2_stress_error_diagnostic": 0.028850145584707925,
+      "effectivity_index_I_op": 0.9943572182157796,
+      "effectivity_index_I_impl": 0.7081206245153802,
+      "ratio_impl_to_op_R": 0.7121390698867688,
+      "classification": "DIAGNOSTIC_ONLY"
+    },
+    "threshold": {
+      "exact_quadrature_bounds": "REPORT_ONLY"
+    },
+    "pass": null,
+    "failure_class": null,
+    "details": "ZZ effectivity on perturbed mesh (plane_strain) n=128 (Gated: False)."
+  },
+  {
+    "id": "A2.7_goal_regression_uniform_cantilever",
+    "computed": {
+      "mesh_case": "uniform_cantilever",
+      "elements": 64,
+      "max_abs_difference": 4.683753385137379e-16,
+      "relative_difference": 1.0760872455677868e-15,
+      "k_factor": -10000.0,
+      "classification": "GATED_CRITERION"
+    },
+    "threshold": {
+      "relative_tolerance": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Goal indicator algebraic identity regression for uniform_cantilever."
+  },
+  {
+    "id": "A2.7_goal_regression_adapted_cantilever",
+    "computed": {
+      "mesh_case": "adapted_cantilever",
+      "elements": 91,
+      "max_abs_difference": 4.475586568020162e-16,
+      "relative_difference": 5.791689835609488e-16,
+      "k_factor": -10000.0,
+      "classification": "GATED_CRITERION"
+    },
+    "threshold": {
+      "relative_tolerance": 1e-10
+    },
+    "pass": true,
+    "failure_class": null,
+    "details": "Goal indicator algebraic identity regression for adapted_cantilever."
+  }
+]
