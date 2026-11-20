@@ -1,0 +1,187 @@
+{
+  "phase": "Phase A: Stage 0 + Numerical Verification",
+  "scope": "2D P1 triangular linear elasticity, plane stress and plane strain",
+  "base_release": "v0.2.2",
+  "mesh_definitions": {
+    "structured": {
+      "constructor": "skfem.MeshTri.init_tensor(np.linspace(0.0, 1.0, n + 1), np.linspace(0.0, 1.0, n + 1))",
+      "diagonal_convention": "default",
+      "refinement_levels_n": [8, 16, 32, 64, 128]
+    },
+    "perturbed": {
+      "random_seed": 12345,
+      "generator": "numpy.random.default_rng(12345)",
+      "independent_seed_per_level": true,
+      "perturbation_theta": "rng.uniform(0, 2*pi, Nnodes)",
+      "perturbation_radius": "rng.uniform(0, 0.2, Nnodes) * h_loc",
+      "h_loc_definition": "minimum incident edge length of that node on the unperturbed mesh",
+      "displace_interior_only": true,
+      "dx": "r * cos(theta)",
+      "dy": "r * sin(theta)",
+      "boundary_nodes_fixed": true,
+      "reject_non_positive_area": true,
+      "recorded_metrics_per_level": [
+        "node_count",
+        "element_count",
+        "dof_count",
+        "min_angle_deg",
+        "max_angle_deg",
+        "max_aspect_ratio",
+        "max_diameter_h",
+        "min_element_area",
+        "max_element_area",
+        "random_seed",
+        "accepted"
+      ]
+    }
+  },
+  "acceptance_rules": {
+    "A0_2_convergence_orders": {
+      "least_squares_levels": [32, 64, 128],
+      "regression_formula": "log(error) = p * log(h) + c",
+      "gates": {
+        "structured": {
+          "L2_displacement": { "min_order": 1.9 },
+          "energy_norm": { "min_order": 0.9, "max_order": 1.1 },
+          "qoi_error": { "min_order": 1.8 }
+        },
+        "perturbed": {
+          "L2_displacement": { "min_order": 1.8 },
+          "energy_norm": { "min_order": 0.9, "max_order": 1.1 },
+          "qoi_error": { "min_order": 1.8 }
+        }
+      },
+      "pairwise_slopes_relaxed_bounds": {
+        "L2_displacement": "primary_lower_bound - 0.1",
+        "qoi_error": "primary_lower_bound - 0.1",
+        "energy_norm": [0.8, 1.2]
+      }
+    },
+    "A0_3_mesh_quality": {
+      "initial_mesh_min_angle_deg": 10.0,
+      "adaptive_refinement_min_angle_formula": "max(10.0, 0.5 * theta_min_0)",
+      "interior_edge_sharing": "exactly 2 triangles",
+      "hanging_nodes": "zero allowed",
+      "interior_vertex_angle_sum_rad": 6.283185307179586,
+      "interior_vertex_angle_sum_abs_tol": 1e-9,
+      "element_area_sum_rel_tol": 1e-12
+    },
+    "A0_4_eigenvalue_test": {
+      "domain": "unit_square",
+      "elements_x": 4,
+      "elements_y": 3,
+      "nodes_x": 5,
+      "nodes_y": 4,
+      "diagonal_convention": "default",
+      "thickness": 1.0,
+      "E": 1.0,
+      "nu": 0.3,
+      "plane_types": ["plane_stress", "plane_strain"],
+      "matrix_asymmetry_rel_tol": 1e-12,
+      "null_space_eigenvalue_max_rel_tol": 1e-10,
+      "null_space_dimension": 3,
+      "fourth_eigenvalue_ratio_min": 1e-4,
+      "rigid_body_null_projection_residual_rel_tol": 1e-8
+    },
+    "A0_5_goal_indicator_regression": {
+      "k_factor": -10000.0,
+      "relationship": "u = k * z",
+      "z_proportionality": "z = u / k = -1e-4 * u",
+      "element_indicator_formula": "eta_e / (h_e^2 * A_e) = |sigma(u) : eps(u)| / |k|",
+      "relative_tolerance": 1e-10,
+      "mesh_types": ["uniform_cantilever", "adapted_cantilever"]
+    },
+    "A0_6_determinism": {
+      "execution_path": "production_GDECRuntime",
+      "strategies": ["uniform", "recovery", "goal_aware"],
+      "initial_dof_sequence_prefix": [200, 418, 894, 1908, 4034],
+      "dof_sequence_equality": "exact",
+      "qoi_relative_tolerance": 1e-8
+    },
+    "A2_1_patch_tests": {
+      "A2_1a_linear_displacement": {
+        "mesh_type": "perturbed_square_5x5",
+        "plane_types": ["plane_stress", "plane_strain"],
+        "interior_nodal_displacement_rel_tol": 1e-10,
+        "stress_constitutive_rel_tol": 1e-10
+      },
+      "A2_1b_uniform_tension": {
+        "execution_path": "production_solve",
+        "traction_s": 1000.0,
+        "plane_types": ["plane_stress", "plane_strain"],
+        "relative_error_tol": 1e-10
+      }
+    },
+    "A2_2_operator_checks": {
+      "stiffness_symmetry_frobenius_rel_tol": 1e-12,
+      "cantilever_residual_rel_tol": 1e-10,
+      "cantilever_reaction_equilibrium_rel_tol": 1e-8
+    },
+    "A2_3_independent_assembler": {
+      "implementation": "pure_numpy_loops_no_skfem",
+      "displacement_rel_tol": 1e-10,
+      "boundary_average_qoi_rel_tol": 1e-10,
+      "test_meshes": [
+        { "name": "tensor_17x9", "type": "structured", "nx": 17, "ny": 9 },
+        { "name": "perturbed_5x5", "type": "perturbed", "nx": 5, "ny": 5 },
+        { "name": "cantilever_20x5", "type": "structured", "nx": 20, "ny": 5 }
+      ],
+      "plane_types": ["plane_stress", "plane_strain"]
+    },
+    "A2_4_manufactured_solution": {
+      "domain": [0.0, 1.0, 0.0, 1.0],
+      "E": 1.0,
+      "nu": 0.3,
+      "thickness": 1.0,
+      "exact_displacement_ux": "sin(pi*x)*sin(pi*y)",
+      "exact_displacement_uy": "x*(1-x)*y*(1-y)*(1+x+2*y)",
+      "body_force_quadrature_order_min": 6,
+      "error_quadrature_order_min": 8,
+      "refinement_levels_n": [8, 16, 32, 64, 128],
+      "mesh_types": ["structured", "perturbed"],
+      "plane_types": ["plane_stress", "plane_strain"]
+    },
+    "A2_5_adjoint_verification": {
+      "A2_5a_finite_difference_derivatives": {
+        "dJ_dfk_rel_tol": 1e-6,
+        "dJ_dE_rel_tol": 1e-6,
+        "num_dofs_sampled": 10
+      },
+      "A2_5b_exact_discrete_identity": {
+        "coarse_n": 8,
+        "relative_tolerance": 1e-9,
+        "qois": ["manufactured_J1", "boundary_average_displacement"]
+      },
+      "A2_5c_reference_comparison": {
+        "status": "REPORT_ONLY_DIAGNOSTIC",
+        "ref_levels": [2, 4, 8, 16]
+      },
+      "A2_5d_cantilever_proportionality": {
+        "k_factor": -10000.0,
+        "relative_tolerance": 1e-10
+      }
+    },
+    "A2_6_refinement_verification": {
+      "num_adaptive_cycles": 8,
+      "strategies": ["goal_aware", "recovery"],
+      "area_conservation_rel_tol": 1e-12,
+      "interior_vertex_angle_sum_abs_tol": 1e-9
+    },
+    "A2_7_zz_effectivity": {
+      "exact_quadrature_operator_energy_norm_bounds": [0.7, 1.3],
+      "finest_structured_levels": [64, 128],
+      "report_production_indicator_ratio": true,
+      "report_L2_stress_variant_for_comparison": true
+    },
+    "A2_8_reference_and_scale": {
+      "four_level_qoi_reproduction_rel_tol": 1e-8,
+      "celik_richardson_gci_reproduction_rel_tol": 1e-6,
+      "scale_and_units_invariance_rel_tol": 1e-9
+    },
+    "A2_9_determinism": {
+      "runtime_path": "production_GDECRuntime",
+      "exact_dof_sequence_match": true,
+      "qoi_relative_tolerance": 1e-8
+    }
+  }
+}

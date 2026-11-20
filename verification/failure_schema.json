@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GDEC Phase A Verification Result Schema",
+  "type": "object",
+  "required": ["id", "computed", "threshold", "pass", "failure_class", "details"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identifier of the verification check (e.g., A2.1a, A2.2_symmetry, etc.)"
+    },
+    "computed": {
+      "type": "object",
+      "description": "Structured computed numerical values from the test execution"
+    },
+    "threshold": {
+      "type": "object",
+      "description": "Frozen threshold values against which computed values are evaluated"
+    },
+    "pass": {
+      "type": "boolean",
+      "description": "Whether the test met the required frozen threshold"
+    },
+    "failure_class": {
+      "type": ["string", "null"],
+      "enum": [null, "INFRA", "IMPL_DEFECT", "NUM_FAIL", "REF_UNCERTAIN", "SPEC_AMBIG"],
+      "description": "Classification of failure: INFRA (environment/dependency), IMPL_DEFECT (code deviates from mathematical spec), NUM_FAIL (numerical threshold violated), REF_UNCERTAIN (reference convergence inadequate), SPEC_AMBIG (ambiguous specification)"
+    },
+    "details": {
+      "type": "string",
+      "description": "Detailed notes, diagnostic traces, or contextual commentary"
+    }
+  }
+}
