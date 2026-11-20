@@ -383,9 +383,13 @@ class SemanticAnalyzer:
             args = {k: self._eval_value(v) for k, v in val.named_args.items()}
             frac = self._finite_number(args.get("fraction", 0.3), "adaptivity fraction", val.loc)
             raw_cost_aware = args.get("cost_aware", True)
-            if raw_cost_aware in (True, "true"):
+            if raw_cost_aware is True or (
+                isinstance(raw_cost_aware, str) and raw_cost_aware == "true"
+            ):
                 cost_aware = True
-            elif raw_cost_aware in (False, "false"):
+            elif raw_cost_aware is False or (
+                isinstance(raw_cost_aware, str) and raw_cost_aware == "false"
+            ):
                 cost_aware = False
             else:
                 raise GDECSemanticError(
