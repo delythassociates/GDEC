@@ -243,12 +243,10 @@ class SemanticAnalyzer:
         if not stmts:
             raise GDECSemanticError("Missing required 'objective' declaration.")
         stmt = stmts[-1]
-        if not isinstance(stmt.value, FunctionCall) or stmt.value.func_name not in [
-            "average_displacement",
-            "point_displacement",
-        ]:
+        if not isinstance(stmt.value, FunctionCall) or stmt.value.func_name != "average_displacement":
             raise GDECSemanticError(
-                "Objective must be defined as 'average_displacement(boundary=..., component=...)'",
+                "Only 'average_displacement(boundary=..., component=...)' is implemented. "
+                "point_displacement is rejected until point-evaluation semantics are implemented.",
                 stmt.loc,
             )
         call = stmt.value
