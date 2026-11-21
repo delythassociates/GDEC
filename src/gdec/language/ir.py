@@ -59,7 +59,7 @@ class BudgetIR(BaseModel):
 
 
 class AdaptivityIR(BaseModel):
-    strategy: Literal["goal_aware", "recovery", "uniform"] = "goal_aware"
+    strategy: Literal["goal_aware", "recovery", "uniform", "dwr", "goal_oriented_dwr"] = "goal_aware"
     marking_fraction: float = Field(default=0.3, gt=0.0, le=1.0, description="Fraction of elements to refine", allow_inf_nan=False)
     cost_aware: bool = Field(default=True, description="Whether to weigh indicator by estimated cost")
 

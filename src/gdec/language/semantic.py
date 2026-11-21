@@ -465,9 +465,9 @@ class SemanticAnalyzer:
                 f"Adaptivity fraction must satisfy 0 < fraction <= 1 (received {frac}).",
                 stmt.loc,
             )
-        if strategy not in ["goal_aware", "recovery", "uniform"]:
+        if strategy not in ["goal_aware", "recovery", "uniform", "dwr", "goal_oriented_dwr"]:
             raise GDECSemanticError(
-                f"Unsupported adaptivity strategy '{strategy}'. Supported are 'goal_aware', 'recovery', 'uniform'.",
+                f"Unsupported adaptivity strategy '{strategy}'. Supported are 'goal_aware', 'recovery', 'uniform', 'dwr'.",
                 stmt.loc,
             )
         return AdaptivityIR(

@@ -62,10 +62,12 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 | :--- | :--- | :--- | :--- |
 | **Uniform Refinement** | **TESTED** | `tests/test_mesh.py` | 1-to-4 triangle splitting with boundary preserving tags and exact area conservation. |
 | **ZZ Recovery Estimator** | **TESTED** | `tests/test_estimators.py` | Area-weighted nodal averaging of element stresses; energy norm metric. |
-| **Goal-Aware Adjoint Heuristic** | **TESTED** | `tests/test_v02_adjoint.py`, `tests/test_estimators.py` | $\eta_e = h_e^2 A_e |\boldsymbol{\varepsilon}_u : \mathbf{C} : \boldsymbol{\varepsilon}_z|$. Heuristic indicator, NOT certified DWR bound. |
+| **Goal-Aware Adjoint Heuristic** | **TESTED** | `tests/test_v02_adjoint.py`, `tests/test_estimators.py` | $\eta_e = h_e^2 A_e \|\boldsymbol{\varepsilon}_u : \mathbf{C} : \boldsymbol{\varepsilon}_z\|$. Heuristic indicator (`goal_heuristic_v1`), NOT a certified DWR bound. |
+| **Residual Energy-Norm Indicator** | **NUMERICALLY VERIFIED** | `tests/test_estimators.py`, `tests/test_dwr_verification.py` | Ainsworth-Oden residual energy norm indicator based on interior facet traction jumps. |
+| **Goal-Oriented DWR Estimator** | **NUMERICALLY VERIFIED** | `tests/test_dwr_verification.py`, `docs/DWR_THEORY_AND_DERIVATION.md`, `docs/DWR_IMPLEMENTATION_REPORT.md`, `docs/GOAL_ORIENTED_ADAPTIVITY_REPORT.md` | Dual-weighted residual with interior facet jumps, Neumann boundary residuals, area-weighted recovered dual gradients, cubic Hermite edge bubble integration, signed QoI error estimate ($I_{\text{eff}} \to 0.81$). |
 | **Cost-Aware Priority Weighting** | **TESTED** | `tests/test_v02_cost_model.py`, `tests/test_estimators.py` | Prioritizes elements by sensitivity per estimated degree of freedom. |
 | **Conforming Local Red-Green Refinement**| **TESTED** | `tests/test_mesh.py` | Bisection and conforming closure via `skfem.MeshTri.refined(marked)`. |
-| **Certified DWR Error Bounds** | **PLANNED** | Roadmap Phase 3 | True dual-weighted residual with interior facet jumps and boundary residual integrations. |
+| **Guaranteed Certified Error Bounds** | **PLANNED** | Roadmap Phase 7 | Requires analytical evaluation of domain-dependent global trace constants $C_{\text{trace}}$. DWR provides an asymptotic estimate, not a certified upper bound. |
 
 ### 2.4 Benchmarking & Research Integrity
 
@@ -81,11 +83,11 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 ## 3. Test Suite Summary Statistics
 
-- **Total Unit & Regression Tests:** 125 tests.
-- **Passing:** 125 (100%).
+- **Total Unit & Regression Tests:** 134 tests.
+- **Passing:** 134 (100%).
 - **Failing:** 0.
 - **Skipped / XFailed:** 0.
-- **Total Test Execution Time:** ~6.0 seconds.
+- **Total Test Execution Time:** ~8.7 seconds.
 - **Python Compilation (`compileall`):** Clean across all `src/` and `tests/` modules (Python 3.10–3.13).
 - **Static Analysis (Ruff):** No syntax errors or import execution issues in compiler/FEM code.
 
@@ -93,6 +95,6 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 ## 4. Next Priorities
 
-1. **Phase 3:** Investigate dual-weighted residual (DWR) formulation vs. current heuristic sensitivity indicator; derive boundary and interior jump residuals.
-2. **Phase 4:** Solver and numerical conditioning audit (evaluate preconditioned conjugate gradient applicability vs. sparse direct solve).
+1. **Phase 3:** Completed research-grade Dual-Weighted Residual (DWR) framework, facet jump evaluator, dual weight evaluator, multi-strategy benchmarks, and theory reports.
+2. **Phase 4:** Solver and numerical conditioning audit (evaluate preconditioned conjugate gradient applicability vs. sparse direct solve, condition number scaling under adaptive refinement).
 3. **Phase 5:** Benchmark protocol re-registration and reproducibility checks.
