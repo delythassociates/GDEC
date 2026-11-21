@@ -4,7 +4,7 @@
 **Branch:** `audit/v0.2.2-deep-review`  
 **Benchmark Problem:** 2D Cantilever Plate ($L = 2.0\text{ m}, H = 0.5\text{ m}, t = 0.02\text{ m}, E = 70\text{ GPa}, \nu = 0.33$, Tip Shear $P = 10\text{ kN}$)  
 **Target QoI:** Average tip vertical displacement: $J(\mathbf{u}) = \frac{1}{H} \int_{\Gamma_{\text{tip}}} u_y \, ds$  
-**Date:** 2026-11-21 (Phase 3.1 Audit Reconciliation)  
+**Date:** 2026-11-21 (Phase 3.2 Audit Reconciliation)  
 
 ---
 
@@ -17,9 +17,12 @@ To avoid reference truncation bias, discretization errors and effectivity indice
 | **Grid 0** | $33 \times 17$ | 1,024 | 1,122 | **-1.855418 mm** | — | — |
 | **Grid 1** | $65 \times 33$ | 4,096 | 4,290 | **-1.894895 mm** | -0.039477 mm | 2.083% |
 | **Grid 2 (Gold)** | $129 \times 65$ | 16,384 | 16,770 | **-1.905570 mm** | -0.010675 mm | **0.560%** |
-| **Richardson Extrap.** | — | — | — | **-1.909129 mm** | -0.003559 mm | 0.187% |
+| **Richardson Extrap.** | — | — | — | **-1.909129 mm** | -0.003559 mm | **0.187%** |
 
 - **Analytical Baseline:** Timoshenko beam theory with shear deformation predicts $J_{\text{analytical}} = -1.9198\text{ mm}$.
+- **Richardson Extrapolation Order ($O(h^2)$):** For linear triangular elements ($P_1$), the functional discretization error in smooth 2D elasticity converges at rate $O(h^p)$ with asymptotic order $p = 2$. With mesh refinement ratio $r = 2$, the extrapolation factor is $2^p - 1 = 3$:
+  $$J_{\text{extrap}} = J_{\text{Grid 2}} + \frac{J_{\text{Grid 2}} - J_{\text{Grid 1}}}{3} = -1.905570 + \frac{-0.010675}{3} = -1.909129\text{ mm}.$$
+- **Uncertainty Quantification:** The difference between the gold Grid 2 reference and Richardson extrapolation is $0.003559\text{ mm}$ ($0.187\%$). This confirms that Grid 2 has entered the asymptotic regime with $< 0.2\%$ residual discretization uncertainty.
 - **Asymptotic Agreement:** Grid 2 is within 0.74% of analytical beam theory and exhibits $< 0.56\%$ successive refinement change.
 - **Reference Resolution:** Grid 2 serves as the primary reference, with sensitivity checked against Grid 1 and Richardson extrapolation.
 
@@ -43,7 +46,11 @@ The signed DWR error estimate $\mathcal{E}_{\text{DWR}}$ is evaluated on a unifo
 
 ## 3. Equal-Accuracy Strategy Comparison
 
-To eliminate conflation between different stopping criteria, strategies are compared at **equivalent target accuracy thresholds** relative to the gold reference ($129\times 65$). Values between discrete refinement steps are interpolated via standard log-log interpolation ($\log(\text{error})$ vs $\log(\text{DOFs})$):
+To eliminate conflation between different stopping criteria, strategies are compared at **equivalent target accuracy thresholds** relative to the gold reference ($129\times 65$).
+
+> [!NOTE]
+> **Measured Iteration Times vs. Log-Log Interpolation:**
+> In the tables below, the required degrees of freedom are evaluated via standard log-log interpolation ($\log(\text{error})$ vs $\log(\text{DOFs})$) between the two bounding discrete mesh iterations that bracket the target error threshold. The execution times and memory figures report the actual cumulative measured wall-clock time and peak memory required up to the discrete iteration where the target accuracy was first satisfied. The discrete iteration index (e.g. Iter 1, Iter 2) indicates the earliest physical solve that achieved the threshold.
 
 ### 3.1 Target Error $\le 10.0\%$
 | Strategy | Target Met? | DOFs Required (interp) | Total Wall Time (ms) | Peak Memory (MB) | Adjoint Overhead (ms) | Indicator Eval (ms) | Refinement Overhead (ms) |

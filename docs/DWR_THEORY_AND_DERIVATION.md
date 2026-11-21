@@ -4,7 +4,7 @@
 **Repository:** `delythassociates/GDEC`  
 **Module:** `src/gdec/fem/estimators.py`  
 **Status:** Complete, Mathematically Audited, Numerically Verified  
-**Revision:** Phase 3.1 Audit Corrections  
+**Revision:** Phase 3.2 Audit Corrections  
 
 ---
 
@@ -248,29 +248,79 @@ $$
 \mathbf{z}|_{\Gamma_D} = \mathbf{0}, \quad \Pi_h \mathbf{z}|_{\Gamma_D} = \mathbf{0} \implies (\mathbf{z} - \Pi_h \mathbf{z})|_{\Gamma_D} \equiv \mathbf{0}.
 $$
 
-### 5.1 Component-Wise Trace Vanishing via Constrained DOFs
-In GDEC, `DualWeightEvaluator` removes all hardcoded boundary names (e.g., assuming "left" is Dirichlet) and operates directly on the partitioned degree-of-freedom vector `sol.dofs_fixed`:
-1. For any facet $F = [v_0, v_1]$, component $c \in \{0, 1\}$ ($x$ or $y$) is Dirichlet-constrained if and only if both endpoint nodes $v_0$ and $v_1$ have their corresponding DOF in `sol.dofs_fixed`:
+### 5.1 Component-Wise Trace Vanishing via Constrained Boundary DOFs
+In GDEC, `DualWeightEvaluator` removes all hardcoded boundary names (e.g., assuming "left" is Dirichlet) and operates directly on the partitioned degree-of-freedom vector `sol.dofs_fixed` restricted strictly to boundary facets:
+1. **Boundary-Facet Restriction:**
+   Only facets lying on the physical boundary ($\neg \text{is\_interior}$) are candidates for Dirichlet trace zeroing.
+   $$\text{is\_candidate}(F) = \neg \text{facet\_data.is\_interior}[F].$$
+   This prevents interior facets whose endpoints both touch the Dirichlet boundary (e.g. diagonal interior facets or corner edges) from having their dual weights falsely zeroed.
+2. For any physical boundary facet $F = [v_0, v_1]$, component $c \in \{0, 1\}$ ($x$ or $y$) is Dirichlet-constrained if and only if both endpoint nodes $v_0$ and $v_1$ have their corresponding DOF in `sol.dofs_fixed`:
    $$
-   \text{is\_constrained}_c(F) = (\text{DOF}(c, v_0) \in \text{dofs\_fixed}) \land (\text{DOF}(c, v_1) \in \text{dofs\_fixed}).
+   \text{is\_constrained}_c(F) = \text{is\_candidate}(F) \land (\text{DOF}(c, v_0) \in \text{dofs\_fixed}) \land (\text{DOF}(c, v_1) \in \text{dofs\_fixed}).
    $$
-2. If constrained, `dual_weights[c, F] = 0.0`.
-3. If only one component is constrained (e.g. roller boundary where $u_y = 0$ but $u_x$ is free), only component $y$ vanishes (`dual_weights[1, F] = 0.0`), while component $x$ remains non-zero.
+3. If constrained on the boundary, `dual_weights[c, F] = 0.0`.
+4. If only one component is constrained (e.g. roller boundary where $u_y = 0$ but $u_x$ is free), only component $y$ vanishes (`dual_weights[1, F] = 0.0`), while component $x$ remains non-zero.
 
 ---
 
-## 6. Element Interior Residual Support ($P_1$ Mechanics)
+## 6. Element Interior Residual Support ($P_1$ Mechanics) and Exact Midpoint Quadrature
 
+### 6.1 Volume Residual Formulation
 For linear triangular elements without body forces ($\mathbf{b} = \mathbf{0}$):
 $$
 \nabla \cdot \boldsymbol{\sigma}(\mathbf{u}_h) \equiv \mathbf{0} \implies \mathbf{R}_K = \mathbf{0}.
 $$
-When body forces $\mathbf{b}(\mathbf{x})$ are present, `ElementResidualEvaluator` computes:
+When body forces $\mathbf{b}(\mathbf{x})$ are present, the volume residual is:
 $$
-\mathbf{R}_K = \mathbf{b}(\mathbf{x}_K),
+\mathbf{R}_K(\mathbf{x}) = \mathbf{b}(\mathbf{x}) + \nabla \cdot \boldsymbol{\sigma}(\mathbf{u}_h) = \mathbf{b}(\mathbf{x}).
 $$
-and evaluates the volume residual contribution using 3-point midpoint quadrature against the reconstructed quadratic dual bubble:
+The volume residual contribution to the primal error functional across the domain is:
 $$
-\int_K \mathbf{b} \cdot (\mathbf{z} - \Pi_h \mathbf{z}) \, d\Omega \approx \frac{\text{Area}_K}{3} \sum_{f \in \partial K} \mathbf{b}(\mathbf{m}_f) \cdot \mathbf{w}_{\text{mid}, f}.
+\rho_{\text{vol}}(\mathbf{u}_h)(\mathbf{w}) = \sum_{K \in \mathcal{T}_h} t \int_K \mathbf{b}(\mathbf{x}) \cdot (\mathbf{z} - \Pi_h \mathbf{z}) \, d\Omega.
 $$
-The volume residual is explicitly reported in `details["volume_residual_contribution"]`, ensuring that residual terms are never silently omitted.
+Notice the explicit linear scaling with domain thickness $t$.
+
+### 6.2 Mathematically Exact 3-Point Midpoint Quadrature
+On triangular elements, the standard 3-point midpoint quadrature rule (Hammer-Marlowe-Stroud / Dunavant degree 2) integrates quadratic polynomials exactly:
+$$
+\int_K g(\mathbf{x}) \, d\Omega \approx \frac{\text{Area}_K}{3} \sum_{F \in \partial K} g(\mathbf{m}_F),
+$$
+where $\mathbf{m}_F = \frac{1}{2}(\mathbf{x}_0 + \mathbf{x}_1)$ is the midpoint of facet $F$.
+
+Evaluating the body force at facet midpoints $\mathbf{b}(\mathbf{m}_F)$ and pairing with the midpoint bubble displacement:
+$$
+\mathbf{w}_{\text{mid}, F} = (\mathbf{z} - \Pi_h \mathbf{z})(\mathbf{m}_F) = \frac{3}{2 h_F} \mathbf{W}_F,
+$$
+where $\mathbf{W}_F = \int_F (\mathbf{z} - \Pi_h \mathbf{z}) \, ds = \frac{h_F^2}{12} [\nabla \mathbf{z}^*(\mathbf{x}_0) - \nabla \mathbf{z}^*(\mathbf{x}_1)] \cdot \mathbf{t}_F$.
+
+Thus, the exact volume integral over triangle $K$ is computed as:
+$$
+t \int_K \mathbf{b} \cdot (\mathbf{z} - \Pi_h \mathbf{z}) \, d\Omega \approx t \frac{\text{Area}_K}{3} \sum_{F \in \partial K} \mathbf{b}(\mathbf{m}_F) \cdot \left( \frac{3}{2 h_F} \mathbf{W}_F \right).
+$$
+
+### 6.3 Dimensional $L_2$ Volume Residual Norm
+The physically meaningful $L_2(\Omega)$ norm of the volume residual includes element areas and domain thickness:
+$$
+\|\mathbf{R}\|_{L_2(\Omega)} = \sqrt{\int_\Omega t \|\mathbf{b}(\mathbf{x})\|^2 \, d\Omega} \approx \sqrt{\sum_{K \in \mathcal{T}_h} t \frac{\text{Area}_K}{3} \sum_{F \in \partial K} \|\mathbf{b}(\mathbf{m}_F)\|^2}.
+$$
+This norm correctly scales with $\sqrt{t}$ under thickness variations and has units of $[b] \times \sqrt{\text{Area} \times \text{thickness}} = (\text{N}/\text{m}^3) \times \text{m}^{1.5} = \text{N}/\text{m}^{1.5}$.
+
+### 6.4 Richardson Extrapolation Order
+For linear triangular finite elements ($P_1$) in displacement-based elasticity, the global discretization error in linear functionals (such as average tip deflection) converges at rate $O(h^2)$.
+Between nested meshes with mesh size ratio $r = h_{2k} / h_k = 2$, the Richardson extrapolation formula is:
+$$
+J_{\text{extrap}} = J_{h/2} + \frac{J_{h/2} - J_h}{2^p - 1},
+$$
+with theoretical convergence order $p = 2$, giving denominator $2^2 - 1 = 3$:
+$$
+J_{\text{extrap}} = J_{\text{Grid 2}} + \frac{J_{\text{Grid 2}} - J_{\text{Grid 1}}}{3}.
+$$
+On the cantilever bending benchmark, $J_{\text{Grid 1}} = -1.894895\text{ mm}$ and $J_{\text{Grid 2}} = -1.905570\text{ mm}$, yielding:
+$$
+J_{\text{extrap}} = -1.905570 + \frac{-1.905570 - (-1.894895)}{3} = -1.909129\text{ mm}.
+$$
+The residual uncertainty between Grid 2 and Richardson extrapolation is:
+$$
+\frac{|-1.909129 - (-1.905570)|}{|-1.909129|} = \frac{0.003559}{1.909129} \approx 0.187\%.
+$$
+This quantifies reference truncation error with mathematical rigor.

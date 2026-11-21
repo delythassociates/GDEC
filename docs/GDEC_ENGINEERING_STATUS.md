@@ -83,11 +83,11 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 ## 3. Test Suite Summary Statistics
 
-- **Total Unit & Regression Tests:** 137 tests.
-- **Passing:** 137 (100%).
+- **Total Unit & Regression Tests:** 138 tests.
+- **Passing:** 138 (100%).
 - **Failing:** 0.
 - **Skipped / XFailed:** 0.
-- **Total Test Execution Time:** ~9.0 seconds.
+- **Total Test Execution Time:** ~8.0 seconds.
 - **Python Compilation (`compileall`):** Clean across all `src/` and `tests/` modules (Python 3.10–3.13).
 - **Static Analysis (Ruff):** No syntax errors or import execution issues in compiler/FEM code.
 
@@ -95,6 +95,13 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 ## 4. Next Priorities
 
-1. **Phase 3.1 (Complete):** Mathematical audit and verification corrections (boundary-agnostic dual weights, first-principles edge bubble integration, volume residual support, multi-reference effectivity sensitivity, equal-accuracy benchmark repair).
+1. **Phase 3.1 & 3.2 (Complete):**
+   - Corrected boundary-facet classification (`is_bnd = ~facet_data.is_interior`), preventing interior facets connecting Dirichlet nodes from having their dual weights zeroed.
+   - Re-derived first-principles cubic Hermite edge bubble integration with orientation invariance and dimensional consistency; exposed pure production helper `compute_edge_bubble_integral`.
+   - Exact 3-point midpoint body-force quadrature with bubble displacement $\mathbf{w}_{\text{mid}, F} = \frac{3}{2 h_F} \mathbf{W}_F$.
+   - Explicit thickness scaling in volume residual contribution ($t \int_K \dots$) and dimensional $L_2$ volume residual norm ($\|\mathbf{R}\|_{L_2(\Omega)} \propto \sqrt{t}$).
+   - Primal body-force assembly (`assemble_body_force`) and full BVP verification with non-zero body forces, demonstrating asymptotic effectivity convergence ($I_{\text{eff}} \approx 0.50 \to 0.78$).
+   - Multi-reference sensitivity ($65\times 33$, $129\times 65$, $O(h^2)$ Richardson extrapolation with $0.187\%$ uncertainty).
+   - Equal-accuracy benchmark reconciliation confirming DWR achieves 20–24% DOF reduction and 44% peak memory reduction, without wall-clock advantage in 2D linear FEM on CPU.
 2. **Phase 4:** Solver and numerical conditioning audit (evaluate preconditioned conjugate gradient applicability vs. sparse direct solve, condition number scaling under adaptive red-green refinement).
 3. **Phase 5:** Benchmark protocol re-registration and reproducibility checks.

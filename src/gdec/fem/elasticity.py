@@ -123,6 +123,23 @@ class LinearElasticitySolver:
 
         return fem.asm(traction_form, fbasis)
 
+    def assemble_body_force(
+        self, basis: fem.Basis, body_force_fn: Any
+    ) -> np.ndarray:
+        r"""
+        Assemble external body force vector:
+          f_b = \int_\Omega t (b_x v_x + b_y v_y) d\Omega.
+        """
+        thickness = self.c.thickness
+
+        @fem.LinearForm
+        def body_force_form(v, w):
+            b_val = body_force_fn(w.x)
+            bx, by = b_val[0], b_val[1]
+            return thickness * (bx * v[0] + by * v[1])
+
+        return fem.asm(body_force_form, basis)
+
     def assemble_qoi_adjoint_vector(
         self, gdec_mesh: GDECMesh, boundary_name: str = "right", component: str = "y"
     ) -> np.ndarray:
@@ -178,6 +195,7 @@ class LinearElasticitySolver:
         gdec_mesh: GDECMesh,
         loads: List[Tuple[str, float, float]],
         fixed_boundaries: List[Tuple[str, List[str]]],
+        body_force_fn: Optional[Any] = None,
         qoi_boundary: str = "right",
         qoi_component: str = "y",
         solve_adjoint: bool = True,
@@ -197,6 +215,8 @@ class LinearElasticitySolver:
         f = np.zeros(basis.N)
         for bnd, tx, ty in loads:
             f += self.assemble_traction(gdec_mesh, bnd, tx, ty)
+        if body_force_fn is not None:
+            f += self.assemble_body_force(basis, body_force_fn)
 
         # QoI adjoint load vector
         g = self.assemble_qoi_adjoint_vector(gdec_mesh, qoi_boundary, qoi_component)

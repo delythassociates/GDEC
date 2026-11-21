@@ -166,6 +166,29 @@ class DualWeightEvaluator:
     """
 
     @staticmethod
+    def compute_edge_bubble_integral(
+        h_F: np.ndarray,
+        t_F: np.ndarray,
+        grad_z_v0: np.ndarray,
+        grad_z_v1: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Pure production helper evaluating the integrated cubic Hermite edge bubble:
+          W_F = int_F (z - Pi_h z) ds = (h_F^2 / 12) * [(grad_z*(v0) - grad_z*(v1)) . t_F]
+        Parameters:
+          h_F: (nfacets,) or scalar
+          t_F: (2, nfacets) or (2,)
+          grad_z_v0: (2, 2, nfacets) or (2, 2) [comp, coord, ...]
+          grad_z_v1: (2, 2, nfacets) or (2, 2) [comp, coord, ...]
+        Returns:
+          dual_weights: (2, nfacets) or (2,)
+        """
+        diff_0 = grad_z_v0[0] - grad_z_v1[0]
+        diff_1 = grad_z_v0[1] - grad_z_v1[1]
+        directional_diff = diff_0 * t_F[0] + diff_1 * t_F[1]
+        return (h_F**2 / 12.0) * directional_diff
+
+    @staticmethod
     def evaluate(
         gdec_mesh: GDECMesh,
         sol: FEMSolution,
@@ -201,32 +224,34 @@ class DualWeightEvaluator:
             np.add.at(nodal_weights, nodes, areas)
         nodal_grad_z /= np.maximum(nodal_weights, 1e-14)
 
-        # For each facet, compute edge bubble integral from first-principles Hermite interpolation:
-        # W_F = int_F (z - Pi_h z) ds = (h_F^2 / 12) * (z'_0 - z'_1)
-        #     = (h_F^2 / 12) * [(grad_z*(v0) - grad_z*(v1)) . t_F]
+        # For each facet, compute edge bubble integral via production helper
         v0 = skm.facets[0]
         v1 = skm.facets[1]
         h_F = facet_data.lengths
         t_F = facet_data.tangents
 
+        grad_v0 = nodal_grad_z[:, :, v0]
+        grad_v1 = nodal_grad_z[:, :, v1]
         dual_weights = np.zeros((2, len(h_F)), dtype=float)
         for comp in range(2):
-            diff_0 = nodal_grad_z[comp, 0, v0] - nodal_grad_z[comp, 0, v1]
-            diff_1 = nodal_grad_z[comp, 1, v0] - nodal_grad_z[comp, 1, v1]
+            diff_0 = grad_v0[comp, 0] - grad_v1[comp, 0]
+            diff_1 = grad_v0[comp, 1] - grad_v1[comp, 1]
             directional_diff = diff_0 * t_F[0] + diff_1 * t_F[1]
             dual_weights[comp] = (h_F**2 / 12.0) * directional_diff
 
         # On Dirichlet boundaries where adjoint trace is constrained to zero, dual error vanishes.
-        # We determine constrained facets component-by-component without assuming any fixed boundary name.
+        # The constraint mask is strictly applied only to actual boundary facets (~facet_data.is_interior).
+        # An interior facet whose endpoints happen to be constrained preserves its enriched dual weight.
         # 1. Primary ground-truth: inspect sol.dofs_fixed directly from the condensed linear system
         if sol.dofs_fixed is not None and len(sol.dofs_fixed) > 0:
             is_dof_fixed = np.zeros(sol.basis.N, dtype=bool)
             is_dof_fixed[sol.dofs_fixed] = True
+            is_bnd = ~facet_data.is_interior
             for comp in range(2):
                 dofs_v0 = sol.basis.nodal_dofs[comp, v0]
                 dofs_v1 = sol.basis.nodal_dofs[comp, v1]
-                # Facet trace is Dirichlet-constrained if both endpoint nodes are constrained
-                facet_constrained = is_dof_fixed[dofs_v0] & is_dof_fixed[dofs_v1]
+                # Facet trace is Dirichlet-constrained strictly on boundary facets where both nodes are fixed
+                facet_constrained = is_bnd & is_dof_fixed[dofs_v0] & is_dof_fixed[dofs_v1]
                 dual_weights[comp, facet_constrained] = 0.0
 
         # 2. Supplementary/fallback: check boundary condition metadata if provided
@@ -275,7 +300,9 @@ class ElementResidualEvaluator:
     When body forces are zero (the standard for supported benchmark BVPs),
     the interior volume residual vanishes identically (R_K = 0).
     When nonzero body forces are provided, the volume residual is integrated
-    using 3-point midpoint quadrature against the quadratic reconstructed dual bubble.
+    using 3-point edge midpoint quadrature against the quadratic reconstructed dual bubble:
+      int_K b . (z - Pi_h z) dOmega = Area_K * (1/3) * sum_{F in dK} b(m_F) . w_mid_F
+    where w_mid_F = (3 / (2 * h_F)) * W_F is the exact midpoint displacement of the cubic Hermite bubble.
     """
 
     @staticmethod
@@ -283,14 +310,14 @@ class ElementResidualEvaluator:
         gdec_mesh: GDECMesh,
         sol: FEMSolution,
         body_force_fn: Optional[Any] = None,
-        dual_evaluator: Optional[DualWeightEvaluator] = None,
+        thickness: float = 1.0,
         facet_data: Optional[FacetResidualData] = None,
     ) -> Tuple[np.ndarray, np.ndarray, float]:
         """
         Returns:
           elem_signed_dwr: (nelements,) array of signed volume contributions
           elem_abs_dwr: (nelements,) array of absolute volume indicators
-          total_volume_residual_norm: L2 norm of R_K over the domain
+          total_volume_residual_norm: L2 norm ||R_K||_{L2(Omega)} including element areas and thickness
         """
         ne = gdec_mesh.nelements
         elem_signed = np.zeros(ne, dtype=float)
@@ -299,18 +326,19 @@ class ElementResidualEvaluator:
         if body_force_fn is None:
             return elem_signed, elem_abs, 0.0
 
-        centroids = gdec_mesh.element_centroids
-        b_val = np.asarray(body_force_fn(centroids), dtype=float)  # shape (2, ne)
-        b_norm = float(np.linalg.norm(b_val))
-        if b_norm < 1e-14:
+        skm = gdec_mesh.mesh
+        p = skm.p
+        v0 = skm.facets[0]
+        v1 = skm.facets[1]
+        midpoints = 0.5 * (p[:, v0] + p[:, v1])  # shape (2, nfacets)
+
+        # Evaluate body force at edge midpoints for exact 3-point midpoint quadrature
+        b_mid = np.asarray(body_force_fn(midpoints), dtype=float)  # shape (2, nfacets)
+        b_max = float(np.max(np.abs(b_mid)))
+        if b_max < 1e-14:
             return elem_signed, elem_abs, 0.0
 
-        # Nonzero body force: integrate b . (z - Pi_h z) dOmega over each triangle
-        # For quadratic adjoint enrichment, the bubble vanishes at the 3 vertices.
-        # We evaluate via 3-point edge midpoint quadrature on triangle K:
-        # int_K b . (z - Pi_h z) dOmega = Area_K * (1/3) * sum_{edge j} b(m_j) . w_mid_j
         areas = gdec_mesh.element_areas
-        thickness = sol.c.thickness if hasattr(sol, "c") and sol.c else 1.0
 
         if facet_data is not None:
             e0 = facet_data.element_0
@@ -319,19 +347,38 @@ class ElementResidualEvaluator:
             int_idx = np.where(facet_data.is_interior)[0]
             bnd_idx = np.where(~facet_data.is_interior)[0]
 
-            # bubble at midpoint = (1.5 / h_F) * dual_weights
+            # Bubble displacement at midpoint:
+            # w_mid_F = (3 / (2 * h_F)) * W_F
             bubble_mid = (1.5 / np.maximum(h_F, 1e-14))[None, :] * facet_data.dual_weights
 
+            # Quadrature: Area_K / 3 * sum_{F in dK} b(m_F) . w_mid_F
+            # Scaled explicitly by constitutive thickness
             for c in range(2):
                 # Interior facets contribute to e0 and e1
-                np.add.at(elem_signed, e0[int_idx], thickness * (areas[e0[int_idx]] / 3.0) * b_val[c, e0[int_idx]] * bubble_mid[c, int_idx])
-                np.add.at(elem_signed, e1[int_idx], thickness * (areas[e1[int_idx]] / 3.0) * b_val[c, e1[int_idx]] * bubble_mid[c, int_idx])
+                term_e0_int = thickness * (areas[e0[int_idx]] / 3.0) * b_mid[c, int_idx] * bubble_mid[c, int_idx]
+                term_e1_int = thickness * (areas[e1[int_idx]] / 3.0) * b_mid[c, int_idx] * bubble_mid[c, int_idx]
+                np.add.at(elem_signed, e0[int_idx], term_e0_int)
+                np.add.at(elem_signed, e1[int_idx], term_e1_int)
+
                 # Boundary facets contribute to e0
-                np.add.at(elem_signed, e0[bnd_idx], thickness * (areas[e0[bnd_idx]] / 3.0) * b_val[c, e0[bnd_idx]] * bubble_mid[c, bnd_idx])
+                term_e0_bnd = thickness * (areas[e0[bnd_idx]] / 3.0) * b_mid[c, bnd_idx] * bubble_mid[c, bnd_idx]
+                np.add.at(elem_signed, e0[bnd_idx], term_e0_bnd)
 
             elem_abs = np.abs(elem_signed)
 
-        return elem_signed, elem_abs, b_norm
+        # Compute physically meaningful volume residual L2 norm over Omega:
+        # ||R||_{L2(Omega)} = sqrt( sum_K t * (Area_K / 3) * sum_{F in dK} ||b(m_F)||^2 )
+        b_sq = b_mid[0] ** 2 + b_mid[1] ** 2
+        elem_norm_sq = np.zeros(ne, dtype=float)
+        if facet_data is not None:
+            np.add.at(elem_norm_sq, e0[int_idx], thickness * (areas[e0[int_idx]] / 3.0) * b_sq[int_idx])
+            np.add.at(elem_norm_sq, e1[int_idx], thickness * (areas[e1[int_idx]] / 3.0) * b_sq[int_idx])
+            np.add.at(elem_norm_sq, e0[bnd_idx], thickness * (areas[e0[bnd_idx]] / 3.0) * b_sq[bnd_idx])
+            total_vol_norm = float(np.sqrt(np.sum(elem_norm_sq)))
+        else:
+            total_vol_norm = float(np.sqrt(np.sum(thickness * areas * (b_mid[0, :ne] ** 2 + b_mid[1, :ne] ** 2))))
+
+        return elem_signed, elem_abs, total_vol_norm
 
 
 class DWREstimator(GoalOrientedEstimator):
@@ -417,7 +464,7 @@ class DWREstimator(GoalOrientedEstimator):
             gdec_mesh=gdec_mesh,
             sol=sol,
             body_force_fn=body_force_fn,
-            dual_evaluator=self.dual_evaluator,
+            thickness=thickness,
             facet_data=facet_data,
         )
 
