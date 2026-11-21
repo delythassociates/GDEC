@@ -1,0 +1,212 @@
+"""
+Tests for Conjugate Gradient and Preconditioners (Phase 4.4 & 4.5).
+"""
+
+import numpy as np
+import scipy.sparse as sp
+import pytest
+
+from gdec.fem.mesh import GDECMesh
+from gdec.fem.elasticity import ConstitutiveTensor, LinearElasticitySolver
+from gdec.fem.solvers import (
+    ConjugateGradientSolver,
+    IdentityPreconditioner,
+    JacobiPreconditioner,
+    IncompleteCholeskyPreconditioner,
+    AMGPreconditioner,
+    ILUPreconditioner,
+)
+import skfem as fem
+
+
+def test_cg_solver_exact_on_laplacian():
+    """Test CG on 1D discrete Laplacian A = [-1, 2, -1]."""
+    n = 20
+    diags = [-np.ones(n - 1), 2.0 * np.ones(n), -np.ones(n - 1)]
+    A = sp.diags(diags, [-1, 0, 1], format="csr")
+    b = np.ones(n)
+
+    cg = ConjugateGradientSolver(default_rtol=1e-10, default_atol=1e-14)
+    res = cg.solve(A, b)
+
+    assert res.converged is True
+    assert res.iterations <= n
+    assert res.residual_norm < 1e-10
+
+    # Compare with scipy direct solve
+    x_direct = sp.linalg.spsolve(A, b)
+    assert np.allclose(res.x, x_direct, atol=1e-9)
+
+
+def test_cg_early_exit_on_zero_rhs():
+    """A zero RHS should terminate immediately with zero iterations."""
+    A = sp.eye(10, format="csr")
+    b = np.zeros(10)
+    cg = ConjugateGradientSolver()
+    res = cg.solve(A, b)
+
+    assert res.converged is True
+    assert res.iterations == 0
+    assert np.all(res.x == 0.0)
+
+
+def test_cg_rejects_asymmetric_matrix_when_checked():
+    A = sp.csr_matrix([[2.0, 1.0], [0.0, 2.0]])
+    b = np.array([1.0, 1.0])
+    cg = ConjugateGradientSolver()
+
+    with pytest.raises(ValueError, match="not symmetric"):
+        cg.solve(A, b, check_eligibility=True)
+
+
+def test_cg_breakdown_detection_on_indefinite_matrix():
+    """An indefinite matrix should trigger non-positive curvature breakdown."""
+    # Saddle point matrix with negative eigenvalue
+    A = sp.csr_matrix([[2.0, 0.0], [0.0, -1.0]])
+    b = np.array([1.0, 1.0])
+    cg = ConjugateGradientSolver()
+
+    res = cg.solve(A, b, check_eligibility=False)
+    assert res.converged is False
+    assert res.breakdown_reason is not None
+    assert "curvature" in res.breakdown_reason.lower()
+
+
+def test_jacobi_preconditioner_validation():
+    # Matrix with negative diagonal must be rejected
+    A_bad = sp.csr_matrix([[-1.0, 0.5], [0.5, 2.0]])
+    with pytest.raises(ValueError, match="non-positive"):
+        JacobiPreconditioner(A_bad)
+
+    # Valid matrix
+    A_good = sp.csr_matrix([[4.0, 1.0], [1.0, 9.0]])
+    jac = JacobiPreconditioner(A_good)
+    r = np.array([4.0, 18.0])
+    z = jac.apply(r)
+    assert np.allclose(z, [1.0, 2.0])
+
+
+def test_incomplete_cholesky_preconditioner():
+    """Test genuine IC(0) on small SPD matrix."""
+    n = 10
+    diags = [-np.ones(n - 1), 2.5 * np.ones(n), -np.ones(n - 1)]
+    A = sp.diags(diags, [-1, 0, 1], format="csr")
+
+    ic = IncompleteCholeskyPreconditioner(A)
+    assert ic.L_csr.shape == (n, n)
+
+    cg_ident = ConjugateGradientSolver(default_rtol=1e-8)
+    cg_ic = ConjugateGradientSolver(default_rtol=1e-8)
+    b = np.ones(n)
+
+    res_ident = cg_ident.solve(A, b, preconditioner=IdentityPreconditioner())
+    res_ic = cg_ic.solve(A, b, preconditioner=ic)
+
+    assert res_ident.converged is True
+    assert res_ic.converged is True
+    assert res_ic.iterations <= res_ident.iterations
+
+
+def test_cantilever_cg_vs_direct_equivalence():
+    """Compare direct solver and PCG on cantilever beam FEM problem."""
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    mesh = GDECMesh.create_cantilever_mesh(width=2.0, height=0.5, nx=10, ny=5)
+    basis = solver.create_basis(mesh)
+    K = solver.assemble_stiffness(basis)
+    f = solver.assemble_traction(mesh, "right", 0.0, -1e6)
+    dofs_fixed = solver.find_dirichlet_dofs(basis, mesh, "left", ["x", "y"])
+
+    K_free, f_free, u_full, I = fem.condense(K, f, D=dofs_fixed)
+
+    # Direct solve
+    solve_fac = sp.linalg.factorized(K_free.tocsc())
+    u_direct = solve_fac(f_free)
+
+    # Jacobi PCG
+    cg = ConjugateGradientSolver(default_rtol=1e-9, default_atol=1e-14)
+    res_jacobi = cg.solve(K_free, f_free, preconditioner=JacobiPreconditioner(K_free))
+
+    assert res_jacobi.converged is True
+
+    # Relative difference between direct and PCG displacements
+    rel_diff = np.linalg.norm(res_jacobi.x - u_direct) / np.linalg.norm(u_direct)
+    assert rel_diff < 1e-7
+
+    # QoI comparison
+    g = solver.assemble_qoi_adjoint_vector(mesh, "right", "y")
+    g_free = g[I]
+    qoi_direct = float(np.dot(g_free, u_direct))
+    qoi_pcg = float(np.dot(g_free, res_jacobi.x))
+    rel_qoi_err = abs(qoi_pcg - qoi_direct) / abs(qoi_direct)
+    assert rel_qoi_err < 1e-7
+
+
+def test_qoi_accuracy_vs_cg_tolerance():
+    """Verify that relaxing CG tolerance systematically affects QoI accuracy."""
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    mesh = GDECMesh.create_cantilever_mesh(width=2.0, height=0.5, nx=8, ny=4)
+    basis = solver.create_basis(mesh)
+    K = solver.assemble_stiffness(basis)
+    f = solver.assemble_traction(mesh, "right", 0.0, -1e6)
+    dofs_fixed = solver.find_dirichlet_dofs(basis, mesh, "left", ["x", "y"])
+
+    K_free, f_free, _, I = fem.condense(K, f, D=dofs_fixed)
+    g = solver.assemble_qoi_adjoint_vector(mesh, "right", "y")
+    g_free = g[I]
+
+    # Reference solution with tight tolerance
+    solve_fac = sp.linalg.factorized(K_free.tocsc())
+    u_ref = solve_fac(f_free)
+    qoi_ref = float(np.dot(g_free, u_ref))
+
+    tolerances = [1e-2, 1e-4, 1e-6, 1e-8]
+    qoi_errors = []
+
+    cg = ConjugateGradientSolver()
+    prec = JacobiPreconditioner(K_free)
+
+    for tol in tolerances:
+        res = cg.solve(K_free, f_free, preconditioner=prec, rtol=tol, atol=1e-15)
+        assert res.converged is True
+        qoi_val = float(np.dot(g_free, res.x))
+        rel_qoi_err = abs(qoi_val - qoi_ref) / abs(qoi_ref)
+        qoi_errors.append(rel_qoi_err)
+
+    # Looser tolerance (1e-2) has larger error than tight tolerance (1e-8)
+    assert qoi_errors[0] >= qoi_errors[-1]
+    assert qoi_errors[-1] < 1e-7
+
+
+def test_amg_preconditioner_availability_contract():
+    """Verify AMGPreconditioner correctly detects availability and reports name."""
+    is_avail = AMGPreconditioner.is_available()
+    assert isinstance(is_avail, bool)
+
+    A = sp.eye(5, format="csr")
+    if not is_avail:
+        with pytest.raises(ImportError, match="PyAMG is not installed"):
+            AMGPreconditioner(A)
+
+
+def test_linear_elasticity_solver_pcg_integration():
+    """Verify LinearElasticitySolver.solve supports solver_type='pcg_jacobi'."""
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    mesh = GDECMesh.create_cantilever_mesh(width=2.0, height=0.5, nx=8, ny=4)
+
+    loads = [("right", 0.0, -1e6)]
+    bcs = [("left", ["x", "y"])]
+
+    sol_direct = solver.solve(mesh, loads=loads, fixed_boundaries=bcs, solver_type="direct")
+    sol_pcg = solver.solve(mesh, loads=loads, fixed_boundaries=bcs, solver_type="pcg_jacobi", solver_rtol=1e-8)
+
+    assert sol_pcg.solver_backend == "pcg_jacobi"
+    assert sol_pcg.primal_iterations > 0
+    assert sol_pcg.adjoint_iterations > 0
+    rel_disp_err = np.linalg.norm(sol_pcg.u - sol_direct.u) / np.linalg.norm(sol_direct.u)
+    assert rel_disp_err < 1e-6
+    rel_qoi_err = abs(sol_pcg.qoi - sol_direct.qoi) / abs(sol_direct.qoi)
+    assert rel_qoi_err < 1e-6
+

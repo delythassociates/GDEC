@@ -78,6 +78,9 @@ class FEMSolution:
     adjoint_solve_time_sec: float = 0.0
     total_solver_time_sec: float = 0.0
     factorization_reused: bool = True
+    solver_backend: str = "direct"
+    primal_iterations: int = 0
+    adjoint_iterations: int = 0
 
 
 class LinearElasticitySolver:
@@ -218,9 +221,13 @@ class LinearElasticitySolver:
         qoi_component: str = "y",
         solve_adjoint: bool = True,
         reuse_factorization: bool = True,
+        solver_type: str = "direct",
+        solver_rtol: float = 1e-8,
+        solver_atol: float = 1e-12,
     ) -> FEMSolution:
         """
         Solve primal and adjoint systems with discrete stage timings and optional factorization reuse.
+        Supports direct sparse solver (production default) and experimental Krylov solvers.
         """
         t_total_start = time.perf_counter()
 
@@ -252,42 +259,95 @@ class LinearElasticitySolver:
         K_free, f_free, u_full, I = fem.condense(K, f, D=dofs_fixed)
         t_condensation = time.perf_counter() - t0
 
-        if reuse_factorization:
-            # Step 3: Factorize once for symmetric K_free
+        primal_iters = 0
+        adjoint_iters = 0
+
+        if solver_type == "direct":
+            if reuse_factorization:
+                # Step 3: Factorize once for symmetric K_free
+                t0 = time.perf_counter()
+                solve_fac = spla.factorized(K_free.tocsc())
+                t_factor = time.perf_counter() - t0
+
+                # Step 4: Primal solve (fast triangular back-solve)
+                t0 = time.perf_counter()
+                u_free = solve_fac(f_free)
+                u = u_full.copy()
+                u[I] = u_free
+                t_primal = time.perf_counter() - t0
+
+                # Step 5: Adjoint solve (reuses same factor)
+                z = None
+                t_adjoint = 0.0
+                if solve_adjoint:
+                    t0 = time.perf_counter()
+                    g_free = g[I]
+                    z_free = solve_fac(g_free)
+                    z = np.zeros(basis.N)
+                    z[I] = z_free
+                    t_adjoint = time.perf_counter() - t0
+            else:
+                # Separate solves without factorization reuse
+                t0 = time.perf_counter()
+                u = fem.solve(K_free, f_free, u_full, I)
+                t_primal = time.perf_counter() - t0
+                t_factor = 0.0
+
+                z = None
+                t_adjoint = 0.0
+                if solve_adjoint:
+                    t0 = time.perf_counter()
+                    z = fem.solve(*fem.condense(K, g, D=dofs_fixed))
+                    t_adjoint = time.perf_counter() - t0
+        else:
+            # Experimental iterative Krylov solver
+            from gdec.fem.solvers.iterative import (
+                ConjugateGradientSolver,
+                IdentityPreconditioner,
+                JacobiPreconditioner,
+                IncompleteCholeskyPreconditioner,
+                AMGPreconditioner,
+            )
+
             t0 = time.perf_counter()
-            solve_fac = spla.factorized(K_free.tocsc())
+            if solver_type in ["cg", "identity"]:
+                prec = IdentityPreconditioner()
+            elif solver_type in ["pcg_jacobi", "jacobi"]:
+                prec = JacobiPreconditioner(K_free)
+            elif solver_type in ["pcg_ic0", "ic0"]:
+                prec = IncompleteCholeskyPreconditioner(K_free)
+            elif solver_type in ["pcg_amg", "amg"]:
+                prec = AMGPreconditioner(K_free)
+            else:
+                raise ValueError(
+                    f"Unknown solver_type: '{solver_type}'. "
+                    "Supported: 'direct', 'cg', 'pcg_jacobi', 'pcg_ic0', 'pcg_amg'."
+                )
             t_factor = time.perf_counter() - t0
 
-            # Step 4: Primal solve (fast triangular back-solve)
-            t0 = time.perf_counter()
-            u_free = solve_fac(f_free)
+            cg = ConjugateGradientSolver(default_rtol=solver_rtol, default_atol=solver_atol)
+            res_primal = cg.solve(K_free, f_free, preconditioner=prec)
+            if not res_primal.converged:
+                import warnings
+                warnings.warn(f"Primal CG did not converge: {res_primal.breakdown_reason or 'max iterations reached'}")
+
             u = u_full.copy()
-            u[I] = u_free
-            t_primal = time.perf_counter() - t0
+            u[I] = res_primal.x
+            t_primal = res_primal.time_sec
+            primal_iters = res_primal.iterations
 
-            # Step 5: Adjoint solve (reuses same factor)
             z = None
             t_adjoint = 0.0
             if solve_adjoint:
-                t0 = time.perf_counter()
                 g_free = g[I]
-                z_free = solve_fac(g_free)
+                res_adj = cg.solve(K_free, g_free, preconditioner=prec)
+                if not res_adj.converged:
+                    import warnings
+                    warnings.warn(f"Adjoint CG did not converge: {res_adj.breakdown_reason or 'max iterations reached'}")
                 z = np.zeros(basis.N)
-                z[I] = z_free
-                t_adjoint = time.perf_counter() - t0
-        else:
-            # Separate solves without factorization reuse
-            t0 = time.perf_counter()
-            u = fem.solve(K_free, f_free, u_full, I)
-            t_primal = time.perf_counter() - t0
-            t_factor = 0.0
-
-            z = None
-            t_adjoint = 0.0
-            if solve_adjoint:
-                t0 = time.perf_counter()
-                z = fem.solve(*fem.condense(K, g, D=dofs_fixed))
-                t_adjoint = time.perf_counter() - t0
+                z[I] = res_adj.x
+                t_adjoint = res_adj.time_sec
+                adjoint_iters = res_adj.iterations
 
         qoi = float(g @ u)
         qoi_mm = qoi * 1000.0
@@ -310,6 +370,9 @@ class LinearElasticitySolver:
             adjoint_solve_time_sec=t_adjoint,
             total_solver_time_sec=t_total,
             factorization_reused=reuse_factorization,
+            solver_backend=solver_type,
+            primal_iterations=primal_iters,
+            adjoint_iterations=adjoint_iters,
         )
 
     def check_reactions_equilibrium(

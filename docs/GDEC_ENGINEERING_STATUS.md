@@ -79,15 +79,33 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 | **Refinement Time Accounting** | **TESTED** | `src/gdec/benchmark/runner.py` | Refinement time included in total execution cost. |
 | **Equal-Accuracy Interpolation** | **TESTED** | `tests/test_v02_evaluator.py`, `docs/GOAL_ORIENTED_ADAPTIVITY_REPORT.md` | Interpolates DOFs, wall time, and memory required to achieve target reference accuracy. |
 
+### 2.5 Linear Solvers, Preconditioning & Matrix Diagnostics (Phase 4)
+
+| Capability / Subsystem | Current State | Verification Evidence / Reference | Notes & Limitations |
+| :--- | :--- | :--- | :--- |
+| **Stiffness Matrix Diagnostics** | **NUMERICALLY VERIFIED** | `tests/test_matrix_diagnostics.py`, `docs/MATRIX_CONDITIONING_REPORT.md` | Reports dimensions, NNZ, sparsity, $\delta_{\mathrm{sym}}$, $\lambda_{\min}$, $\lambda_{\max}$, $\kappa_2$, null modes, warnings. |
+| **Matrix Symmetry Metric $\delta_{\mathrm{sym}}$** | **NUMERICALLY VERIFIED** | `tests/test_matrix_diagnostics.py`, `src/gdec/fem/matrix_diagnostics.py` | Evaluates relative Frobenius defect; verified $\le 5.78 \times 10^{-17}$ across meshes, materials, and distortions. |
+| **Rigid-Body Null Mode Detection** | **NUMERICALLY VERIFIED** | `tests/test_matrix_diagnostics.py`, `docs/MATRIX_CONDITIONING_REPORT.md` | Detects exactly 3 zero modes for unconstrained body, 1 mode for roller, 0 for clamped cantilever. |
+| **Conditioning Scaling $\mathcal{O}(h^{-2})$** | **NUMERICALLY VERIFIED** | `docs/CONDITIONING_SCALING_STUDY.md` | Scaling verified under quasi-uniform mesh refinement ($\kappa_2 \propto N$) and aspect ratio distortion ($\kappa_2 \propto AR^2$). |
+| **Volumetric Locking & Near-Incompressibility** | **NUMERICALLY VERIFIED** | `docs/CONDITIONING_SCALING_STUDY.md` | Contrast verified: plane stress remains bounded ($\kappa_2 \approx 10^5$), plane strain explodes ($\kappa_2 \approx 2.2 \times 10^6$ at $\nu=0.499$). |
+| **Direct Sparse Solver (SuperLU via `factorized`)** | **NUMERICALLY VERIFIED** | `docs/SOLVER_RECONNAISSANCE.md`, `docs/SOLVER_PERFORMANCE_BENCHMARK.md` | Identified as SuperLU $P_r A P_c = L U$ (not sparse Cholesky). Reference solver in GDEC production. |
+| **Primal-Adjoint Factorization Reuse** | **NUMERICALLY VERIFIED** | `tests/test_v02_profiling_and_reuse.py`, `docs/SOLVER_PERFORMANCE_BENCHMARK.md` | Factorization computed once; reused across primal and adjoint solves, yielding 4.1x–8.7x wall-clock speedup over PCG in 2D. |
+| **Conjugate Gradient Solver** | **NUMERICALLY VERIFIED** | `tests/test_iterative_solvers.py`, `src/gdec/fem/solvers/iterative.py` | Standard PCG for SPD systems with breakdown detection (non-positive curvature, inner-product underflow) and convergence history. |
+| **Jacobi Preconditioner** | **NUMERICALLY VERIFIED** | `tests/test_iterative_solvers.py`, `src/gdec/fem/solvers/iterative.py` | Strict diagonal positivity validation ($D_{ii} > 0$), modest 6–10% iteration reduction in 2D elasticity. |
+| **Incomplete Cholesky Preconditioner $IC(0)$** | **NUMERICALLY VERIFIED** | `tests/test_iterative_solvers.py`, `src/gdec/fem/solvers/iterative.py` | True symmetric $IC(0)$ sparse factorization with breakdown detection; 4.17x iteration reduction. |
+| **Algebraic Multigrid (PyAMG Interface)** | **IMPLEMENTED** | `tests/test_iterative_solvers.py`, `src/gdec/fem/solvers/iterative.py` | Optional wrapper around PyAMG smoothed aggregation; reports availability and provides clear import guidance when absent. |
+| **Solver Selection Architecture & Policy** | **TESTED** | `docs/GDEC_SOLVER_SELECTION_DESIGN.md` | Decoupled eligibility analysis, performance prediction, and selection policy. Direct solver retained as production default. |
+| **Engineering QoI Tolerance Scaling** | **NUMERICALLY VERIFIED** | `tests/test_iterative_solvers.py`, `docs/SOLVER_PERFORMANCE_BENCHMARK.md` | Verified super-convergence of QoI error ($e_{\mathrm{rel},J} \sim 10^{-8}$ at $\text{rtol} = 10^{-2}$). |
+
 ---
 
 ## 3. Test Suite Summary Statistics
 
-- **Total Unit & Regression Tests:** 141 tests.
-- **Passing:** 141 (100%).
+- **Total Unit & Regression Tests:** 157 tests.
+- **Passing:** 157 (100%).
 - **Failing:** 0.
 - **Skipped / XFailed:** 0.
-- **Total Test Execution Time:** ~8.8 seconds.
+- **Total Test Execution Time:** ~7.4 seconds.
 - **Python Compilation (`compileall`):** Clean across all `src/` and `tests/` modules (Python 3.10–3.13).
 - **Static Analysis (Ruff):** No syntax errors or import execution issues in compiler/FEM code.
 
@@ -95,15 +113,13 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 ## 4. Next Priorities
 
-1. **Phase 3 (Complete — Phase 3.1, 3.2, 3.3 Scope Closure):**
-   - Corrected boundary-facet classification (`is_bnd = ~facet_data.is_interior`), preventing interior facets connecting Dirichlet nodes from having their dual weights zeroed.
-   - Re-derived first-principles cubic Hermite edge bubble integration with orientation invariance and dimensional consistency; exposed pure production helper `compute_edge_bubble_integral()`, with `DualWeightEvaluator.evaluate()` calling it directly.
-   - Explicit body-force scope: exact degree-2 triangular midpoint quadrature restricted and strictly enforced for globally constant body force vectors $\mathbf{b}(\mathbf{x}) = (b_x, b_y) = \text{const}$ over the complete domain. Explicit contract validation accepts 2-component constant vectors, strictly checks finiteness (rejecting NaN/Inf and invalid dimensions), and rejects arbitrary callables with a clear `TypeError` diagnostic. Affine Neumann tractions verified separately in manufactured BVP.
-   - Primal body-force assembly (`assemble_body_force`) and DWR estimator use compatible degree-2 quadrature on triangles.
-   - Explicit thickness scaling in volume residual contribution ($t \int_K \dots$) and dimensional $L_2$ volume residual norm ($\|\mathbf{R}\|_{L_2(\Omega)} \propto \sqrt{t}$).
-   - Comprehensive manufactured 2D linear-elasticity BVP with body force: verified primal $O(h^2)$ convergence, non-zero volume residuals, interior traction jumps, boundary residuals, and asymptotic effectivity convergence ($0.5356 \to 0.7686 \to 0.8811 \to 0.9364$).
-   - Observed convergence order $p_{\text{obs}} = \log_2(|J_h - J_{h/2}| / |J_{h/2} - J_{h/4}|) \approx 2.0$ independently verified.
-   - Richardson extrapolation documented as an asymptotic estimate, with `is_certified_dwr_bound = False`.
-   - Multi-strategy benchmark reconciliation confirming DWR achieves 20–24% DOF reduction and 44% peak memory reduction, without wall-clock advantage in 2D linear FEM on CPU.
-2. **Phase 4:** Solver and numerical conditioning audit (evaluate preconditioned conjugate gradient applicability vs. sparse direct solve, condition number scaling under adaptive red-green refinement).
-3. **Phase 5:** Benchmark protocol re-registration and reproducibility checks.
+1. **Phase 4 (Complete — Solver Reliability, Matrix Conditioning & Iterative Solver Research):**
+   - Established complete reconnaissance of direct sparse solver: confirmed `scipy.sparse.linalg.factorized` uses SuperLU ($P_r A P_c = L U$), not sparse Cholesky.
+   - Built modular `src/gdec/fem/matrix_diagnostics.py`: evaluated $\delta_{\mathrm{sym}} \le 5.78 \times 10^{-17}$, detected rigid-body modes (3 modes for free body, 1 mode for roller, 0 for clamped), and evaluated $\kappa_2(K_{ff})$ via sparse ARPACK `eigsh` and dense exact solvers.
+   - Executed conditioning scaling study: validated $\mathcal{O}(h^{-2}) = \mathcal{O}(N)$ scaling under mesh refinement, $\mathcal{O}(AR^2)$ distortion scaling, and near-incompressibility volumetric locking in plane strain ($\kappa_2 \to 2.19 \times 10^6$ at $\nu=0.499$).
+   - Implemented isolated Krylov framework in `src/gdec/fem/solvers/iterative.py`: standard CG with breakdown and curvature checks, Jacobi preconditioner, true symmetric $IC(0)$ incomplete Cholesky, and PyAMG interface.
+   - Clarified mathematical distinction: documented why `scipy.sparse.linalg.spilu` (ILU) is non-symmetric and invalid for ordinary CG.
+   - Established direct-solver performance superiority in 2D linear FEM: single-factorization reuse makes SuperLU 4.1x–8.7x faster than PCG across all tested mesh scales.
+   - Discovered super-convergence of engineering QoI vs algebraic tolerance: $\text{rtol} = 10^{-2}$ yields $10^{-8}$ relative QoI accuracy, saving 30–40% of iterations.
+   - Designed solver selection architecture in `docs/GDEC_SOLVER_SELECTION_DESIGN.md`, maintaining direct solver as production default and exposing iterative solvers via opt-in interface.
+2. **Phase 5:** Benchmark protocol re-registration and reproducibility checks.
