@@ -43,7 +43,7 @@ flowchart TD
         Solver --> Stiffness["Stiffness Assembly (P1 Triangles)"]
         Solver --> PrimalSolve["Primal Displacement Solve (Ku = f)"]
         Solver --> AdjointSolve["Dual Adjoint Solve (Kz = g)"]
-        Solver --> FactorReuse["Single-Factorization Cholesky/LU Reuse"]
+        Solver --> FactorReuse["Single-Factorization SuperLU Reuse"]
     end
 
     subgraph Adaptivity["Adaptivity & Postprocessing"]
@@ -91,7 +91,7 @@ flowchart TD
 | `src/gdec/core/runtime.py` | `GDECRuntime` | Adaptive iteration loop driver | `fem`, `core`, `ir` | Tested |
 | `src/gdec/core/telemetry.py` | `TelemetryTracker` | Iteration-by-iteration telemetry records | Dataclasses | Tested |
 | `src/gdec/fem/mesh.py` | `GDECMesh` | Conforming triangular mesh wrapping `skfem.MeshTri` | `skfem`, `numpy` | Numerically Verified |
-| `src/gdec/fem/elasticity.py` | `LinearElasticitySolver`, `ConstitutiveTensor` | Bilinear stiffness, load vectors, Cholesky solve, adjoint solve | `skfem`, `scipy.sparse`, `numpy` | Numerically Verified |
+| `src/gdec/fem/elasticity.py` | `LinearElasticitySolver`, `ConstitutiveTensor` | Bilinear stiffness, load vectors, SuperLU direct solve, adjoint solve | `skfem`, `scipy.sparse`, `numpy` | Numerically Verified |
 | `src/gdec/fem/boundary_conditions.py` | `BoundaryConditionHandler` | Dirichlet boundary condition enforcement | `skfem` | Tested |
 | `src/gdec/fem/estimators.py` | `RefinementEstimator`, `GoalOrientedEstimator` | Uniform, ZZ recovery, and goal-aware indicators | `skfem`, `numpy` | Tested |
 | `src/gdec/fem/adaptivity.py` | `AdaptivityController` | Element marking and local refinement orchestration | `mesh`, `numpy` | Tested |

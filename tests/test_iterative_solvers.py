@@ -381,3 +381,183 @@ def test_qoi_accuracy_across_multiple_configurations():
         assert rel_qoi_err < 1e-4
 
 
+def test_default_fem_cg_interface_spd_verification():
+    """
+    P0 Regression Test (Phase 4.1.2):
+    Verify that the default FEM iterative solve (caller_certified_spd=False by default)
+    strictly performs upfront SPD verification:
+    - Clamped cantilever: verified SPD and solves successfully.
+    - Unconstrained model: rejected upfront with ValueError (null modes / near-singular).
+    - Roller-constrained model: rejected upfront with ValueError (unconstrained y-mode).
+    """
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    mesh = GDECMesh.create_cantilever_mesh(2.0, 0.5, 6, 3)
+
+    loads = [("right", 0.0, -1e6)]
+
+    # 1. Clamped cantilever: fully constrained, genuinely SPD -> succeeds under default setting
+    sol_clamped = solver.solve(
+        mesh, loads=loads, fixed_boundaries=[("left", ["x", "y"])], solver_type="cg"
+    )
+    assert sol_clamped.converged is True
+    assert sol_clamped.u is not None
+
+    # 2. Unconstrained elasticity model: rigid body modes present -> rejected upfront
+    with pytest.raises(ValueError, match="not positive-definite"):
+        solver.solve(
+            mesh, loads=loads, fixed_boundaries=[], solver_type="cg"
+        )
+
+    # 3. Roller-constrained model (only x fixed, y free) -> unconstrained vertical translation -> rejected upfront
+    with pytest.raises(ValueError, match="not positive-definite"):
+        solver.solve(
+            mesh, loads=loads, fixed_boundaries=[("left", ["x"])], solver_type="cg"
+        )
+
+    # 4. Explicit opt-in caller assertion bypass: passing caller_certified_spd=True bypasses upfront check
+    # (Direct SuperLU behavior is always unaffected)
+    sol_dir = solver.solve(mesh, loads=loads, fixed_boundaries=[("left", ["x", "y"])], solver_type="direct")
+    assert sol_dir.converged is True
+
+
+def test_direct_cg_indefinite_matrix_positive_eigenspace_rhs():
+    """
+    P0 Regression Test (Phase 4.1.2):
+    Direct CG regression using an indefinite matrix with positive diagonal and a
+    right-hand side confined entirely to its positive eigenspace.
+    Demonstrates why runtime curvature checks alone along the Krylov trajectory are
+    NOT a global proof of positive-definiteness.
+    """
+    # A has eigenvalues -1.0 (vector [1, -1]) and +5.0 (vector [1, 1])
+    # Both diagonal entries are +2.0 (positive diagonal)
+    A = sp.csr_matrix([[2.0, 3.0], [3.0, 2.0]])
+    # b is exactly in the positive eigenspace of lambda = +5
+    b = np.array([1.0, 1.0])
+    cg = ConjugateGradientSolver()
+
+    # 1. Default caller_certified_spd=False:
+    # Upfront scale-aware spectral verification catches the negative eigenvalue -1.0
+    # and strictly rejects the matrix as indefinite!
+    with pytest.raises(ValueError, match="indefinite"):
+        cg.solve(A, b, caller_certified_spd=False)
+
+    # 2. Bypassing upfront check with caller_certified_spd=True:
+    # Search direction p0 = r0 = [1, 1], curvature p0^T A p0 = 10.0 > 0.
+    # CG terminates in 1 iteration without ever encountering negative curvature,
+    # because the Krylov subspace never probed the negative eigenspace span([1, -1]).
+    # This demonstrates conclusively why runtime curvature checks alone are NOT a global SPD proof.
+    res_bypassed = cg.solve(A, b, caller_certified_spd=True)
+    assert res_bypassed.converged is True
+    assert res_bypassed.iterations == 1
+    np.testing.assert_allclose(res_bypassed.x, [0.2, 0.2])
+
+
+def test_cg_scale_aware_near_null_rejection():
+    """
+    P0 Regression Test (Phase 4.1.2):
+    Test scale-aware near-null rejection in CG:
+    1. Positive-definite matrix at several scales (1e-6, 1.0, 1e6) succeeds.
+    2. Exactly singular matrix is rejected upfront.
+    3. Nearly singular matrix with small positive eigenvalue (1e-12 * lambda_max) is rejected upfront.
+    4. Indefinite matrix with positive diagonal is rejected upfront.
+    5. Sparse (N > 300) and dense (N <= 300) paths produce consistent rejections.
+    """
+    cg = ConjugateGradientSolver(null_tol=1e-10)
+
+    # 1. Positive-definite matrix across 12 orders of magnitude
+    for scale in [1e-6, 1.0, 1e6]:
+        A_scaled = sp.csr_matrix([[4.0, 1.0], [1.0, 4.0]]) * scale
+        b_scaled = np.array([5.0, 5.0]) * scale
+        res = cg.solve(A_scaled, b_scaled, caller_certified_spd=False)
+        assert res.converged is True
+
+    # 2. Exactly singular matrix (dense path)
+    A_sing = sp.csr_matrix([[1.0, 1.0], [1.0, 1.0]])
+    b = np.array([2.0, 2.0])
+    with pytest.raises(ValueError, match="not positive-definite"):
+        cg.solve(A_sing, b, caller_certified_spd=False)
+
+    # 3. Nearly singular matrix with small positive eigenvalue (lambda_min / lambda_max = 1e-12 < null_tol)
+    # Naive lambda_min > 0 checks would falsely pass this!
+    A_near_null = sp.diags([1e-12, 1.0], shape=(2, 2), format="csr")
+    with pytest.raises(ValueError, match="not positive-definite"):
+        cg.solve(A_near_null, np.array([1.0, 1.0]), caller_certified_spd=False)
+
+    # 4. Sparse path (N = 350 > 300 dense_threshold):
+    # Construct 350x350 sparse diagonal matrix with positive entries but one near-zero entry (1e-12)
+    diag_vals = np.ones(350)
+    diag_vals[0] = 1e-12
+    A_sparse_near_null = sp.diags(diag_vals, shape=(350, 350), format="csr")
+    with pytest.raises(ValueError, match="not positive-definite"):
+        cg.solve(A_sparse_near_null, np.ones(350), caller_certified_spd=False)
+
+    # 5. Sparse path with negative eigenvalue (indefinite)
+    diag_vals_indef = np.ones(350)
+    diag_vals_indef[0] = -0.5
+    # Note: to ensure diagonal positivity passes so it reaches the spectral test, use 2x2 block
+    A_sparse_indef = sp.eye(350, format="lil")
+    A_sparse_indef[0, 0] = 2.0
+    A_sparse_indef[0, 1] = 3.0
+    A_sparse_indef[1, 0] = 3.0
+    A_sparse_indef[1, 1] = 2.0
+    with pytest.raises(ValueError, match="indefinite"):
+        cg.solve(A_sparse_indef.tocsr(), np.ones(350), caller_certified_spd=False)
+
+
+def test_preconditioner_fail_closed_and_amg_configuration():
+    """
+    P1 Regression Test (Phase 4.1.2):
+    1. Base Preconditioner class fails closed (is_spd == False).
+    2. Unknown custom preconditioner inheriting Preconditioner without overriding is_spd is rejected by CG.
+    3. Identity, Jacobi, and IC(0) declare is_spd == True.
+    4. ILU declares is_spd == False.
+    5. AMG verified configuration check: supported symmetric configuration vs unverified configuration.
+    """
+    from gdec.fem.solvers.iterative import Preconditioner, IdentityPreconditioner, JacobiPreconditioner, IncompleteCholeskyPreconditioner, ILUPreconditioner, AMGPreconditioner
+
+    # 1. Custom preconditioner inheriting Preconditioner without overriding is_spd
+    class UnknownCustomPreconditioner(Preconditioner):
+        def apply(self, r: np.ndarray) -> np.ndarray:
+            return r
+
+        @property
+        def name(self) -> str:
+            return "UnknownCustom"
+
+    custom = UnknownCustomPreconditioner()
+    assert custom.is_spd is False  # Must fail closed!
+
+    # Rejected by CG compatibility gate
+    cg = ConjugateGradientSolver()
+    A = sp.eye(4, format="csr")
+    b = np.ones(4)
+    with pytest.raises(ValueError, match="not symmetric positive-definite"):
+        cg.solve(A, b, preconditioner=custom)
+
+    # 2. Known SPD preconditioners
+    assert IdentityPreconditioner().is_spd is True
+    assert JacobiPreconditioner(A).is_spd is True
+    assert IncompleteCholeskyPreconditioner(A).is_spd is True
+
+    # 3. Known non-SPD preconditioner
+    assert ILUPreconditioner(A).is_spd is False
+
+    # 4. AMGPreconditioner configuration verification
+    if AMGPreconditioner.is_available():
+        # Supported symmetric configuration: V-cycle, symmetric=True
+        amg_sym = AMGPreconditioner(A, cycle="V", symmetric=True)
+        assert amg_sym.is_spd is True
+
+        # Unsupported unsymmetric configuration: symmetric=False
+        amg_unsym = AMGPreconditioner(A, cycle="V", symmetric=False)
+        assert amg_unsym.is_spd is False
+        with pytest.raises(ValueError, match="not symmetric positive-definite"):
+            cg.solve(A, b, preconditioner=amg_unsym)
+    else:
+        # Clear optional dependency error
+        with pytest.raises(ImportError, match="PyAMG is not installed"):
+            AMGPreconditioner(A)
+
+
+

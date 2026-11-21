@@ -68,21 +68,19 @@ If a matrix fails CG eligibility (e.g., asymmetric or non-positive-definite due 
 Based on Phase 4 empirical measurements across 2D linear elasticity problems ($N \in [56, 9,120]$ DOFs) on the standardized cantilever benchmark:
 
 ### 3.1 Empirical Wall-Clock Scaling Models
-From log-log regression across the measured benchmark dataset ($N \ge 992$ asymptotic regime):
+GDEC explicitly distinguishes between three tiers of performance evidence:
+1. **Measured Wall-Clock Benchmarks (Primary Ground Truth):** Direct wall-clock timings measured under standardized repetitions on identical hardware (cantilever shear benchmark, $N \in [56, 9,120]$).
+2. **Empirical Power-Law Fits (Calibrated Interpolations):** Calibrated least-squares regressions across the measured dataset range $N \in [992, 9,120]$:
+   - **Direct Sparse Solver (SuperLU via `factorized` with Reuse):**
+     $$T_{\text{direct, total}}(N) \approx 2.9 \times 10^{-4} \cdot N^{1.31} \text{ ms} \quad (R^2 = 0.9992)$$
+     Factorization accounts for $>92\%$ of total direct time; subsequent triangular backsolves take $< 1.85\text{ ms}$ even at $N=9,120$.
+   - **Preconditioned Conjugate Gradient (Jacobi-PCG without Reuse):**
+     $$T_{\text{pcg, total}}(N) \approx 2.5 \times 10^{-2} \cdot N^{0.98} \text{ ms} \quad (R^2 = 0.9984)$$
+     Preconditioner setup time is negligible ($\le 0.12\text{ ms}$), but each solve requires independent Krylov iterations ($N_{\text{iter}} \approx 12 \sqrt{N}$), totaling $2,184$ iterations for primal and adjoint combined at $N=9,120$.
+   - **Range of Validity & Extrapolation Limits:** These power-law fits are strictly descriptive of the 2D cantilever benchmark on the measured range $N \in [56, 9,120]$. They must not be extrapolated into universal asymptotic crossover claims or applied indiscriminately to 3D domains or ill-conditioned meshes.
+3. **Theoretical Asymptotic Complexity (Upper Bounds):** For 2D sparse direct methods (nested dissection / SuperLU), theoretical factorization complexity is $\mathcal{O}(N^{1.5})$ with backsolve $\mathcal{O}(N \log N)$. For CG/PCG, complexity is $\mathcal{O}(N \cdot \sqrt{\kappa_2})$.
 
-1. **Direct Sparse Solver (SuperLU via `factorized` with Reuse):**
-   - Total primal + adjoint solve time:
-     $$T_{\text{direct, total}}(N) \approx 2.9 \times 10^{-4} \cdot N^{1.31} \text{ ms}$$
-     (e.g., $2.51\text{ ms}$ at $N=992$; $16.17\text{ ms}$ at $N=4,032$; $46.21\text{ ms}$ at $N=9,120$).
-   - Factorization accounts for over $92\%$ of total direct time; subsequent triangular backsolves take $< 1.85\text{ ms}$ even at $N=9,120$.
-
-2. **Preconditioned Conjugate Gradient (Jacobi-PCG without Reuse):**
-   - Total primal + adjoint solve time:
-     $$T_{\text{pcg, total}}(N) \approx 2.5 \times 10^{-2} \cdot N^{0.98} \text{ ms}$$
-     (e.g., $21.78\text{ ms}$ at $N=992$; $69.96\text{ ms}$ at $N=4,032$; $190.54\text{ ms}$ at $N=9,120$).
-   - Preconditioner setup time is negligible ($\le 0.12\text{ ms}$), but each solve requires independent Krylov iterations ($N_{\text{iter}} \approx 12 \sqrt{N}$), totaling $2,184$ iterations for primal and adjoint combined at $N=9,120$.
-
-### 3.2 Measured Speedup Ratio and Crossover Analysis
+### 3.2 Measured Speedup Ratio and Empirical Crossover Analysis
 Comparing total wall-clock times $T_{\text{pcg, total}}$ to $T_{\text{direct, total}}$ directly from the empirical benchmark table:
 
 | DOFs $N$ | Direct Total Time (ms) | Jacobi-PCG Total Time (ms) | Measured Ratio $\frac{T_{\text{pcg}}}{T_{\text{direct}}}$ |
@@ -95,7 +93,7 @@ Comparing total wall-clock times $T_{\text{pcg, total}}$ to $T_{\text{direct, to
 
 **Summary of Empirical Scaling Findings:**
 - Across all tested 2D discretization scales ($N \le 9,120$), **the direct sparse solver with factorization reuse is between $4.1\times$ and $10.3\times$ faster than Jacobi-PCG**.
-- Because the direct solver scales as $\mathcal{O}(N^{1.31})$ in 2D while PCG scales as $\mathcal{O}(N^{1.5})$ theoretically (or $\mathcal{O}(N)$ when memory-bandwidth-bound in Python/NumPy), direct factorization with reuse maintains a decisive speed advantage for all typical 2D mesh sizes ($N < 50,000$).
+- Because the direct solver scales as $\mathcal{O}(N^{1.31})$ in 2D while PCG scales as $\mathcal{O}(N^{0.98})$ empirically (due to memory-bandwidth bounds in Python/NumPy loops), direct factorization with reuse maintains a decisive speed advantage for all typical 2D mesh sizes ($N < 50,000$).
 - Krylov methods become competitive only for 3D elasticity where direct fill-in scales as $\mathcal{O}(N^2)$ and memory exceeds RAM, or when multiple right-hand sides are not required.
 
 ---
@@ -112,7 +110,6 @@ Comparing total wall-clock times $T_{\text{pcg, total}}$ to $T_{\text{direct, to
    - `solver_type="pcg_jacobi"` (Experimental Jacobi-PCG).
    - `solver_type="pcg_ic0"` (Experimental $IC(0)$-PCG).
    - `solver_type="pcg_amg"` (Experimental AMG, available only when `pyamg` is installed).
-3. **Adaptive QoI-Driven Tolerance Calibration:**
-   When iterative solvers are selected for large-scale systems, the solver tolerance should be calibrated to the required engineering accuracy:
-   $$\text{rtol} = \min\left(10^{-4}, \, 0.1 \cdot \frac{\text{target\_accuracy\_pct}}{100}\right)$$
-   For a $1\%$ target QoI accuracy, $\text{rtol} = 10^{-3}$ provides $10^{-8}$ engineering QoI precision, reducing Krylov iterations by $30\text{--}40\%$ compared to standard $\text{rtol} = 10^{-8}$.
+3. **User-Controlled Linear Solver Tolerance Policy:**
+   Linear solver convergence tolerances (`solver_rtol`, `solver_atol`, and `solver_max_iter`) must be explicitly controlled by the user or problem specification. GDEC does not employ fixed heuristic algebraic tolerance scaling formulas.
+   Future goal-oriented tolerance allocation will require validated, problem-specific adjoint error estimates (such as dual-weighted residual bounds) that rigorously relate algebraic residuals to Quantity of Interest discretization errors, rather than uncertified global formulas.

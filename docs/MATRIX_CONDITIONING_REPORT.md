@@ -12,9 +12,9 @@ The condensed linear system governing the free displacements is:
 $$K_{ff} u_f = f_f - K_{fd} u_d$$
 
 ### 1.1 Matrix Symmetry Metric
-Because the constitutive tensor satisfies $C_{ij} = C_{ji}$ and the bilinear form is symmetric ($a(u, v) = a(v, u)$), $K_{ff}$ is theoretically symmetric. To evaluate machine precision deviations and assembly defects, GDEC defines the relative Frobenius symmetry defect:
-$$\delta_{\mathrm{sym}} = \frac{\|K_{ff} - K_{ff}^T\|_F}{\max(\|K_{ff}\|_F, \epsilon)}$$
-where $\epsilon = 10^{-15}$.
+Because the constitutive tensor satisfies $C_{ij} = C_{ji}$ and the bilinear form is symmetric ($a(u, v) = a(v, u)$), $K_{ff}$ is theoretically symmetric. To evaluate machine precision deviations and assembly defects, GDEC defines the strictly scale-invariant relative Frobenius symmetry defect:
+$$\delta_{\mathrm{sym}} = \frac{\|K_{ff} - K_{ff}^T\|_F}{\|K_{ff}\|_F}$$
+For the exact zero matrix ($\|K_{ff}\|_F = 0$), $\delta_{\mathrm{sym}} \equiv 0.0$. By removing arbitrary absolute denominator floors, this metric is strictly scale-invariant across at least 28 orders of magnitude ($c \in [10^{-14}, 10^{14}]$). If $\delta_{\mathrm{sym}} > \text{sym\_tol}$, the matrix is nonsymmetric; symmetric eigensolvers (`eigvalsh`, `eigsh`) are bypassed and SPD classification is declared inapplicable.
 
 ### 1.2 Positive Definiteness and Spectrum
 By Korn's inequality, when kinematic boundary conditions eliminate all rigid-body displacements (translations $T_x, T_y$ and in-plane rotation $R_z$), the strain energy is coercive:
@@ -79,6 +79,8 @@ For large sparse systems ($N > 400$ up to $100,000+$), dense conversion is prohi
   - `null_modes_detected`: The integer count of null modes discovered among the $k$ requested eigenvalues satisfying $|\lambda_i| \le \text{null\_tol} \times \text{norm\_scale}$.
   - `exact_nullity`: Returns the exact algebraic nullity in dense mode ($N \le 400$), and `None` in sparse mode to prevent false claims of complete nullspace dimension.
   - `has_null_modes`: Boolean flag indicating whether any null modes were detected.
+- **Nonsymmetric Matrix Protection:**
+  If $\delta_{\mathrm{sym}} > \text{sym\_tol}$, symmetric eigensolvers (`eigvalsh` and `eigsh`) are strictly bypassed. Sparse `eigsh` assumes symmetric operators and is skipped with an explicit diagnostic warning; dense analysis uses general eigensolves (`la.eigvals`) without discarding imaginary components. Both `is_positive_definite` and `is_cg_eligible` are strictly set to `False`.
 
 ### Validation of Agreement (Dense vs Sparse)
 On a $6 \times 4$ cantilever mesh ($N = 40$ free DOFs):

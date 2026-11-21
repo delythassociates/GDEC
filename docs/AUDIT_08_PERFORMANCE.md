@@ -20,7 +20,7 @@ The **factorization reuse optimization is genuinely implemented and active**. By
 ### 2.1 Formulation and Implementation
 In linear elasticity with homogeneous Dirichlet constraints:
 $$\mathbf{K}_{FF} \mathbf{u}_F = \mathbf{f}_F, \qquad \mathbf{K}_{FF}^T \mathbf{z}_F = \mathbf{g}_F$$
-Because $\mathbf{K}_{FF} = \mathbf{K}_{FF}^T$, both primal and adjoint systems share the exact same sparse Cholesky/LU matrix.
+Because $\mathbf{K}_{FF} = \mathbf{K}_{FF}^T$, both primal and adjoint systems share the exact same sparse SuperLU matrix.
 
 In `src/gdec/fem/elasticity.py` lines 220–239:
 ```python

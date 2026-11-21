@@ -100,7 +100,7 @@ To eliminate conflation between different stopping criteria, strategies are comp
    - Goal-oriented DWR and ZZ recovery achieve a **$20\%$ to $24\%$ reduction in required DOFs** compared to uniform refinement at equivalent accuracy targets (e.g. 478 DOFs vs 596 DOFs at 5% error; 911–989 DOFs vs 1,173 DOFs at 2.5% error).
    - Peak memory consumption under adaptive refinement is approximately **44% lower** than uniform refinement (~6.6 MB vs 11.8 MB).
 2. **Wall-Clock Time Trade-Off:**
-   - In 2D linear elasticity on CPU, sparse direct Cholesky factorizations are exceptionally fast ($< 30\text{ ms}$ for 2,000 DOFs).
+   - In 2D linear elasticity on CPU, sparse direct factorizations (SuperLU via `factorized`) are exceptionally fast ($< 30\text{ ms}$ for 2,000 DOFs).
    - Evaluating DWR facet jumps and patch gradient recoveries in pure Python introduces an indicator evaluation overhead of $\sim 26$–$57\text{ ms}$.
    - Consequently, **uniform refinement is faster in total wall-clock time** on small 2D linear problems (63.4 ms vs 142.1 ms at 2.5% error).
    - Adjoint solve overhead is negligible ($< 1.0\text{ ms}$ cumulative) because the primal stiffness factorization is reused.

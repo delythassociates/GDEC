@@ -200,3 +200,88 @@ def test_sparse_null_mode_multiplicity_and_detection():
     assert diag.is_positive_definite is False
     assert diag.is_cg_eligible is False
 
+
+def test_symmetry_defect_scale_invariance_across_24_orders():
+    """
+    P1 Regression Test (Phase 4.1.2):
+    Verify that relative symmetry defect calculation is strictly scale-invariant
+    across at least 24 orders of magnitude (1e-12 to 1e12 and beyond),
+    without arbitrary denominator floor distortions.
+    """
+    from gdec.fem.matrix_diagnostics import compute_symmetry_defect, analyze_stiffness_matrix
+
+    # Asymmetric test matrix from specification
+    # K = [[1.0, 1e-8], [0.0, 1.0]]
+    K_base = np.array([[1.0, 1e-8], [0.0, 1.0]])
+    expected_defect = float(np.linalg.norm(K_base - K_base.T, "fro") / np.linalg.norm(K_base, "fro"))
+
+    # Test scaling factors spanning 28 orders of magnitude
+    scale_factors = [1e-14, 1e-12, 1e-8, 1e-4, 1.0, 1e4, 1e8, 1e12, 1e14]
+
+    for c in scale_factors:
+        K_scaled = c * K_base
+        defect = compute_symmetry_defect(K_scaled)
+        np.testing.assert_allclose(
+            defect, expected_defect, rtol=1e-12,
+            err_msg=f"Symmetry defect changed under scale {c}!"
+        )
+
+        # Full analysis must consistently classify as asymmetric
+        diag = analyze_stiffness_matrix(K_scaled, sym_tol=1e-10)
+        assert diag.is_symmetric is False, f"Scaled matrix at scale {c} was falsely marked symmetric!"
+        assert diag.is_cg_eligible is False
+
+    # Symmetric test matrix
+    K_sym = np.array([[2.0, 1.0], [1.0, 2.0]])
+    for c in scale_factors:
+        defect_sym = compute_symmetry_defect(c * K_sym)
+        assert defect_sym <= 1e-15
+        diag_sym = analyze_stiffness_matrix(c * K_sym, sym_tol=1e-10)
+        assert diag_sym.is_symmetric is True
+        assert diag_sym.is_positive_definite is True
+
+    # Exact zero matrix
+    assert compute_symmetry_defect(np.zeros((3, 3))) == 0.0
+    assert compute_symmetry_defect(sp.csr_matrix((4, 4))) == 0.0
+
+
+def test_nonsymmetric_matrix_no_symmetric_eigensolvers():
+    """
+    P1 Regression Test (Phase 4.1.2):
+    Ensure that nonsymmetric matrices:
+    1. Are not analyzed using symmetric eigensolvers (eigvalsh or eigsh).
+    2. Do not have imaginary eigenvalue parts discarded to claim positive-definiteness.
+    3. Are strictly classified as is_positive_definite=False and is_cg_eligible=False.
+    4. Emit clear diagnostic warnings in both dense and sparse paths.
+    """
+    from gdec.fem.matrix_diagnostics import analyze_stiffness_matrix
+
+    # 1. Dense nonsymmetric matrix with positive real eigenvalue parts
+    # K = [[2.0, 5.0], [0.0, 2.0]] -> eigenvalues are 2.0, 2.0 (real positive), but matrix is asymmetric
+    K_dense_asym = np.array([[2.0, 5.0], [0.0, 2.0]])
+    diag_dense = analyze_stiffness_matrix(K_dense_asym, compute_spectrum=True, dense_threshold=400)
+    assert diag_dense.is_symmetric is False
+    assert diag_dense.is_positive_definite is False
+    assert diag_dense.is_cg_eligible is False
+    assert diag_dense.eigenvalue_method == "dense_general"
+    assert any("nonsymmetric" in w.lower() for w in diag_dense.warnings)
+    assert any("symmetric eigensolvers" in w.lower() for w in diag_dense.warnings)
+
+    # Dense nonsymmetric matrix with complex eigenvalues
+    # K = [[1.0, -2.0], [2.0, 1.0]] -> eigenvalues are 1 +/- 2i
+    K_complex = np.array([[1.0, -2.0], [2.0, 1.0]])
+    diag_comp = analyze_stiffness_matrix(K_complex, compute_spectrum=True, dense_threshold=400)
+    assert diag_comp.is_symmetric is False
+    assert diag_comp.is_positive_definite is False
+    assert any("complex eigenvalues" in w.lower() for w in diag_comp.warnings)
+
+    # 2. Sparse nonsymmetric matrix (N = 500 > dense_threshold = 400)
+    # Must NOT call ARPACK eigsh!
+    A_sparse_asym = sp.diags([1.0], [1], shape=(500, 500), format="csr") + sp.eye(500, format="csr") * 2.0
+    diag_sparse = analyze_stiffness_matrix(A_sparse_asym, compute_spectrum=True, dense_threshold=400)
+    assert diag_sparse.is_symmetric is False
+    assert diag_sparse.is_positive_definite is False
+    assert diag_sparse.is_cg_eligible is False
+    assert diag_sparse.eigenvalue_method == "skipped_nonsymmetric"
+    assert any("sparse spectrum computation skipped" in w.lower() for w in diag_sparse.warnings)
+

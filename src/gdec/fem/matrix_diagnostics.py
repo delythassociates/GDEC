@@ -73,25 +73,33 @@ class MatrixDiagnostics:
 
 
 def compute_symmetry_defect(
-    K: sp.spmatrix | np.ndarray, eps: float = 1e-15
+    K: sp.spmatrix | np.ndarray,
 ) -> float:
     r"""
     Compute relative Frobenius symmetry defect:
-      \delta_{sym} = \frac{||K - K^T||_F}{\max(||K||_F, \epsilon)}
+      \delta_{sym} = \frac{||K - K^T||_F}{||K||_F}
+
+    Scale Invariance:
+      For any positive scalar c > 0 within floating-point range:
+        compute_symmetry_defect(c * K) == compute_symmetry_defect(K)
+      The zero matrix (||K||_F == 0) is identically symmetric (returns 0.0).
     """
     if sp.issparse(K):
         K_csr = K.tocsr()
-        norm_K = spla.norm(K_csr, "fro")
+        norm_K = float(spla.norm(K_csr, "fro"))
+        if norm_K == 0.0:
+            return 0.0
         diff = (K_csr - K_csr.T).tocsr()
-        norm_diff = spla.norm(diff, "fro")
+        norm_diff = float(spla.norm(diff, "fro"))
     else:
         K_arr = np.asarray(K)
         norm_K = float(np.linalg.norm(K_arr, "fro"))
+        if norm_K == 0.0:
+            return 0.0
         diff = K_arr - K_arr.T
         norm_diff = float(np.linalg.norm(diff, "fro"))
 
-    denom = max(norm_K, eps)
-    return float(norm_diff / denom)
+    return float(norm_diff / norm_K)
 
 
 def analyze_stiffness_matrix(
@@ -197,14 +205,39 @@ def analyze_stiffness_matrix(
     eigenvalue_method = "none"
 
     if compute_spectrum and n_rows >= 2 and not has_invalid:
-        if n_rows <= dense_threshold:
-            # Small systems: dense exact eigensolver
+        if not is_symmetric:
+            # Do NOT apply symmetric eigensolvers (eigvalsh / eigsh) to nonsymmetric matrices!
+            # SPD classification is mathematically inapplicable for nonsymmetric matrices.
+            warnings.append(
+                f"Matrix is nonsymmetric (delta_sym = {delta_sym:.2e} > tol {sym_tol:.2e}): "
+                "SPD classification and symmetric eigensolvers (eigsh / eigvalsh) are not applicable."
+            )
+            is_positive_definite = False
+            is_cg_eligible = False
+            condition_number = float("nan")
+            if n_rows <= dense_threshold:
+                eigenvalue_method = "dense_general"
+                K_dense = K_sparse.toarray()
+                gen_eigvals = la.eigvals(K_dense)
+                max_imag = float(np.max(np.abs(np.imag(gen_eigvals))))
+                ref_norm = max(float(np.max(np.abs(np.real(gen_eigvals)))), np.finfo(float).tiny)
+                if max_imag > 1e-14 * ref_norm:
+                    warnings.append(
+                        f"Nonsymmetric matrix has complex eigenvalues (max imaginary component = {max_imag:.2e})."
+                    )
+                lambda_min = float(np.min(np.real(gen_eigvals)))
+                lambda_max = float(np.max(np.real(gen_eigvals)))
+            else:
+                eigenvalue_method = "skipped_nonsymmetric"
+                warnings.append(
+                    "Sparse spectrum computation skipped: ARPACK eigsh requires symmetric operators "
+                    "and cannot be applied to nonsymmetric matrices."
+                )
+        elif n_rows <= dense_threshold:
+            # Small systems: dense exact eigensolver for symmetric matrices
             eigenvalue_method = "dense_exact"
             K_dense = K_sparse.toarray()
-            if is_symmetric:
-                eigvals = la.eigvalsh(K_dense)
-            else:
-                eigvals = np.real(la.eigvals(K_dense))
+            eigvals = la.eigvalsh(K_dense)
             eigvals = np.sort(eigvals)
             lambda_min = float(eigvals[0])
             lambda_max = float(eigvals[-1])
@@ -215,10 +248,10 @@ def analyze_stiffness_matrix(
             null_modes_detected = exact_nullity
             has_null_modes = (exact_nullity > 0)
         else:
-            # Large sparse systems: ARPACK via scipy.sparse.linalg.eigsh
+            # Large sparse systems: ARPACK via scipy.sparse.linalg.eigsh on verified symmetric matrix
             eigenvalue_method = "sparse_eigsh"
             try:
-                K_sym = 0.5 * (K_sparse + K_sparse.T) if is_symmetric else K_sparse
+                K_sym = 0.5 * (K_sparse + K_sparse.T)
                 
                 # Largest algebraic eigenvalue
                 lmax_arr = spla.eigsh(K_sym, k=1, which="LA", return_eigenvectors=False)
@@ -238,7 +271,7 @@ def analyze_stiffness_matrix(
             except Exception as e:
                 warnings.append(f"Sparse eigenvalue computation encountered exception: {e}")
 
-        if lambda_min is not None and lambda_max is not None:
+        if is_symmetric and lambda_min is not None and lambda_max is not None:
             norm_scale = max(abs(lambda_max), np.finfo(float).tiny)
             
             # Definiteness classification:

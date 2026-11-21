@@ -66,19 +66,24 @@ Before initiating Krylov iterations, `ConjugateGradientSolver.solve()` executes:
 1. **Finite Value Validation:** Verifies that $A$, $b$, and initial guess $x_0$ contain no NaNs or Infs.
 2. **Dimension and Shape:** Verifies $A$ is square ($n \times n$) and compatible with $b$ ($n$).
 3. **Diagonal Positivity:** Checks $A_{ii} > 0$ for all $i \in \{1, \dots, n\}$. Any non-positive diagonal entry violates positive-definiteness and raises `ValueError`.
-4. **Symmetry Metric:** Measures relative Frobenius defect $\delta_{\mathrm{sym}} = \|A - A^T\|_F / \max(\|A\|_F, \epsilon)$. If $\delta_{\mathrm{sym}} > 10^{-8}$, it raises `ValueError`.
-5. **Algebraic Eigenvalue Validation (`caller_certified_spd=False`):**
-   When `caller_certified_spd=False`, the solver calculates the smallest algebraic eigenvalue using ARPACK (`which="SA"`). If $\lambda_{\min} \le \text{null\_tol} \times \text{norm\_scale}$, it rejects the system as non-positive-definite or singular before starting iterations.
-6. **Runtime Curvature Safeguard:**
-   When `caller_certified_spd=True` (skipping the expensive $\mathcal{O}(N)$ upfront eigensolve during production runs), CG dynamically checks the Rayleigh quotient denominator $\kappa_k = p_k^T A p_k$ at every iteration. If $\kappa_k \le 0$, the operator has non-positive curvature along $p_k$, and the solver terminates immediately with a breakdown notice.
+4. **Symmetry Metric:** Measures strictly scale-invariant relative Frobenius defect $\delta_{\mathrm{sym}} = \|A - A^T\|_F / \|A\|_F$ (zero matrix returns $0.0$). If $\delta_{\mathrm{sym}} > 10^{-8}$, it raises `ValueError`.
+5. **Scale-Aware Algebraic Eigenvalue Verification (`caller_certified_spd=False`, Default in FEM):**
+   When `caller_certified_spd=False`, the solver calculates the smallest and largest algebraic eigenvalues using dense exact eigensolvers ($N \le 300$) or ARPACK (`which="SA"` / `which="LA"`, $N > 300$). It evaluates the scale-invariant reference norm:
+   $$\lambda_{\text{scale}} = \max(|\lambda_{\min}|, |\lambda_{\max}|, \epsilon_{\text{tiny}})$$
+   If $\lambda_{\min} \le \tau_{\text{null}} \lambda_{\text{scale}}$ ($\tau_{\text{null}} = 10^{-10}$), it strictly rejects the system as indefinite ($\lambda_{\min} < -\tau_{\text{null}}\lambda_{\text{scale}}$) or numerically near-singular / possessing unconstrained rigid-body modes ($|\lambda_{\min}| \le \tau_{\text{null}}\lambda_{\text{scale}}$). A tiny positive eigenvalue is not accepted as sufficient proof of positive definiteness.
+6. **Runtime Curvature Safeguard vs Global SPD Proof:**
+   When `caller_certified_spd=True` (skipping upfront eigensolves during production runs upon explicit caller assertion), CG dynamically checks the Rayleigh quotient denominator $\kappa_k = p_k^T A p_k$ at every iteration. If $\kappa_k \le 0$, the operator has non-positive curvature along $p_k$, and the solver terminates immediately with a breakdown notice.
+   > [!WARNING]
+   > Runtime curvature checks alone along the Krylov trajectory are **not** a global proof of positive-definiteness. If an indefinite matrix has a positive diagonal and the right-hand side $b$ is confined to its positive eigenspace, the Krylov subspace never probes the negative eigenspace, and CG terminates with positive curvature despite the matrix being indefinite. Thus, `caller_certified_spd=False` is enforced as the fail-safe default.
 
-### 3.2 Preconditioner SPD Compatibility Gate
+### 3.2 Preconditioner SPD Compatibility Gate (Fail-Closed)
 Ordinary CG requires that the preconditioned system remains self-adjoint with respect to the preconditioner inner product $\langle u, v \rangle_M = u^T M v$. This requires $M$ to be SPD.
-GDEC establishes a strict preconditioner contract:
-- Every preconditioner defines property `is_spd: bool`.
-- `IdentityPreconditioner`, `JacobiPreconditioner`, and `IncompleteCholeskyPreconditioner` define `is_spd = True`.
-- `AMGPreconditioner` defines `is_spd = self.symmetric` (defaults to `True` for symmetric smoothed aggregation).
+GDEC establishes a strict fail-closed preconditioner contract:
+- The base `Preconditioner` class defines property `is_spd: bool = False` (fails closed).
+- Custom subclasses must explicitly declare and verify SPD compatibility.
+- `IdentityPreconditioner`, `JacobiPreconditioner` (after positive diagonal verification), and `IncompleteCholeskyPreconditioner` (after positive pivot factorization) define `is_spd = True`.
 - `ILUPreconditioner` defines `is_spd = False`.
+- `AMGPreconditioner` evaluates configuration: supported symmetric cycles ("V" or "W") and symmetric smoothers declare `is_spd = True`; unverified configurations or `symmetric=False` declare `is_spd = False`.
 - In `ConjugateGradientSolver.solve()`, passing a preconditioner with `preconditioner.is_spd is False` triggers an upfront `ValueError("Conjugate Gradient requires a symmetric positive-definite preconditioner...")`.
 
 ### 3.3 Non-Convergence Error Contract

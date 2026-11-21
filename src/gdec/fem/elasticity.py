@@ -241,11 +241,21 @@ class LinearElasticitySolver:
         solver_atol: float = 1e-12,
         solver_max_iter: Optional[int] = None,
         raise_on_nonconvergence: bool = True,
-        caller_certified_spd: bool = True,
+        caller_certified_spd: bool = False,
     ) -> FEMSolution:
         """
         Solve primal and adjoint systems with discrete stage timings and optional factorization reuse.
         Supports direct sparse solver (production default) and experimental Krylov solvers.
+
+        Parameters
+        ----------
+        caller_certified_spd : bool, default False
+            If True, caller explicitly asserts that the condensed stiffness matrix is physically
+            guaranteed to be SPD (e.g., all rigid body modes eliminated by Dirichlet conditions),
+            skipping upfront eigenvalue verification in iterative solvers while retaining necessary
+            diagonal, symmetry, and runtime curvature checks. Default is False (fail-safe:
+            performs spectral verification before iterative solving).
+            This option is a caller assertion, not a mathematical certificate produced by the solver.
         """
         t_total_start = time.perf_counter()
 

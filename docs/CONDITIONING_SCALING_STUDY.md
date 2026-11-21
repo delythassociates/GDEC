@@ -84,6 +84,10 @@ $$\kappa_2(AR) \approx 2,090 \times AR^{2.95} \quad (R^2 = 0.9978)$$
 The empirical growth factor across the range $AR \in [1, 20]$ is:
 $$\frac{\kappa_2(AR=20)}{\kappa_2(AR=1)} = \frac{1.16 \times 10^7}{2.09 \times 10^3} \approx 5,550 \approx 20^{2.88}$$
 
+> [!NOTE]
+> **Scope and Extrapolation Limits:**
+> The relation $\kappa_2(AR) \approx 2,090 \times AR^{2.95}$ ($R^2 = 0.9978$) represents specifically the empirical log-log regression across the five tested cantilever configurations ($AR \in \{1, 2, 5, 10, 20\}$). It describes the observed combined behavior on this specific structured mesh benchmark family and is not a universal finite-element asymptotic law for arbitrary geometries, boundary constraints, or 3D domains.
+
 This rapid cubic-order degradation arises from the physical coupling of two distinct structural and finite element mechanisms:
 1. **Local Finite Element Distortion:**
    As the aspect ratio $h_x / h_y$ increases, triangular element angles collapse from $45^\circ$ to $2.86^\circ$. In linear Lagrange triangles, element stiffness matrix eigenvalues in the compressed direction scale as $\mathcal{O}(h_x / h_y)$, inflating the local conditioning by $\mathcal{O}(AR^2)$.
