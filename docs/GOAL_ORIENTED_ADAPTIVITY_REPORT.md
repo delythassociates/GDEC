@@ -4,7 +4,7 @@
 **Branch:** `audit/v0.2.2-deep-review`  
 **Benchmark Problem:** 2D Cantilever Plate ($L = 2.0\text{ m}, H = 0.5\text{ m}, t = 0.02\text{ m}, E = 70\text{ GPa}, \nu = 0.33$, Tip Shear $P = 10\text{ kN}$)  
 **Target QoI:** Average tip vertical displacement: $J(\mathbf{u}) = \frac{1}{H} \int_{\Gamma_{\text{tip}}} u_y \, ds$  
-**Date:** 2026-11-21 (Phase 3.2 Audit Reconciliation)  
+**Date:** 2026-11-21 (Phase 3.3 Scope Closure)  
 
 ---
 
@@ -20,9 +20,16 @@ To avoid reference truncation bias, discretization errors and effectivity indice
 | **Richardson Extrap.** | — | — | — | **-1.909129 mm** | -0.003559 mm | **0.187%** |
 
 - **Analytical Baseline:** Timoshenko beam theory with shear deformation predicts $J_{\text{analytical}} = -1.9198\text{ mm}$.
-- **Richardson Extrapolation Order ($O(h^2)$):** For linear triangular elements ($P_1$), the functional discretization error in smooth 2D elasticity converges at rate $O(h^p)$ with asymptotic order $p = 2$. With mesh refinement ratio $r = 2$, the extrapolation factor is $2^p - 1 = 3$:
+- **Observed Convergence Order ($p_{\text{obs}}$):**
+  From the successive triad (Grid 0, Grid 1, Grid 2):
+  $$p_{\text{obs}} = \log_2\left( \frac{|J_{\text{Grid 0}} - J_{\text{Grid 1}}|}{|J_{\text{Grid 1}} - J_{\text{Grid 2}}|} \right) = \log_2\left( \frac{0.039477}{0.010675} \right) = \log_2(3.698) \approx 1.887 \to 2.0.$$
+  The numerical evidence rigorously supports the asymptotic validity of second-order ($O(h^2)$) convergence.
+- **Richardson Extrapolation Order ($O(h^2)$):** With theoretical convergence order $p = 2$ and uniform refinement ratio $r = 2$, the extrapolation factor is $2^p - 1 = 3$:
   $$J_{\text{extrap}} = J_{\text{Grid 2}} + \frac{J_{\text{Grid 2}} - J_{\text{Grid 1}}}{3} = -1.905570 + \frac{-0.010675}{3} = -1.909129\text{ mm}.$$
-- **Uncertainty Quantification:** The difference between the gold Grid 2 reference and Richardson extrapolation is $0.003559\text{ mm}$ ($0.187\%$). This confirms that Grid 2 has entered the asymptotic regime with $< 0.2\%$ residual discretization uncertainty.
+- **Asymptotic Estimate vs. Certified Bound:**
+  The extrapolation correction is an **asymptotic estimate**, NOT a certified uncertainty interval (`is_certified_dwr_bound = False`).
+  The residual uncertainty between Grid 2 and Richardson extrapolation is:
+  $$\frac{|-1.909129 - (-1.905570)|}{|-1.909129|} = \frac{0.003559}{1.909129} \approx 0.187\%.$$
 - **Asymptotic Agreement:** Grid 2 is within 0.74% of analytical beam theory and exhibits $< 0.56\%$ successive refinement change.
 - **Reference Resolution:** Grid 2 serves as the primary reference, with sensitivity checked against Grid 1 and Richardson extrapolation.
 

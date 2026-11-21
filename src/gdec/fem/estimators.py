@@ -136,7 +136,9 @@ class FacetTractionJumpEvaluator:
                 bnd_name = "top"
 
             if bnd_name and bnd_name in load_map:
-                applied_tx, applied_ty = load_map[bnd_name]
+                app_x, app_y = load_map[bnd_name]
+                applied_tx = float(app_x(midpoints[:, f])) if callable(app_x) else float(app_x)
+                applied_ty = float(app_y(midpoints[:, f])) if callable(app_y) else float(app_y)
             else:
                 applied_tx, applied_ty = 0.0, 0.0
 
@@ -178,14 +180,18 @@ class DualWeightEvaluator:
         Parameters:
           h_F: (nfacets,) or scalar
           t_F: (2, nfacets) or (2,)
-          grad_z_v0: (2, 2, nfacets) or (2, 2) [comp, coord, ...]
-          grad_z_v1: (2, 2, nfacets) or (2, 2) [comp, coord, ...]
+          grad_z_v0: (2, 2, nfacets) or (2, 2, 1) or (2, 2) [comp, coord, ...]
+          grad_z_v1: (2, 2, nfacets) or (2, 2, 1) or (2, 2) [comp, coord, ...]
         Returns:
-          dual_weights: (2, nfacets) or (2,)
+          dual_weights: (2, nfacets) or (2, 1) or (2,)
         """
-        diff_0 = grad_z_v0[0] - grad_z_v1[0]
-        diff_1 = grad_z_v0[1] - grad_z_v1[1]
-        directional_diff = diff_0 * t_F[0] + diff_1 * t_F[1]
+        diff = grad_z_v0 - grad_z_v1
+        if diff.ndim == 3 and t_F.ndim == 2:
+            directional_diff = np.sum(diff * t_F[None, :, :], axis=1)
+        elif diff.ndim == 2 and t_F.ndim == 1:
+            directional_diff = np.sum(diff * t_F[None, :], axis=1)
+        else:
+            directional_diff = np.sum(diff * t_F, axis=0)
         return (h_F**2 / 12.0) * directional_diff
 
     @staticmethod
@@ -232,12 +238,7 @@ class DualWeightEvaluator:
 
         grad_v0 = nodal_grad_z[:, :, v0]
         grad_v1 = nodal_grad_z[:, :, v1]
-        dual_weights = np.zeros((2, len(h_F)), dtype=float)
-        for comp in range(2):
-            diff_0 = grad_v0[comp, 0] - grad_v1[comp, 0]
-            diff_1 = grad_v0[comp, 1] - grad_v1[comp, 1]
-            directional_diff = diff_0 * t_F[0] + diff_1 * t_F[1]
-            dual_weights[comp] = (h_F**2 / 12.0) * directional_diff
+        dual_weights = DualWeightEvaluator.compute_edge_bubble_integral(h_F, t_F, grad_v0, grad_v1)
 
         # On Dirichlet boundaries where adjoint trace is constrained to zero, dual error vanishes.
         # The constraint mask is strictly applied only to actual boundary facets (~facet_data.is_interior).
@@ -331,12 +332,31 @@ class ElementResidualEvaluator:
         v0 = skm.facets[0]
         v1 = skm.facets[1]
         midpoints = 0.5 * (p[:, v0] + p[:, v1])  # shape (2, nfacets)
+        nfacets = midpoints.shape[1]
 
         # Evaluate body force at edge midpoints for exact 3-point midpoint quadrature
-        b_mid = np.asarray(body_force_fn(midpoints), dtype=float)  # shape (2, nfacets)
+        if isinstance(body_force_fn, (tuple, list, np.ndarray)) and len(body_force_fn) == 2:
+            bx, by = float(body_force_fn[0]), float(body_force_fn[1])
+            b_mid = np.vstack([np.full(nfacets, bx), np.full(nfacets, by)])
+        else:
+            b_mid = np.asarray(body_force_fn(midpoints), dtype=float)  # shape (2, nfacets)
+
         b_max = float(np.max(np.abs(b_mid)))
         if b_max < 1e-14:
             return elem_signed, elem_abs, 0.0
+
+        # Validate body force quadrature consistency:
+        # The 3-point triangular midpoint rule is degree-2 exact.
+        # Multiplying by the quadratic dual bubble w \in P2 means the integrand b \cdot w
+        # is degree 2 if and only if b is piecewise-constant (P0).
+        # Any spatial variation across evaluation midpoints requires higher-order quadrature.
+        ptp = np.ptp(b_mid, axis=1)
+        if np.max(ptp) > 1e-10 * b_max:
+            raise ValueError(
+                "ElementResidualEvaluator currently supports piecewise-constant body forces (degree 0) "
+                "for exact degree-2 triangular midpoint quadrature. Spatially varying body forces "
+                "require higher-order quadrature and are not supported."
+            )
 
         areas = gdec_mesh.element_areas
 

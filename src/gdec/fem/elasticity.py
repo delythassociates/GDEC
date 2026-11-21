@@ -108,7 +108,7 @@ class LinearElasticitySolver:
         return fem.asm(stiffness_form, basis).tocsr()
 
     def assemble_traction(
-        self, gdec_mesh: GDECMesh, boundary_name: str, tx: float, ty: float
+        self, gdec_mesh: GDECMesh, boundary_name: str, tx: Any, ty: Any
     ) -> np.ndarray:
         facets = gdec_mesh.get_boundary_facets(boundary_name)
         if len(facets) == 0:
@@ -119,7 +119,13 @@ class LinearElasticitySolver:
 
         @fem.LinearForm
         def traction_form(v, w):
-            return thickness * (tx * v[0] + ty * v[1])
+            if callable(tx):
+                val_x = tx(w.x)
+                val_y = ty(w.x)
+            else:
+                val_x = tx
+                val_y = ty
+            return thickness * (val_x * v[0] + val_y * v[1])
 
         return fem.asm(traction_form, fbasis)
 
@@ -129,14 +135,21 @@ class LinearElasticitySolver:
         r"""
         Assemble external body force vector:
           f_b = \int_\Omega t (b_x v_x + b_y v_y) d\Omega.
+        Supports constant vectors (bx, by) or piecewise-constant callables.
         """
         thickness = self.c.thickness
 
-        @fem.LinearForm
-        def body_force_form(v, w):
-            b_val = body_force_fn(w.x)
-            bx, by = b_val[0], b_val[1]
-            return thickness * (bx * v[0] + by * v[1])
+        if isinstance(body_force_fn, (tuple, list, np.ndarray)) and len(body_force_fn) == 2:
+            bx, by = float(body_force_fn[0]), float(body_force_fn[1])
+            @fem.LinearForm
+            def body_force_form(v, w):
+                return thickness * (bx * v[0] + by * v[1])
+        else:
+            @fem.LinearForm
+            def body_force_form(v, w):
+                b_val = body_force_fn(w.x)
+                bx, by = b_val[0], b_val[1]
+                return thickness * (bx * v[0] + by * v[1])
 
         return fem.asm(body_force_form, basis)
 

@@ -4,7 +4,7 @@
 **Repository:** `delythassociates/GDEC`  
 **Module:** `src/gdec/fem/estimators.py`  
 **Status:** Complete, Mathematically Audited, Numerically Verified  
-**Revision:** Phase 3.2 Audit Corrections  
+**Revision:** Phase 3.3 Audit & Scope Closure  
 
 ---
 
@@ -280,23 +280,26 @@ $$
 $$
 Notice the explicit linear scaling with domain thickness $t$.
 
-### 6.2 Mathematically Exact 3-Point Midpoint Quadrature
-On triangular elements, the standard 3-point midpoint quadrature rule (Hammer-Marlowe-Stroud / Dunavant degree 2) integrates quadratic polynomials exactly:
-$$
-\int_K g(\mathbf{x}) \, d\Omega \approx \frac{\text{Area}_K}{3} \sum_{F \in \partial K} g(\mathbf{m}_F),
-$$
-where $\mathbf{m}_F = \frac{1}{2}(\mathbf{x}_0 + \mathbf{x}_1)$ is the midpoint of facet $F$.
+### 6.2 Supported Body-Force Classes & Mathematically Exact Quadrature
+The volume residual requires integrating $\mathbf{b}(\mathbf{x}) \cdot (\mathbf{z} - \Pi_h \mathbf{z})$ over each triangular element $K$.
+Along each edge $F$, the 1D Hermite bubble has midpoint value $\mathbf{w}_{\text{mid}, F} = \frac{3}{2 h_F} \mathbf{W}_F$. On triangle $K$, the enrichment field is quadratic: $\mathbf{w} \in [P_2(K)]^2$.
 
-Evaluating the body force at facet midpoints $\mathbf{b}(\mathbf{m}_F)$ and pairing with the midpoint bubble displacement:
-$$
-\mathbf{w}_{\text{mid}, F} = (\mathbf{z} - \Pi_h \mathbf{z})(\mathbf{m}_F) = \frac{3}{2 h_F} \mathbf{W}_F,
-$$
-where $\mathbf{W}_F = \int_F (\mathbf{z} - \Pi_h \mathbf{z}) \, ds = \frac{h_F^2}{12} [\nabla \mathbf{z}^*(\mathbf{x}_0) - \nabla \mathbf{z}^*(\mathbf{x}_1)] \cdot \mathbf{t}_F$.
+**Supported Class (Piecewise-Constant Body Forces $\mathbf{b} \in [P_0]^2$):**
+- When $\mathbf{b}(\mathbf{x}) = \mathbf{b}_K = \text{const}$ (e.g. gravity, uniform centrifugal loads, constant block forces):
+  The integrand $\mathbf{b}_K \cdot \mathbf{w}(\mathbf{x})$ is a polynomial of degree 2 ($P_2$).
+- The standard 3-point midpoint quadrature rule on triangles (Hammer-Marlowe-Stroud degree 2) evaluates at the 3 edge midpoints $\mathbf{m}_F = \frac{1}{2}(\mathbf{x}_0 + \mathbf{x}_1)$ with weight $\frac{\text{Area}_K}{3}$:
+  $$
+  \int_K g(\mathbf{x}) \, d\Omega = \frac{\text{Area}_K}{3} \sum_{F \in \partial K} g(\mathbf{m}_F).
+  $$
+  Because this rule integrates all degree-2 polynomials on triangles **exactly**, there is zero quadrature error:
+  $$
+  t \int_K \mathbf{b} \cdot (\mathbf{z} - \Pi_h \mathbf{z}) \, d\Omega = t \frac{\text{Area}_K}{3} \sum_{F \in \partial K} \mathbf{b}(\mathbf{m}_F) \cdot \left( \frac{3}{2 h_F} \mathbf{W}_F \right).
+  $$
+- In the primal problem, $\int_K t \mathbf{b} \cdot \mathbf{v} \, d\Omega$ with $\mathbf{v} \in [P_1]^2$ has a degree-1 integrand. The degree-2 quadrature on `InteriorBasis` is likewise exact. Thus, the primal assembly and DWR volume residual use **fully compatible, exact degree-2 quadrature**.
 
-Thus, the exact volume integral over triangle $K$ is computed as:
-$$
-t \int_K \mathbf{b} \cdot (\mathbf{z} - \Pi_h \mathbf{z}) \, d\Omega \approx t \frac{\text{Area}_K}{3} \sum_{F \in \partial K} \mathbf{b}(\mathbf{m}_F) \cdot \left( \frac{3}{2 h_F} \mathbf{W}_F \right).
-$$
+**Explicit Restriction & Validation:**
+- `ElementResidualEvaluator` validates all input body forces: arbitrary callables are tested across evaluation points. Any spatially varying body force ($\mathbf{b} \notin P_0$) triggers a `ValueError` rather than silently assuming degree-2 accuracy.
+- Spatially varying polynomial body forces would require higher-order quadrature (e.g. 7-point Dunavant degree 5 for $P_1$ or $P_2$ body forces). Currently, the certified estimator scope is restricted to piecewise-constant body forces.
 
 ### 6.3 Dimensional $L_2$ Volume Residual Norm
 The physically meaningful $L_2(\Omega)$ norm of the volume residual includes element areas and domain thickness:
@@ -305,22 +308,26 @@ $$
 $$
 This norm correctly scales with $\sqrt{t}$ under thickness variations and has units of $[b] \times \sqrt{\text{Area} \times \text{thickness}} = (\text{N}/\text{m}^3) \times \text{m}^{1.5} = \text{N}/\text{m}^{1.5}$.
 
-### 6.4 Richardson Extrapolation Order
-For linear triangular finite elements ($P_1$) in displacement-based elasticity, the global discretization error in linear functionals (such as average tip deflection) converges at rate $O(h^2)$.
-Between nested meshes with mesh size ratio $r = h_{2k} / h_k = 2$, the Richardson extrapolation formula is:
+---
+
+## 7. Observed Convergence Order & Richardson Extrapolation
+
+### 7.1 Observed Convergence Order from Mesh Triads
+On any three successively refined meshes with uniform refinement ratio $r = 2$ ($h, h/2, h/4$), the observed convergence order of a functional $J(u_h)$ is estimated directly from the numerical sequence:
 $$
-J_{\text{extrap}} = J_{h/2} + \frac{J_{h/2} - J_h}{2^p - 1},
+p_{\text{obs}} = \log_2\left( \frac{|J_h - J_{h/2}|}{|J_{h/2} - J_{h/4}|} \right).
 $$
-with theoretical convergence order $p = 2$, giving denominator $2^2 - 1 = 3$:
+For linear triangular finite elements ($P_1$) in displacement elasticity, the asymptotic convergence rate is $O(h^2)$, meaning $p_{\text{obs}} \to 2.0$ as $h \to 0$.
+
+### 7.2 Richardson Extrapolation as an Asymptotic Estimate
+When asymptotic validity is supported ($p_{\text{obs}} \approx 2.0$), Richardson extrapolation provides an improved estimate of the continuum limit:
 $$
-J_{\text{extrap}} = J_{\text{Grid 2}} + \frac{J_{\text{Grid 2}} - J_{\text{Grid 1}}}{3}.
+J_{\text{extrap}} = J_{h/2} + \frac{J_{h/2} - J_h}{2^p - 1} = J_{h/2} + \frac{J_{h/2} - J_h}{3}.
 $$
-On the cantilever bending benchmark, $J_{\text{Grid 1}} = -1.894895\text{ mm}$ and $J_{\text{Grid 2}} = -1.905570\text{ mm}$, yielding:
-$$
-J_{\text{extrap}} = -1.905570 + \frac{-1.905570 - (-1.894895)}{3} = -1.909129\text{ mm}.
-$$
-The residual uncertainty between Grid 2 and Richardson extrapolation is:
-$$
-\frac{|-1.909129 - (-1.905570)|}{|-1.909129|} = \frac{0.003559}{1.909129} \approx 0.187\%.
-$$
-This quantifies reference truncation error with mathematical rigor.
+
+> [!IMPORTANT]
+> **Nature of Richardson Extrapolation:**
+> The extrapolation correction is an **asymptotic estimate**, NOT a certified upper/lower uncertainty interval.
+> In GDEC:
+> `is_certified_dwr_bound = False`
+> Discretization error estimation provides asymptotic verification, while certified bounds require analytical evaluation of global domain trace constants.

@@ -11,7 +11,7 @@ import pytest
 import skfem as fem
 
 from gdec.fem.mesh import GDECMesh
-from gdec.fem.elasticity import ConstitutiveTensor, LinearElasticitySolver
+from gdec.fem.elasticity import ConstitutiveTensor, LinearElasticitySolver, FEMSolution
 from gdec.fem.estimators import (
     RefinementEstimator,
     DWREstimator,
@@ -551,3 +551,244 @@ def test_dwr_full_body_force_bvp_verification():
 
     eff = dwr_est / true_err
     assert 0.40 < eff < 0.65, f"Coarse mesh gravity effectivity {eff:.3f} within expected asymptotic regime"
+
+
+# 14. Helper and Evaluator Exact Numerical Consistency
+def test_dwr_helper_and_evaluator_consistency():
+    """
+    Verify DualWeightEvaluator:
+      1. evaluate() uses the production compute_edge_bubble_integral() helper.
+      2. Regression test asserting evaluate() and compute_edge_bubble_integral() produce identical results.
+    """
+    mesh = GDECMesh.create_cantilever_mesh(2.0, 0.5, 9, 5)
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    sol = solver.solve(mesh, loads=[("right", 0.0, -1e4)], fixed_boundaries=[("left", ["x", "y"])])
+    
+    stresses = np.zeros((3, mesh.nelements))
+    jump_eval = FacetTractionJumpEvaluator(c)
+    facet_data = jump_eval.evaluate(mesh, stresses, loads=[("right", 0.0, -1e4)])
+    
+    # 1. Output from production evaluate()
+    w_eval = DualWeightEvaluator.evaluate(mesh, sol, facet_data)
+    
+    # 2. Output from direct helper call on the exact same nodal recovered gradients
+    skm = mesh.mesh
+    p = skm.p
+    t = skm.t
+    areas = mesh.element_areas
+    grad_z = sol.basis.interpolate(sol.z).grad[:, :, :, 0]
+    nodal_grad_z = np.zeros((2, 2, mesh.nnodes), dtype=float)
+    nodal_weights = np.zeros(mesh.nnodes, dtype=float)
+    for v in range(3):
+        nodes = t[v, :]
+        for comp in range(2):
+            for coord in range(2):
+                np.add.at(nodal_grad_z[comp, coord], nodes, areas * grad_z[comp, coord])
+        np.add.at(nodal_weights, nodes, areas)
+    nodal_grad_z /= np.maximum(nodal_weights, 1e-14)
+    
+    v0 = skm.facets[0]
+    v1 = skm.facets[1]
+    w_helper = DualWeightEvaluator.compute_edge_bubble_integral(
+        facet_data.lengths, facet_data.tangents, nodal_grad_z[:, :, v0], nodal_grad_z[:, :, v1]
+    )
+    
+    # Interior facets must match identically
+    int_idx = np.where(facet_data.is_interior)[0]
+    np.testing.assert_allclose(w_eval[:, int_idx], w_helper[:, int_idx], atol=1e-15, rtol=1e-15)
+
+
+# 15. Body Force Scope & Spatially Varying Validation
+def test_dwr_spatially_varying_body_force_validation():
+    """
+    Verify ElementResidualEvaluator:
+      1. Rejects spatially varying body-force callables with explicit ValueError.
+      2. Accepts piecewise-constant body-force callables and arrays.
+    """
+    mesh = GDECMesh.create_cantilever_mesh(1.0, 1.0, 5, 5)
+    c = ConstitutiveTensor.from_properties(E=1000.0, nu=0.25, assumption="plane_stress", thickness=1.0)
+    solver = LinearElasticitySolver(c)
+    sol = solver.solve(mesh, loads=[], fixed_boundaries=[("left", ["x", "y"])])
+    
+    stresses = np.zeros((3, mesh.nelements))
+    jump_eval = FacetTractionJumpEvaluator(c)
+    facet_data = jump_eval.evaluate(mesh, stresses, loads=[])
+    
+    # Piecewise-constant body force callable must pass
+    const_fn = lambda x: np.array([np.full_like(x[0], 10.0), np.full_like(x[1], -20.0)])
+    s, a, norm = ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=const_fn, facet_data=facet_data)
+    assert norm > 0.0
+    
+    # Constant array/tuple must pass
+    s_arr, a_arr, norm_arr = ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(10.0, -20.0), facet_data=facet_data)
+    np.testing.assert_allclose(norm, norm_arr, rtol=1e-14)
+    
+    # Spatially varying body force callable must raise ValueError
+    var_fn = lambda x: np.array([x[0] ** 2, x[1]])
+    import pytest
+    with pytest.raises(ValueError, match="ElementResidualEvaluator currently supports piecewise-constant body forces"):
+        ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=var_fn, facet_data=facet_data)
+
+
+# 16. Comprehensive Manufactured 2D Linear Elasticity BVP with Body Force
+def test_dwr_manufactured_body_force_convergence():
+    """
+    Manufactured 2D linear-elasticity problem with:
+      - Known analytical quadratic displacement field: u_x = c1 * x^2, u_y = d1 * x^2.
+      - Analytical linear strain and stress fields.
+      - Body force derived from analytical equilibrium: b_x = - 2 * c1 * C11, b_y = - 2 * d1 * G.
+      - Consistent clamped Dirichlet boundary on left (x=0) and Neumann tractions on top, bottom, right.
+      - Explicit linear QoI: average vertical displacement on right boundary (exact J = d1 * L^2).
+    Evaluated across four successively refined meshes (N = 5, 9, 17, 33).
+    Verifies:
+      - Primal displacement convergence rate O(h^2).
+      - Non-zero volume residual, interior jumps, and boundary residuals.
+      - Signed DWR estimate shares true error sign.
+      - Effectivity indices are strictly positive and converge asymptotically (0.5356 -> 0.7686 -> 0.8811 -> 0.9364).
+      - Observed convergence order p_obs ~ 1.7 -> 1.9 -> 2.0.
+      - Richardson extrapolation estimate achieves < 0.01% error.
+    """
+    E = 1000.0
+    nu = 0.25
+    c = ConstitutiveTensor.from_properties(E=E, nu=nu, assumption="plane_stress", thickness=1.0)
+    solver = LinearElasticitySolver(c)
+    estimator = DWREstimator(c)
+
+    c1 = 1e-3
+    d1 = -2e-3
+    C11 = c.c11
+    C12 = c.c12
+    G = c.c33
+
+    # Exact body force derived from equilibrium: div(sigma) + b = 0
+    bx = - 2.0 * c1 * C11
+    by = - 2.0 * d1 * G
+    body_force = lambda x: np.array([bx * np.ones_like(x[0]), by * np.ones_like(x[1])])
+
+    L, H = 1.0, 1.0
+    t_right_x = 2.0 * c1 * C11 * L
+    t_right_y = 2.0 * d1 * G * L
+
+    J_exact = d1 * (L ** 2)  # -2.0e-3
+    J_list = []
+    dwr_list = []
+    err_list = []
+    eff_list = []
+
+    for n in [5, 9, 17, 33]:
+        m = GDECMesh.create_cantilever_mesh(L, H, n, n)
+        basis = solver.create_basis(m)
+        K = solver.assemble_stiffness(basis)
+        f = np.zeros(basis.N)
+
+        # Primal loads: body force, right constant traction, top/bottom linear tractions
+        f += solver.assemble_body_force(basis, body_force)
+        f += solver.assemble_traction(m, "right", t_right_x, t_right_y)
+
+        top_facets = m.get_boundary_facets("top")
+        fbasis_top = fem.FacetBasis(m.mesh, solver.element, facets=top_facets)
+        @fem.LinearForm
+        def top_form(v, w):
+            return (2.0 * d1 * G * w.x[0]) * v[0] + (2.0 * c1 * C12 * w.x[0]) * v[1]
+        f += fem.asm(top_form, fbasis_top)
+
+        bot_facets = m.get_boundary_facets("bottom")
+        fbasis_bot = fem.FacetBasis(m.mesh, solver.element, facets=bot_facets)
+        @fem.LinearForm
+        def bot_form(v, w):
+            return (- 2.0 * d1 * G * w.x[0]) * v[0] + (- 2.0 * c1 * C12 * w.x[0]) * v[1]
+        f += fem.asm(bot_form, fbasis_bot)
+
+        # QoI adjoint functional vector
+        g = solver.assemble_qoi_adjoint_vector(m, "right", "y")
+
+        # Boundary condition: clamped left
+        dofs_fixed = solver.find_dirichlet_dofs(basis, m, "left", ["x", "y"])
+        K_free, f_free, u_full, I = fem.condense(K, f, D=dofs_fixed)
+        u_free = fem.solve(K_free, f_free)
+        u_full[I] = u_free
+
+        # Dual solve
+        K_free_adj, g_free, z_full, _ = fem.condense(K, g, D=dofs_fixed)
+        z_free = fem.solve(K_free_adj, g_free)
+        z_full[I] = z_free
+
+        sol = FEMSolution(
+            u=u_full,
+            z=z_full,
+            K=K,
+            f=f,
+            g=g,
+            dofs_fixed=dofs_fixed,
+            basis=basis,
+            qoi=float(np.dot(g, u_full)),
+            qoi_mm=float(np.dot(g, u_full)) * 1000.0,
+        )
+
+        loads_list = [
+            ("right", t_right_x, t_right_y),
+            ("top", lambda x: 2.0 * d1 * G * x[0], lambda x: 2.0 * c1 * C12 * x[0]),
+            ("bottom", lambda x: - 2.0 * d1 * G * x[0], lambda x: - 2.0 * c1 * C12 * x[0]),
+        ]
+
+        res = estimator.estimate(
+            gdec_mesh=m,
+            sol=sol,
+            loads=loads_list,
+            fixed_boundaries=[("left", ["x", "y"])],
+            body_force_fn=body_force,
+        )
+
+        # Verify primal displacement convergence against analytical quadratic solution
+        p = m.mesh.p
+        u_exact_x = c1 * p[0] ** 2
+        u_exact_y = d1 * p[0] ** 2
+        err_disp_x = np.max(np.abs(u_full[::2] - u_exact_x))
+        err_disp_y = np.max(np.abs(u_full[1::2] - u_exact_y))
+        assert err_disp_x < 2e-4
+        assert err_disp_y < 2e-4
+
+        # Verify active residual components
+        vol_contrib = res.details["volume_residual_contribution"]
+        jump_contrib = res.details["interior_jump_contribution"]
+        bnd_contrib = res.details["boundary_residual_contribution"]
+        assert vol_contrib != 0.0, "Volume residual contribution must be active"
+        assert jump_contrib != 0.0, "Interior facet traction jumps must be active"
+        assert bnd_contrib != 0.0, "Boundary traction residuals must be active"
+
+        J_h = sol.qoi
+        true_err = J_exact - J_h
+        dwr_est = res.details["signed_qoi_error_estimate"]
+        eff = dwr_est / true_err
+
+        assert true_err < 0.0
+        assert dwr_est < 0.0
+        assert eff > 0.0, "Effectivity index must be strictly positive"
+
+        J_list.append(J_h)
+        err_list.append(true_err)
+        dwr_list.append(dwr_est)
+        eff_list.append(eff)
+
+    # 1. Monotonic error reduction in QoI
+    for k in range(len(err_list) - 1):
+        assert abs(err_list[k + 1]) < abs(err_list[k])
+
+    # 2. Asymptotic effectivity approach toward 1.0
+    np.testing.assert_allclose(eff_list, [0.5356, 0.7686, 0.8811, 0.9364], atol=1e-3)
+
+    # 3. Observed convergence order from mesh sequence
+    # p_obs = log2(|J_h - J_h/2| / |J_h/2 - J_h/4|)
+    diff_12 = abs(J_list[0] - J_list[1])
+    diff_23 = abs(J_list[1] - J_list[2])
+    diff_34 = abs(J_list[2] - J_list[3])
+    p_obs_1 = np.log2(diff_12 / diff_23)
+    p_obs_2 = np.log2(diff_23 / diff_34)
+    assert 1.5 < p_obs_1 < 1.8, f"Observed order 1: {p_obs_1:.3f}"
+    assert 1.8 < p_obs_2 < 2.1, f"Observed order 2: {p_obs_2:.3f}"
+
+    # 4. Richardson extrapolation on finest triad using theoretical order p=2
+    J_extrap = J_list[3] + (J_list[3] - J_list[2]) / 3.0
+    rel_extrap_err = abs(J_extrap - J_exact) / abs(J_exact)
+    assert rel_extrap_err < 5e-5, f"Extrapolation error {rel_extrap_err:.2e} within 0.005%"

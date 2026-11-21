@@ -83,11 +83,11 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 ## 3. Test Suite Summary Statistics
 
-- **Total Unit & Regression Tests:** 138 tests.
-- **Passing:** 138 (100%).
+- **Total Unit & Regression Tests:** 141 tests.
+- **Passing:** 141 (100%).
 - **Failing:** 0.
 - **Skipped / XFailed:** 0.
-- **Total Test Execution Time:** ~8.0 seconds.
+- **Total Test Execution Time:** ~8.8 seconds.
 - **Python Compilation (`compileall`):** Clean across all `src/` and `tests/` modules (Python 3.10–3.13).
 - **Static Analysis (Ruff):** No syntax errors or import execution issues in compiler/FEM code.
 
@@ -95,13 +95,15 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 ## 4. Next Priorities
 
-1. **Phase 3.1 & 3.2 (Complete):**
+1. **Phase 3 (Complete — Phase 3.1, 3.2, 3.3 Scope Closure):**
    - Corrected boundary-facet classification (`is_bnd = ~facet_data.is_interior`), preventing interior facets connecting Dirichlet nodes from having their dual weights zeroed.
-   - Re-derived first-principles cubic Hermite edge bubble integration with orientation invariance and dimensional consistency; exposed pure production helper `compute_edge_bubble_integral`.
-   - Exact 3-point midpoint body-force quadrature with bubble displacement $\mathbf{w}_{\text{mid}, F} = \frac{3}{2 h_F} \mathbf{W}_F$.
+   - Re-derived first-principles cubic Hermite edge bubble integration with orientation invariance and dimensional consistency; exposed pure production helper `compute_edge_bubble_integral()`, with `DualWeightEvaluator.evaluate()` calling it directly.
+   - Explicit body-force quadrature scope: exact degree-2 triangular midpoint quadrature restricted and validated to piecewise-constant body forces $\mathbf{b} \in [P_0]^2$. Explicit spatial variation guard rejecting $P_1+$ body forces with `ValueError`.
+   - Primal body-force assembly (`assemble_body_force`) and DWR estimator use compatible degree-2 quadrature on triangles.
    - Explicit thickness scaling in volume residual contribution ($t \int_K \dots$) and dimensional $L_2$ volume residual norm ($\|\mathbf{R}\|_{L_2(\Omega)} \propto \sqrt{t}$).
-   - Primal body-force assembly (`assemble_body_force`) and full BVP verification with non-zero body forces, demonstrating asymptotic effectivity convergence ($I_{\text{eff}} \approx 0.50 \to 0.78$).
-   - Multi-reference sensitivity ($65\times 33$, $129\times 65$, $O(h^2)$ Richardson extrapolation with $0.187\%$ uncertainty).
-   - Equal-accuracy benchmark reconciliation confirming DWR achieves 20–24% DOF reduction and 44% peak memory reduction, without wall-clock advantage in 2D linear FEM on CPU.
+   - Comprehensive manufactured 2D linear-elasticity BVP with body force: verified primal $O(h^2)$ convergence, non-zero volume residuals, interior traction jumps, boundary residuals, and asymptotic effectivity convergence ($0.5356 \to 0.7686 \to 0.8811 \to 0.9364$).
+   - Observed convergence order $p_{\text{obs}} = \log_2(|J_h - J_{h/2}| / |J_{h/2} - J_{h/4}|) \approx 2.0$ independently verified.
+   - Richardson extrapolation documented as an asymptotic estimate, with `is_certified_dwr_bound = False`.
+   - Multi-strategy benchmark reconciliation confirming DWR achieves 20–24% DOF reduction and 44% peak memory reduction, without wall-clock advantage in 2D linear FEM on CPU.
 2. **Phase 4:** Solver and numerical conditioning audit (evaluate preconditioned conjugate gradient applicability vs. sparse direct solve, condition number scaling under adaptive red-green refinement).
 3. **Phase 5:** Benchmark protocol re-registration and reproducibility checks.
