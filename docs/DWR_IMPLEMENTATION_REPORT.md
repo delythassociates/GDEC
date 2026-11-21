@@ -95,11 +95,16 @@ The DWR framework in GDEC is implemented through modular, decoupled classes with
 - Eliminates duplicate numerical integration logic across evaluation and unit verification.
 - Verified exact numerical identity ($< 10^{-15}$) in `test_dwr_helper_and_evaluator_consistency`.
 
-### 2.6 Body-Force Quadrature Scope & Validation (`ElementResidualEvaluator`)
-- **Supported Class:** Piecewise-constant body forces $\mathbf{b} \in [P_0]^2$. Evaluated using exact degree-2 triangular midpoint quadrature paired with the quadratic reconstructed dual bubble $w \in [P_2]^2$.
-- **Compatible Primal Assembly:** `LinearElasticitySolver.assemble_body_force` uses degree-2 quadrature on `InteriorBasis`, exactly integrating $\mathbf{b} \cdot \mathbf{v}$ for $\mathbf{v} \in [P_1]^2$.
-- **Explicit Spatial Variation Guard:** Evaluator tests spatial variance across evaluation midpoints. Any spatially varying body force triggers a clear `ValueError` rather than silently assuming degree-2 accuracy.
-- Verified in `test_dwr_spatially_varying_body_force_validation`.
+### 2.6 Body-Force Scope & Enforceable Input Contract (`ElementResidualEvaluator`)
+- **Supported Scope:** $\mathbf{b}(\mathbf{x}) = (b_x, b_y) = \text{constant over the complete domain}$. The current midpoint integration aggregates globally across the mesh and supports a globally constant vector, not general per-element piecewise-constant $P_0$ fields.
+- **Enforceable Input Contract:**
+  - Accepts an explicit two-component constant vector `(bx, by)` (tuple, list, or `np.ndarray` of shape `(2,)`).
+  - Shape and finiteness are strictly validated: non-sequences and non-2D shapes trigger `TypeError` or `ValueError`; `NaN` and `Inf` trigger `ValueError`.
+  - Arbitrary callables are **rejected** with a clear `TypeError` diagnostic, as constancy cannot be certified through finite sampling.
+  - Primal assembly (`assemble_body_force`) and DWR estimation share this exact constant vector representation.
+- **Future Element-Wise $P_0$ Scope:** General piecewise-constant $P_0$ fields that vary element-by-element will require an explicit per-element representation (e.g. array of shape `(2, nelements)`) and element-local integration.
+- **Affine Neumann Tractions:** Linear affine boundary tractions $\mathbf{t}_N = \mathbf{A} \mathbf{x}$ are verified on top/bottom boundaries for the manufactured BVP, recorded separately from arbitrary variable boundary traction support.
+- Verified in `test_dwr_body_force_input_contract_and_validation`.
 
 ### 2.7 Comprehensive Manufactured Body-Force BVP Convergence
 - Analytical quadratic displacement field: $\mathbf{u} = (c_1 x^2, d_1 x^2)$ with linear stresses and exact body force $\mathbf{b} = (-2 c_1 C_{11}, -2 d_1 G) \in [P_0]^2$.
@@ -134,7 +139,7 @@ The verification suite [tests/test_dwr_verification.py](file:///f:/fem-edit-benc
 | `test_dwr_element_volume_residual_thickness_scaling` | Thickness scaling verification ($t=1.0$ vs $t=2.0$) | Residual scales linearly with $t$, norm scales with $\sqrt{t}$ | **PASSED** |
 | `test_dwr_full_body_force_bvp_verification` | Gravity cantilever BVP with primal solve + DWR | Primal solve valid, DWR non-zero, $I_{\text{eff}} \approx 0.50 \to 0.78$ | **PASSED** |
 | `test_dwr_helper_and_evaluator_consistency` | Exact equivalence between evaluator and pure helper | Max facet difference $< 10^{-15}$ | **PASSED** |
-| `test_dwr_spatially_varying_body_force_validation` | Validation of piecewise-constant body force and rejection of spatial variation | Validates $P_0$ callable/array; raises ValueError for $P_1$ | **PASSED** |
+| `test_dwr_body_force_input_contract_and_validation` | Enforces explicit 2-component constant vector contract; rejects non-sequences, invalid dimensions, NaN/Inf, and arbitrary callables | Validates $(b_x, b_y)$; rejects invalid types, dimensions, non-finites, and callables | **PASSED** |
 | `test_dwr_manufactured_body_force_convergence` | Full 4-mesh manufactured BVP with body force | $I_{\text{eff}} \in [0.53, 0.94]$, $p_{\text{obs}} \approx 2.0$, extrapolation $< 0.005\%$ | **PASSED** |
 
 Execution: **16/16 passed in 1.66s**. Full suite: **141/141 passed in 8.84s**.

@@ -300,10 +300,16 @@ class ElementResidualEvaluator:
     
     When body forces are zero (the standard for supported benchmark BVPs),
     the interior volume residual vanishes identically (R_K = 0).
-    When nonzero body forces are provided, the volume residual is integrated
-    using 3-point edge midpoint quadrature against the quadratic reconstructed dual bubble:
-      int_K b . (z - Pi_h z) dOmega = Area_K * (1/3) * sum_{F in dK} b(m_F) . w_mid_F
+    When nonzero body forces are provided, the supported scope is:
+      b(x) = (bx, by) = constant over the complete domain.
+    The volume residual is integrated using 3-point edge midpoint quadrature
+    against the quadratic reconstructed dual bubble:
+      int_K b . (z - Pi_h z) dOmega = Area_K * (1/3) * sum_{F in dK} b . w_mid_F
     where w_mid_F = (3 / (2 * h_F)) * W_F is the exact midpoint displacement of the cubic Hermite bubble.
+    
+    Arbitrary callables are rejected by the DWR estimator because constancy cannot be
+    certified through finite sampling. Future element-wise P0 support should use an explicit
+    per-element representation and element-local integration.
     """
 
     @staticmethod
@@ -327,36 +333,37 @@ class ElementResidualEvaluator:
         if body_force_fn is None:
             return elem_signed, elem_abs, 0.0
 
-        skm = gdec_mesh.mesh
-        p = skm.p
-        v0 = skm.facets[0]
-        v1 = skm.facets[1]
-        midpoints = 0.5 * (p[:, v0] + p[:, v1])  # shape (2, nfacets)
-        nfacets = midpoints.shape[1]
+        if callable(body_force_fn):
+            raise TypeError(
+                "DWREstimator and ElementResidualEvaluator require an explicit constant vector (bx, by) "
+                "over the complete domain. Arbitrary callables cannot be certified as constant through finite "
+                "midpoint sampling and are rejected; provide an explicit two-component constant vector (bx, by)."
+            )
 
-        # Evaluate body force at edge midpoints for exact 3-point midpoint quadrature
-        if isinstance(body_force_fn, (tuple, list, np.ndarray)) and len(body_force_fn) == 2:
-            bx, by = float(body_force_fn[0]), float(body_force_fn[1])
-            b_mid = np.vstack([np.full(nfacets, bx), np.full(nfacets, by)])
-        else:
-            b_mid = np.asarray(body_force_fn(midpoints), dtype=float)  # shape (2, nfacets)
+        if not isinstance(body_force_fn, (tuple, list, np.ndarray)):
+            raise TypeError(
+                f"Body force must be an explicit 2-component constant vector (bx, by), got {type(body_force_fn).__name__}."
+            )
 
-        b_max = float(np.max(np.abs(b_mid)))
+        b_arr = np.asarray(body_force_fn, dtype=float)
+        if b_arr.shape != (2,):
+            raise ValueError(
+                f"Body force must be an explicit 2-component vector (bx, by) of shape (2,), got shape {b_arr.shape}."
+            )
+
+        bx, by = float(b_arr[0]), float(b_arr[1])
+        if not (np.isfinite(bx) and np.isfinite(by)):
+            raise ValueError(
+                f"Body force components must be finite numeric values, got ({bx}, {by})."
+            )
+
+        b_max = max(abs(bx), abs(by))
         if b_max < 1e-14:
             return elem_signed, elem_abs, 0.0
 
-        # Validate body force quadrature consistency:
-        # The 3-point triangular midpoint rule is degree-2 exact.
-        # Multiplying by the quadratic dual bubble w \in P2 means the integrand b \cdot w
-        # is degree 2 if and only if b is piecewise-constant (P0).
-        # Any spatial variation across evaluation midpoints requires higher-order quadrature.
-        ptp = np.ptp(b_mid, axis=1)
-        if np.max(ptp) > 1e-10 * b_max:
-            raise ValueError(
-                "ElementResidualEvaluator currently supports piecewise-constant body forces (degree 0) "
-                "for exact degree-2 triangular midpoint quadrature. Spatially varying body forces "
-                "require higher-order quadrature and are not supported."
-            )
+        skm = gdec_mesh.mesh
+        nfacets = skm.facets.shape[1]
+        b_mid = np.vstack([np.full(nfacets, bx), np.full(nfacets, by)])
 
         areas = gdec_mesh.element_areas
 

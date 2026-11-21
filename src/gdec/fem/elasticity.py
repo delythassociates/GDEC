@@ -135,12 +135,17 @@ class LinearElasticitySolver:
         r"""
         Assemble external body force vector:
           f_b = \int_\Omega t (b_x v_x + b_y v_y) d\Omega.
-        Supports constant vectors (bx, by) or piecewise-constant callables.
+        Supports constant vectors (bx, by) or general callables for solver use.
         """
         thickness = self.c.thickness
 
-        if isinstance(body_force_fn, (tuple, list, np.ndarray)) and len(body_force_fn) == 2:
-            bx, by = float(body_force_fn[0]), float(body_force_fn[1])
+        if isinstance(body_force_fn, (tuple, list, np.ndarray)) and not callable(body_force_fn):
+            b_arr = np.asarray(body_force_fn, dtype=float)
+            if b_arr.shape != (2,):
+                raise ValueError(f"Body force must be a 2-component vector (bx, by), got shape {b_arr.shape}.")
+            bx, by = float(b_arr[0]), float(b_arr[1])
+            if not (np.isfinite(bx) and np.isfinite(by)):
+                raise ValueError(f"Body force components must be finite numeric values, got ({bx}, {by}).")
             @fem.LinearForm
             def body_force_form(v, w):
                 return thickness * (bx * v[0] + by * v[1])

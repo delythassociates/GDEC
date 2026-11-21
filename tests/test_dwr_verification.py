@@ -481,7 +481,7 @@ def test_dwr_element_volume_residual_thickness_scaling():
     c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
     solver = LinearElasticitySolver(c)
     mesh = GDECMesh.create_cantilever_mesh(width=2.0, height=0.5, nx=5, ny=3)
-    b_fn = lambda x: np.array([np.zeros_like(x[0]), np.full_like(x[1], -1e5)])
+    b_fn = (0.0, -1e5)
 
     sol = solver.solve(mesh, loads=[], fixed_boundaries=[("left", ["x", "y"])], body_force_fn=b_fn, solve_adjoint=True)
 
@@ -516,11 +516,8 @@ def test_dwr_full_body_force_bvp_verification():
     solver = LinearElasticitySolver(c)
     estimator = RefinementEstimator(c)
 
-    # Constant downward gravity body force
-    def b_gravity(x):
-        bx = np.zeros_like(x[0])
-        by = np.full_like(x[1], -1e5)
-        return np.array([bx, by])
+    # Constant downward gravity body force vector (bx, by)
+    b_gravity = (0.0, -1e5)
 
     # Reference solution on 65x33
     ref_mesh = GDECMesh.create_cantilever_mesh(2.0, 0.5, 65, 33)
@@ -599,12 +596,14 @@ def test_dwr_helper_and_evaluator_consistency():
     np.testing.assert_allclose(w_eval[:, int_idx], w_helper[:, int_idx], atol=1e-15, rtol=1e-15)
 
 
-# 15. Body Force Scope & Spatially Varying Validation
-def test_dwr_spatially_varying_body_force_validation():
+# 15. Body Force Scope & Input Contract Validation
+def test_dwr_body_force_input_contract_and_validation():
     """
-    Verify ElementResidualEvaluator:
-      1. Rejects spatially varying body-force callables with explicit ValueError.
-      2. Accepts piecewise-constant body-force callables and arrays.
+    Verify ElementResidualEvaluator and DWREstimator body-force input contract:
+      1. Accepts explicit 2-component constant vectors (tuple, list, np.ndarray).
+      2. Rejects invalid dimensions (e.g. length 1 or 3) with ValueError.
+      3. Rejects non-finite values (NaN, infinity) with ValueError.
+      4. Rejects arbitrary callables with clear diagnostic (TypeError).
     """
     mesh = GDECMesh.create_cantilever_mesh(1.0, 1.0, 5, 5)
     c = ConstitutiveTensor.from_properties(E=1000.0, nu=0.25, assumption="plane_stress", thickness=1.0)
@@ -615,20 +614,49 @@ def test_dwr_spatially_varying_body_force_validation():
     jump_eval = FacetTractionJumpEvaluator(c)
     facet_data = jump_eval.evaluate(mesh, stresses, loads=[])
     
-    # Piecewise-constant body force callable must pass
-    const_fn = lambda x: np.array([np.full_like(x[0], 10.0), np.full_like(x[1], -20.0)])
-    s, a, norm = ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=const_fn, facet_data=facet_data)
-    assert norm > 0.0
+    # 1. Valid constant vectors: tuple, list, array
+    s_tup, _, norm_tup = ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(10.0, -20.0), facet_data=facet_data)
+    s_lst, _, norm_lst = ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=[10.0, -20.0], facet_data=facet_data)
+    s_arr, _, norm_arr = ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=np.array([10.0, -20.0]), facet_data=facet_data)
+    assert norm_tup > 0.0
+    np.testing.assert_allclose(norm_tup, norm_lst, rtol=1e-14)
+    np.testing.assert_allclose(norm_tup, norm_arr, rtol=1e-14)
+    np.testing.assert_allclose(s_tup, s_arr, rtol=1e-14)
     
-    # Constant array/tuple must pass
-    s_arr, a_arr, norm_arr = ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(10.0, -20.0), facet_data=facet_data)
-    np.testing.assert_allclose(norm, norm_arr, rtol=1e-14)
+    # 2. Zero vector: norm is 0
+    _, _, norm_zero = ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(0.0, 0.0), facet_data=facet_data)
+    assert norm_zero == 0.0
     
-    # Spatially varying body force callable must raise ValueError
+    # 3. Invalid types (non-sequence)
+    with pytest.raises(TypeError, match="explicit 2-component constant vector"):
+        ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=100.0, facet_data=facet_data)
+        
+    # 4. Invalid dimensions
+    with pytest.raises(ValueError, match="explicit 2-component vector"):
+        ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(10.0,), facet_data=facet_data)
+    with pytest.raises(ValueError, match="explicit 2-component vector"):
+        ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(10.0, 20.0, 30.0), facet_data=facet_data)
+        
+    # 5. Non-finite values (NaN, infinity)
+    with pytest.raises(ValueError, match="finite numeric values"):
+        ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(np.nan, 10.0), facet_data=facet_data)
+    with pytest.raises(ValueError, match="finite numeric values"):
+        ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(10.0, np.inf), facet_data=facet_data)
+    with pytest.raises(ValueError, match="finite numeric values"):
+        ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=(-np.inf, 0.0), facet_data=facet_data)
+        
+    # 6. Arbitrary callables rejected by DWR estimator and evaluator
     var_fn = lambda x: np.array([x[0] ** 2, x[1]])
-    import pytest
-    with pytest.raises(ValueError, match="ElementResidualEvaluator currently supports piecewise-constant body forces"):
+    const_fn = lambda x: np.array([10.0, -20.0])
+    with pytest.raises(TypeError, match="DWREstimator and ElementResidualEvaluator require an explicit constant vector"):
         ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=var_fn, facet_data=facet_data)
+    with pytest.raises(TypeError, match="DWREstimator and ElementResidualEvaluator require an explicit constant vector"):
+        ElementResidualEvaluator.evaluate(mesh, sol, body_force_fn=const_fn, facet_data=facet_data)
+        
+    # DWREstimator also rejects callables
+    estimator = DWREstimator(c)
+    with pytest.raises(TypeError, match="DWREstimator and ElementResidualEvaluator require an explicit constant vector"):
+        estimator.estimate(mesh, sol, body_force_fn=const_fn)
 
 
 # 16. Comprehensive Manufactured 2D Linear Elasticity BVP with Body Force
@@ -638,6 +666,7 @@ def test_dwr_manufactured_body_force_convergence():
       - Known analytical quadratic displacement field: u_x = c1 * x^2, u_y = d1 * x^2.
       - Analytical linear strain and stress fields.
       - Body force derived from analytical equilibrium: b_x = - 2 * c1 * C11, b_y = - 2 * d1 * G.
+      - Explicit constant vector representation: body_force = (b_x, b_y).
       - Consistent clamped Dirichlet boundary on left (x=0) and Neumann tractions on top, bottom, right.
       - Explicit linear QoI: average vertical displacement on right boundary (exact J = d1 * L^2).
     Evaluated across four successively refined meshes (N = 5, 9, 17, 33).
@@ -664,7 +693,7 @@ def test_dwr_manufactured_body_force_convergence():
     # Exact body force derived from equilibrium: div(sigma) + b = 0
     bx = - 2.0 * c1 * C11
     by = - 2.0 * d1 * G
-    body_force = lambda x: np.array([bx * np.ones_like(x[0]), by * np.ones_like(x[1])])
+    body_force = (bx, by)  # Explicit 2-component constant vector
 
     L, H = 1.0, 1.0
     t_right_x = 2.0 * c1 * C11 * L

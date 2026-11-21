@@ -280,26 +280,33 @@ $$
 $$
 Notice the explicit linear scaling with domain thickness $t$.
 
-### 6.2 Supported Body-Force Classes & Mathematically Exact Quadrature
+### 6.2 Supported Body-Force Classes & Enforceable Input Contract
 The volume residual requires integrating $\mathbf{b}(\mathbf{x}) \cdot (\mathbf{z} - \Pi_h \mathbf{z})$ over each triangular element $K$.
 Along each edge $F$, the 1D Hermite bubble has midpoint value $\mathbf{w}_{\text{mid}, F} = \frac{3}{2 h_F} \mathbf{W}_F$. On triangle $K$, the enrichment field is quadratic: $\mathbf{w} \in [P_2(K)]^2$.
 
-**Supported Class (Piecewise-Constant Body Forces $\mathbf{b} \in [P_0]^2$):**
-- When $\mathbf{b}(\mathbf{x}) = \mathbf{b}_K = \text{const}$ (e.g. gravity, uniform centrifugal loads, constant block forces):
-  The integrand $\mathbf{b}_K \cdot \mathbf{w}(\mathbf{x})$ is a polynomial of degree 2 ($P_2$).
-- The standard 3-point midpoint quadrature rule on triangles (Hammer-Marlowe-Stroud degree 2) evaluates at the 3 edge midpoints $\mathbf{m}_F = \frac{1}{2}(\mathbf{x}_0 + \mathbf{x}_1)$ with weight $\frac{\text{Area}_K}{3}$:
-  $$
-  \int_K g(\mathbf{x}) \, d\Omega = \frac{\text{Area}_K}{3} \sum_{F \in \partial K} g(\mathbf{m}_F).
-  $$
-  Because this rule integrates all degree-2 polynomials on triangles **exactly**, there is zero quadrature error:
-  $$
-  t \int_K \mathbf{b} \cdot (\mathbf{z} - \Pi_h \mathbf{z}) \, d\Omega = t \frac{\text{Area}_K}{3} \sum_{F \in \partial K} \mathbf{b}(\mathbf{m}_F) \cdot \left( \frac{3}{2 h_F} \mathbf{W}_F \right).
-  $$
-- In the primal problem, $\int_K t \mathbf{b} \cdot \mathbf{v} \, d\Omega$ with $\mathbf{v} \in [P_1]^2$ has a degree-1 integrand. The degree-2 quadrature on `InteriorBasis` is likewise exact. Thus, the primal assembly and DWR volume residual use **fully compatible, exact degree-2 quadrature**.
+**Actual Supported Scope (Globally Constant Body Force):**
+- **Contract:** $\mathbf{b}(\mathbf{x}) = (b_x, b_y) = \text{constant over the complete domain}$.
+  Because the midpoint evaluator aggregates facet midpoints globally across the mesh, the current estimator strictly supports a **globally constant vector**, not an arbitrary piecewise-constant $P_0$ field that varies element-by-element.
+- **Enforceable Input Contract:**
+  - `DWREstimator` and `ElementResidualEvaluator` accept an explicit two-component vector `(bx, by)` (as tuple, list, or `np.ndarray` of shape `(2,)`).
+  - Shape and numeric finiteness are validated strictly (rejecting non-2D shapes, `NaN`, and `Inf`).
+  - Arbitrary callables are **rejected** with a clear `TypeError` diagnostic, as constancy cannot be certified through finite sampling.
+- **Future Element-Wise $P_0$ Scope:**
+  Future extensions supporting general per-element piecewise-constant $P_0$ fields must use an explicit per-element representation (e.g. array of shape `(2, nelements)`) and element-local integration rather than global midpoint arrays.
 
-**Explicit Restriction & Validation:**
-- `ElementResidualEvaluator` validates all input body forces: arbitrary callables are tested across evaluation points. Any spatially varying body force ($\mathbf{b} \notin P_0$) triggers a `ValueError` rather than silently assuming degree-2 accuracy.
-- Spatially varying polynomial body forces would require higher-order quadrature (e.g. 7-point Dunavant degree 5 for $P_1$ or $P_2$ body forces). Currently, the certified estimator scope is restricted to piecewise-constant body forces.
+**Quadrature Exactness for Globally Constant Body Forces:**
+- For $\mathbf{b}(\mathbf{x}) = (b_x, b_y) = \text{const}$, the integrand $\mathbf{b} \cdot \mathbf{w}(\mathbf{x})$ is a polynomial of degree 2 ($P_2$).
+- The standard 3-point midpoint rule on triangles (Hammer-Marlowe-Stroud degree 2) integrates all degree-2 polynomials **exactly**:
+  $$
+  t \int_K \mathbf{b} \cdot (\mathbf{z} - \Pi_h \mathbf{z}) \, d\Omega = t \frac{\text{Area}_K}{3} \sum_{F \in \partial K} \mathbf{b} \cdot \left( \frac{3}{2 h_F} \mathbf{W}_F \right).
+  $$
+  Quadrature error is identically zero.
+- In primal assembly, `LinearElasticitySolver.assemble_body_force` integrates $t \int_K \mathbf{b} \cdot \mathbf{v} \, d\Omega$ with $\mathbf{v} \in [P_1]^2$. The degree-2 quadrature on `InteriorBasis` is likewise exact for constant vectors. Both primal and DWR estimation share compatible, exact degree-2 quadrature.
+
+**Affine Neumann Traction Verification:**
+- For the manufactured boundary-value problem, boundary tractions on top and bottom are linear affine functions $\mathbf{t}_N(\mathbf{x}) = \mathbf{A} \mathbf{x}$.
+- `FacetBasis` integrates affine tractions with zero quadrature error in primal assembly, and `FacetTractionJumpEvaluator` evaluates $\mathbf{t}_N$ at facet midpoints for boundary residuals.
+- This verification confirms consistency for affine linear boundary tractions, recorded separately from general arbitrary variable boundary traction support.
 
 ### 6.3 Dimensional $L_2$ Volume Residual Norm
 The physically meaningful $L_2(\Omega)$ norm of the volume residual includes element areas and domain thickness:

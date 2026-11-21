@@ -121,6 +121,9 @@ To eliminate conflation between different stopping criteria, strategies are comp
    - When an explicit, localized engineering Quantity of Interest is targeted.
    - When a computable, signed a posteriori error estimate $\mathcal{E}_{\text{DWR}}$ is required for verification contracts.
    - In problems with localized boundary layer phenomena where far-field refinement is undesirable.
+   - **Supported Body-Force Scope:** Explicit globally constant vectors $\mathbf{b}(\mathbf{x}) = (b_x, b_y) = \text{const}$ over the complete domain (e.g. gravity, uniform centrifugal loading). Arbitrary callables are rejected by the estimator; general per-element piecewise-constant $P_0$ fields require future element-local representations.
+   - **Boundary Tractions:** Verified for constant tractions and affine linear tractions $\mathbf{t}_N = \mathbf{A}\mathbf{x}$ (exercised in the manufactured benchmark), distinct from arbitrary variable boundary traction support.
+   - **Certification Contract:** DWR error estimates and Richardson extrapolation provide asymptotic verification only (`is_certified_dwr_bound = False`); guaranteed certified upper/lower bounds require analytical evaluation of domain trace constants.
 2. **Select `zz` (`recovery`):**
    - When global stress accuracy or strain energy norm convergence is required.
    - When fast indicator evaluation is preferred without constructing an adjoint problem.
