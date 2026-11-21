@@ -205,3 +205,41 @@ def test_cpu_evaluate_parameter_scaling_validation():
 
     with pytest.raises(NumericalBackendError, match="strictly positive"):
         backend.evaluate_parameter_scaling_batch([-1.0], [1.0], J_0=1.0, E_0=10.0, P_0=1.0)
+
+
+def test_cpu_solve_cg_edge_cases():
+    """Test solver edge cases: zero RHS, empty system, dimension mismatch, and SPD status telemetry."""
+    import scipy.sparse.linalg as spla
+    backend = CPUBackend()
+    n = 10
+    A = sp.diags([np.full(n, 4.0), np.full(n - 1, -1.0), np.full(n - 1, -1.0)], [0, -1, 1], format="csr")
+
+    # Zero RHS edge case
+    b_zero = np.zeros(n)
+    x_zero, info_zero = backend.solve_cg(A, b_zero)
+    assert info_zero["converged"] is True
+    assert info_zero["iterations"] == 0
+    assert info_zero["residual_norm"] == 0.0
+    np.testing.assert_allclose(x_zero, 0.0)
+
+    # Preconditioner dimension mismatch
+    M_bad = spla.LinearOperator((n + 2, n + 2), matvec=lambda v: v)
+    M_bad.is_spd = True
+    with pytest.raises(InputValidationError, match="Preconditioner shape"):
+        backend.solve_cg(A, np.ones(n), M=M_bad)
+
+    # Empty 0x0 system
+    A_empty = sp.csr_matrix((0, 0))
+    with pytest.raises(InputValidationError, match="empty 0x0 system"):
+        backend.solve_cg(A_empty, np.array([]))
+
+    # Invalid max_iter
+    with pytest.raises(InputValidationError, match="positive integer"):
+        backend.solve_cg(A, np.ones(n), max_iter=-5)
+
+    # Verified SPD vs Caller Assumed SPD telemetry
+    _, info_verified = backend.solve_cg(A, np.ones(n), caller_certified_spd=False)
+    assert info_verified["spd_status"] == "VERIFIED_SPD"
+
+    _, info_assumed = backend.solve_cg(A, np.ones(n), caller_certified_spd=True)
+    assert info_assumed["spd_status"] == "CALLER_ASSUMED_SPD"

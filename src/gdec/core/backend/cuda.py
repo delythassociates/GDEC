@@ -15,7 +15,7 @@ import numpy as np
 import scipy.sparse as sp
 
 from gdec.core.backend.capabilities import BackendCapabilities, CapabilityStatus
-from gdec.core.backend.spd_check import verify_cg_eligibility
+from gdec.core.backend.spd_check import verify_cg_eligibility, SPDVerificationStatus
 from gdec.core.backend.exceptions import (
     BackendNotAvailableError,
     UnsupportedCapabilityError,
@@ -323,58 +323,158 @@ class CUDABackend:
         """
         Minimal experimental GPU Conjugate Gradient solver for SPD systems.
         Enforces identical structural and SPD verification checks as CPUBackend.
+        Tracks GPU data residency, host-device transfers, and explicit SPD states.
         """
         self._ensure_operational()
 
-        # Extract host arrays for structural and SPD verification
-        A_host = self.to_host(A) if (cp_sp is not None and cp_sp.issparse(A)) else (
-            A.tocsr() if sp.issparse(A) else np.asarray(A)
-        )
-        b_host = self.to_host(b) if (cp is not None and isinstance(b, cp.ndarray)) else np.asarray(b)
+        is_gpu_sparse = cp_sp is not None and cp_sp.issparse(A)
+        is_gpu_vec = cp is not None and isinstance(b, cp.ndarray)
 
-        # Enforce unified eligibility policy
-        n, _, _ = verify_cg_eligibility(
-            A=A_host,
-            b=b_host,
-            rtol=rtol,
-            atol=atol,
-            max_iter=max_iter,
-            caller_certified_spd=caller_certified_spd,
-        )
+        device_resident_validation = False
+        host_matrix_transfers = 0
+        spd_status_val = SPDVerificationStatus.VERIFIED_SPD
+
+        # Case 1: Matrix is already device-resident on GPU
+        if is_gpu_sparse:
+            A_gpu = A.tocsr()
+            n_rows, n_cols = A_gpu.shape
+
+            if n_rows == 0 or n_cols == 0:
+                raise InputValidationError("Conjugate Gradient cannot solve empty 0x0 system.")
+            if n_rows != n_cols:
+                raise InputValidationError(f"Conjugate Gradient requires a square matrix, got {n_rows} x {n_cols}.")
+
+            b_gpu = b if is_gpu_vec else self.to_device(np.asarray(b))
+            if b_gpu.ndim != 1 or b_gpu.shape[0] != n_rows:
+                raise InputValidationError(f"Dimension mismatch: A is ({n_rows}, {n_cols}), but b has length {b_gpu.shape[0]}.")
+
+            # Check finiteness on GPU
+            if bool(cp.any(cp.isnan(A_gpu.data)) or cp.any(cp.isinf(A_gpu.data))):
+                raise NumericalBackendError("Matrix A contains non-finite values (NaN or Inf).")
+            if bool(cp.any(cp.isnan(b_gpu)) or cp.any(cp.isinf(b_gpu))):
+                raise NumericalBackendError("Right-hand side b contains non-finite values (NaN or Inf).")
+
+            # Parameter checks
+            if rtol <= 0.0 or not np.isfinite(rtol):
+                raise InputValidationError(f"Relative tolerance rtol must be positive and finite, got {rtol}.")
+            if atol < 0.0 or not np.isfinite(atol):
+                raise InputValidationError(f"Absolute tolerance atol must be non-negative and finite, got {atol}.")
+            if max_iter is not None:
+                if not isinstance(max_iter, int) or max_iter <= 0:
+                    raise InputValidationError(f"Maximum iterations max_iter must be a positive integer, got {max_iter}.")
+
+            # Positive diagonal check on GPU
+            diag_gpu = A_gpu.diagonal()
+            if bool(cp.any(diag_gpu <= 0.0)):
+                min_d = float(cp.min(diag_gpu).get())
+                raise NumericalBackendError(
+                    f"Matrix A diagonal contains non-positive entries (minimum diagonal value = {min_d:.2e} <= 0). "
+                    "Necessary condition for positive definiteness failed."
+                )
+
+            if caller_certified_spd:
+                # Fully device-resident validation: zero host matrix transfers
+                device_resident_validation = True
+                host_matrix_transfers = 0
+                spd_status_val = SPDVerificationStatus.CALLER_ASSUMED_SPD
+                n = n_rows
+            else:
+                # Spectral eigensolve requires host ARPACK / dense eigensolve
+                host_matrix_transfers = 1
+                A_host = self.to_host(A_gpu)
+                b_host = self.to_host(b_gpu)
+                eligibility = verify_cg_eligibility(
+                    A=A_host,
+                    b=b_host,
+                    rtol=rtol,
+                    atol=atol,
+                    max_iter=max_iter,
+                    caller_certified_spd=False,
+                )
+                n = eligibility.n
+                spd_status_val = eligibility.status
+
+        else:
+            # Case 2: Input matrix is supplied as host SciPy sparse matrix
+            if not sp.issparse(A):
+                raise InputValidationError("Matrix A must be a scipy.sparse matrix or cupyx.scipy.sparse matrix.")
+            A_host = A.tocsr()
+            b_host = self.to_host(b) if is_gpu_vec else np.asarray(b)
+
+            eligibility = verify_cg_eligibility(
+                A=A_host,
+                b=b_host,
+                rtol=rtol,
+                atol=atol,
+                max_iter=max_iter,
+                caller_certified_spd=caller_certified_spd,
+            )
+            n = eligibility.n
+            spd_status_val = eligibility.status
+
+            A_gpu = self.to_device(A_host)
+            b_gpu = self.to_device(b_host)
+            device_resident_validation = False
+            host_matrix_transfers = 0
+
+        # Zero RHS edge case
+        norm_b = float(cp.linalg.norm(b_gpu).get())
+        if norm_b == 0.0:
+            return np.zeros(n, dtype=np.float64), {
+                "converged": True,
+                "iterations": 0,
+                "residual_norm": 0.0,
+                "exit_code": 0,
+                "breakdown_reason": None,
+                "spd_status": spd_status_val.value,
+                "device_resident_validation": device_resident_validation,
+                "host_matrix_transfers": host_matrix_transfers,
+                "preconditioner_status": "NONE",
+            }
 
         if max_iter is None:
             max_iter = n * 2
 
-        # Transfer verified inputs to device
-        A_gpu = A if (cp_sp is not None and cp_sp.issparse(A)) else self.to_device(sp.csr_matrix(A_host))
-        b_gpu = b if (cp is not None and isinstance(b, cp.ndarray)) else self.to_device(b_host)
-
-        # Preconditioner handling: support GPU Jacobi or reject unsupported CPU preconditioners
+        # Preconditioner handling: explicit GPU contract validation
         M_gpu = None
+        precond_status = "NONE"
         if M is not None:
-            if isinstance(M, str) and M.lower() == "jacobi":
-                diag_gpu = A_gpu.diagonal()
-                M_gpu = cp_spla.LinearOperator(A_gpu.shape, matvec=lambda v: v / diag_gpu, dtype=A_gpu.dtype)
-            elif hasattr(M, "is_spd"):
-                if not M.is_spd:
-                    p_name = getattr(M, "name", type(M).__name__)
-                    raise NumericalBackendError(
-                        f"Preconditioner '{p_name}' is not SPD (is_spd=False). "
-                        "Conjugate Gradient strictly requires an SPD preconditioner."
-                    )
-                p_name = getattr(M, "name", "").lower()
-                if "jacobi" in p_name:
+            if isinstance(M, str):
+                if M.lower() == "jacobi":
                     diag_gpu = A_gpu.diagonal()
+                    if bool(cp.any(diag_gpu == 0.0)):
+                        raise NumericalBackendError("Cannot construct Jacobi preconditioner: zero diagonal detected.")
                     M_gpu = cp_spla.LinearOperator(A_gpu.shape, matvec=lambda v: v / diag_gpu, dtype=A_gpu.dtype)
-                elif "identity" in p_name:
+                    M_gpu.is_spd = True
+                    precond_status = "VERIFIED_SPD_JACOBI"
+                elif M.lower() in ("none", "identity"):
                     M_gpu = None
+                    precond_status = "IDENTITY"
                 else:
                     raise UnsupportedCapabilityError(
-                        f"Preconditioner '{getattr(M, 'name', type(M).__name__)}' is a CPU operator. "
-                        "CUDABackend requires a GPU-resident preconditioner (e.g. 'jacobi' or cupyx LinearOperator)."
+                        f"Unsupported preconditioner name '{M}' passed to CUDABackend. "
+                        "Supported string names are 'jacobi' or 'none'."
                     )
             elif cp_spla is not None and isinstance(M, cp_spla.LinearOperator):
+                if tuple(M.shape) != tuple(A_gpu.shape):
+                    raise InputValidationError(
+                        f"Preconditioner shape {M.shape} does not match matrix shape {A_gpu.shape}."
+                    )
+                if not getattr(M, "is_spd", False):
+                    p_name = getattr(M, "name", type(M).__name__)
+                    raise NumericalBackendError(
+                        f"GPU Preconditioner '{p_name}' does not declare is_spd=True. "
+                        "Conjugate Gradient strictly requires an SPD preconditioner."
+                    )
                 M_gpu = M
+                precond_status = "CALLER_ASSUMED_SPD_GPU_OPERATOR"
+            elif hasattr(M, "matvec"):
+                # CPU LinearOperator or other host callable
+                p_name = getattr(M, "name", type(M).__name__)
+                raise UnsupportedCapabilityError(
+                    f"Preconditioner '{p_name}' is a CPU operator. "
+                    "CUDABackend requires a GPU-resident preconditioner (e.g. 'jacobi' or cupyx LinearOperator)."
+                )
             else:
                 raise UnsupportedCapabilityError(
                     f"Unsupported preconditioner type '{type(M).__name__}' passed to CUDABackend. "
@@ -393,10 +493,14 @@ class CUDABackend:
             converged = (info == 0)
             return x, {
                 "converged": converged,
-                "iterations": None, # CuPy CG does not return iteration telemetry; documented limitation
+                "iterations": None,  # CuPy CG does not return iteration telemetry; documented limitation
                 "residual_norm": res_norm,
                 "exit_code": info,
                 "breakdown_reason": None if converged else f"CuPy CG did not converge (exit code {info})",
+                "spd_status": spd_status_val.value,
+                "device_resident_validation": device_resident_validation,
+                "host_matrix_transfers": host_matrix_transfers,
+                "preconditioner_status": precond_status,
             }
         except Exception as e:
             if isinstance(e, (UnsupportedCapabilityError, NumericalBackendError, InputValidationError)):

@@ -154,7 +154,7 @@ class TestCUDABackendOperational:
 
         # Rejects CPU LinearOperator
         cpu_M = spla.LinearOperator(A.shape, matvec=lambda v: v)
-        with pytest.raises(UnsupportedCapabilityError, match="Only GPU-resident preconditioners or 'jacobi' are supported"):
+        with pytest.raises(UnsupportedCapabilityError, match="CPU operator"):
             cuda.solve_cg(A, b, M=cpu_M, caller_certified_spd=True)
 
         # Accepts 'jacobi' preconditioner string
@@ -162,6 +162,60 @@ class TestCUDABackendOperational:
         assert info_jacobi["converged"] is True
         res_norm = np.linalg.norm(b - A @ x_jacobi) / np.linalg.norm(b)
         assert res_norm < 1e-6
+
+    def test_cuda_gpu_custom_linear_operator_contract(self):
+        """Verify GPU LinearOperator must declare is_spd=True."""
+        import cupy as cp
+        import cupyx.scipy.sparse.linalg as cp_spla
+        cuda = CUDABackend()
+        n = 25
+        A = sp.diags([np.full(n, 4.0), np.full(n - 1, -1.0), np.full(n - 1, -1.0)], [0, -1, 1], format="csr")
+        b = np.ones(n)
+
+        # GPU LinearOperator without is_spd -> MUST BE REJECTED
+        gpu_M_untrusted = cp_spla.LinearOperator((n, n), matvec=lambda v: v, dtype=cp.float64)
+        with pytest.raises(NumericalBackendError, match="does not declare is_spd=True"):
+            cuda.solve_cg(A, b, M=gpu_M_untrusted, caller_certified_spd=True)
+
+        # GPU LinearOperator with is_spd=True -> ACCEPTED
+        gpu_M_trusted = cp_spla.LinearOperator((n, n), matvec=lambda v: v, dtype=cp.float64)
+        gpu_M_trusted.is_spd = True
+        x_sol, info = cuda.solve_cg(A, b, M=gpu_M_trusted, caller_certified_spd=True)
+        assert info["converged"] is True
+        assert info["preconditioner_status"] == "CALLER_ASSUMED_SPD_GPU_OPERATOR"
+
+    def test_cuda_solve_cg_edge_cases_and_telemetry(self):
+        """Test zero RHS, empty system, dimension mismatch, and data residency telemetry on GPU."""
+        import cupy as cp
+        import cupyx.scipy.sparse as cp_sp
+        cuda = CUDABackend()
+        n = 15
+        A_sp = sp.diags([np.full(n, 4.0), np.full(n - 1, -1.0), np.full(n - 1, -1.0)], [0, -1, 1], format="csr")
+
+        # Zero RHS
+        x_z, info_z = cuda.solve_cg(A_sp, np.zeros(n), caller_certified_spd=True)
+        assert info_z["converged"] is True
+        assert info_z["iterations"] == 0
+        assert info_z["residual_norm"] == 0.0
+        np.testing.assert_allclose(x_z, 0.0)
+
+        # Empty 0x0 system
+        with pytest.raises(InputValidationError, match="empty 0x0 system"):
+            cuda.solve_cg(sp.csr_matrix((0, 0)), np.array([]))
+
+        # Device-resident validation without host transfer
+        A_device = cp_sp.csr_matrix(A_sp)
+        b_device = cp.ones(n, dtype=cp.float64)
+        _, info_res = cuda.solve_cg(A_device, b_device, caller_certified_spd=True)
+        assert info_res["device_resident_validation"] is True
+        assert info_res["host_matrix_transfers"] == 0
+        assert info_res["spd_status"] == "CALLER_ASSUMED_SPD"
+
+        # When caller_certified_spd=False, host transfer is recorded for ARPACK eigensolve
+        _, info_eigensolve = cuda.solve_cg(A_device, b_device, caller_certified_spd=False)
+        assert info_eigensolve["device_resident_validation"] is False
+        assert info_eigensolve["host_matrix_transfers"] == 1
+        assert info_eigensolve["spd_status"] == "VERIFIED_SPD"
 
 
 class TestCUDADetectionAndFallback:

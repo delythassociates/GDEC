@@ -19,7 +19,12 @@ from gdec.core.backend.exceptions import (
 )
 from gdec.core.backend.cpu import CPUBackend
 from gdec.core.backend.cuda import CUDABackend, detect_cuda_capability, CUDADetectionResult, CUDADetectionStatus
-from gdec.core.backend.spd_check import verify_cg_eligibility, compute_symmetry_defect
+from gdec.core.backend.spd_check import (
+    verify_cg_eligibility,
+    compute_symmetry_defect,
+    SPDVerificationStatus,
+    CGEligibilityResult,
+)
 
 
 _BACKEND_REGISTRY: Dict[str, Type[ExecutionBackend]] = {
@@ -75,4 +80,6 @@ __all__ = [
     "get_backend",
     "verify_cg_eligibility",
     "compute_symmetry_defect",
+    "SPDVerificationStatus",
+    "CGEligibilityResult",
 ]

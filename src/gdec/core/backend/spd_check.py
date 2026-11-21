@@ -1,9 +1,11 @@
 """
 Shared SPD and Conjugate Gradient eligibility verification for GDEC backends.
 Enforces identical mathematical safety standards across CPU and GPU backends.
+Formalises explicit verification states: VERIFIED_SPD, CALLER_ASSUMED_SPD, DEMONSTRABLY_NON_SPD.
 """
 
 from __future__ import annotations
+from enum import Enum
 from typing import Tuple, Optional, Any
 import numpy as np
 import scipy.sparse as sp
@@ -14,6 +16,61 @@ from gdec.core.backend.exceptions import (
     InputValidationError,
     NumericalBackendError,
 )
+
+
+class SPDVerificationStatus(str, Enum):
+    """
+    Formal positive-definiteness verification state of a linear operator.
+
+    - VERIFIED_SPD: Numerical verification (symmetry + positive diagonal + spectral eigensolve
+      confirming lambda_min > 0) was successfully performed within documented tolerances.
+    - CALLER_ASSUMED_SPD: The caller explicitly declared the matrix as SPD based on
+      domain physics, kinematics, or prior certification; upfront eigensolve was skipped.
+    - DEMONSTRABLY_NON_SPD: Structural or spectral checks proved the matrix is not SPD
+      (e.g., asymmetry, non-positive diagonal, or lambda_min <= 0).
+    - INCONCLUSIVE: Eigensolve failed to converge or system was ill-conditioned to establish status.
+    """
+    VERIFIED_SPD = "VERIFIED_SPD"
+    CALLER_ASSUMED_SPD = "CALLER_ASSUMED_SPD"
+    DEMONSTRABLY_NON_SPD = "DEMONSTRABLY_NON_SPD"
+    INCONCLUSIVE = "INCONCLUSIVE"
+
+
+class CGEligibilityResult(tuple):
+    """
+    Backwards-compatible 3-tuple (dimension, lambda_min, lambda_max)
+    that also exposes .status, .dimension, .lambda_min, .lambda_max, and .reasons.
+    """
+    n: int
+    lambda_min: float
+    lambda_max: float
+    status: SPDVerificationStatus
+    reasons: Tuple[str, ...]
+
+    def __new__(
+        cls,
+        n: int,
+        lambda_min: float,
+        lambda_max: float,
+        status: SPDVerificationStatus,
+        reasons: Tuple[str, ...] = (),
+    ):
+        return super().__new__(cls, (n, lambda_min, lambda_max))
+
+    def __init__(
+        self,
+        n: int,
+        lambda_min: float,
+        lambda_max: float,
+        status: SPDVerificationStatus,
+        reasons: Tuple[str, ...] = (),
+    ):
+        self.n = n
+        self.dimension = n
+        self.lambda_min = lambda_min
+        self.lambda_max = lambda_max
+        self.status = status
+        self.reasons = reasons
 
 
 def compute_symmetry_defect(A: sp.spmatrix | np.ndarray) -> float:
@@ -49,7 +106,7 @@ def verify_cg_eligibility(
     caller_certified_spd: bool = False,
     sym_tol: float = 1e-8,
     null_tol: float = 1e-10,
-) -> Tuple[int, float, float]:
+) -> CGEligibilityResult:
     r"""
     Enforce unified structural and positive-definiteness eligibility checks for Conjugate Gradient.
 
@@ -78,7 +135,7 @@ def verify_cg_eligibility(
 
     Returns
     -------
-    (n, lambda_min, lambda_max)
+    CGEligibilityResult : tuple subclass (n, lambda_min, lambda_max) with .status attribute.
     """
     # 1. Structural Checks: Matrix Shape and Format
     if sp.issparse(A):
@@ -89,6 +146,9 @@ def verify_cg_eligibility(
         data_arr = A_mat
 
     n_rows, n_cols = A_mat.shape
+    if n_rows == 0 or n_cols == 0:
+        raise InputValidationError("Conjugate Gradient cannot solve empty 0x0 system.")
+
     if n_rows != n_cols:
         raise InputValidationError(f"Conjugate Gradient requires a square matrix, got {n_rows} x {n_cols}.")
 
@@ -109,8 +169,9 @@ def verify_cg_eligibility(
         raise InputValidationError(f"Relative tolerance rtol must be positive and finite, got {rtol}.")
     if atol < 0.0 or not np.isfinite(atol):
         raise InputValidationError(f"Absolute tolerance atol must be non-negative and finite, got {atol}.")
-    if max_iter is not None and max_iter <= 0:
-        raise InputValidationError(f"Maximum iterations max_iter must be a positive integer, got {max_iter}.")
+    if max_iter is not None:
+        if not isinstance(max_iter, int) or max_iter <= 0:
+            raise InputValidationError(f"Maximum iterations max_iter must be a positive integer, got {max_iter}.")
 
     # 4. Symmetry Check
     delta_sym = compute_symmetry_defect(A_mat)
@@ -133,7 +194,10 @@ def verify_cg_eligibility(
     lambda_min = 0.0
     lambda_max = 0.0
 
-    if not caller_certified_spd:
+    if caller_certified_spd:
+        status = SPDVerificationStatus.CALLER_ASSUMED_SPD
+        reasons = ("Caller explicitly certified SPD; spectral eigensolve skipped.",)
+    else:
         # Perform rigorous spectral verification of smallest algebraic eigenvalue
         if n_rows <= 300:
             dense_A = A_mat.toarray() if sp.issparse(A_mat) else A_mat
@@ -169,4 +233,7 @@ def verify_cg_eligibility(
                 "Conjugate Gradient requires a strictly positive-definite operator without rigid body modes."
             )
 
-    return n_rows, lambda_min, lambda_max
+        status = SPDVerificationStatus.VERIFIED_SPD
+        reasons = (f"Smallest algebraic eigenvalue verified positive: lambda_min = {lambda_min:.4e} > 0.",)
+
+    return CGEligibilityResult(n_rows, lambda_min, lambda_max, status=status, reasons=reasons)

@@ -154,16 +154,26 @@ class SingleQoIEvaluator:
                 raise DecisionRefusalError(reason)
             return self._insufficient(reason, mu=mu, sigma=sigma)
 
-        # Check required evidence categories
-        missing_categories = [
-            cat for cat in self.contract.evidence.required_categories
-            if not evidence_assessment.has_category(cat)
-        ]
-        if missing_categories:
-            reason = f"Missing required evidence categories: {missing_categories}"
+        # Check record-level eligibility for all required categories
+        records_ok, reports_by_cat, record_refusal_reasons = evidence_assessment.evaluate_record_eligibility(
+            required_categories=self.contract.evidence.required_categories,
+            target_model=self.contract.qoi.model_reference or "",
+            target_domain=self.contract.evidence.applicable_domain or "",
+            required_status=self.contract.evidence.validation_status or "verified",
+        )
+        if not records_ok:
+            reason = f"Evidence record eligibility check failed: {'; '.join(record_refusal_reasons)}"
             if raise_on_refusal:
-                raise DecisionRefusalError(reason, diagnostics={"missing_categories": missing_categories})
-            return self._insufficient(reason, mu=mu, sigma=sigma, diagnostics={"missing_categories": missing_categories})
+                raise DecisionRefusalError(
+                    reason,
+                    diagnostics={"record_reports": reports_by_cat, "refusal_reasons": record_refusal_reasons},
+                )
+            return self._insufficient(
+                reason,
+                mu=mu,
+                sigma=sigma,
+                diagnostics={"record_reports": reports_by_cat, "refusal_reasons": record_refusal_reasons},
+            )
 
         # Check model assumptions attestation
         unattested_assumptions = [
@@ -216,9 +226,33 @@ class SingleQoIEvaluator:
         dwr_breached = False
         dwr_rel = None
 
-        if dwr_indicator is not None:
-            if not math.isfinite(dwr_indicator) or dwr_indicator < 0.0:
-                reason = f"Invalid DWR indicator: {dwr_indicator} (must be non-negative finite)"
+        dwr_required = any(
+            cat.strip().lower() in ("discretization_error", "mesh_convergence", "dwr", "numerical_quality")
+            for cat in self.contract.evidence.required_categories
+        )
+
+        effective_dwr = dwr_indicator
+        if effective_dwr is None and evidence_assessment is not None:
+            # Look for numerical_metric in discretization_error / mesh_convergence records
+            for rec in evidence_assessment.evidence_records:
+                if rec.category.strip().lower() in ("discretization_error", "mesh_convergence", "dwr"):
+                    if rec.numerical_metric is not None and math.isfinite(rec.numerical_metric):
+                        effective_dwr = rec.numerical_metric
+                        break
+
+        if dwr_required and effective_dwr is None:
+            reason = (
+                "Mandatory Discretization Quality Evidence Missing: Decision Contract specifies "
+                f"numerical_quality_threshold ({self.contract.evidence.numerical_quality_threshold}) or requires "
+                "discretization error assessment, but no DWR error indicator or valid numerical_metric was provided."
+            )
+            if raise_on_refusal:
+                raise DecisionRefusalError(reason)
+            return self._insufficient(reason, mu=mu, sigma=sigma)
+
+        if effective_dwr is not None:
+            if not math.isfinite(effective_dwr) or effective_dwr < 0.0:
+                reason = f"Invalid DWR indicator: {effective_dwr} (must be non-negative finite)"
                 if raise_on_refusal:
                     raise DecisionRefusalError(reason)
                 return self._insufficient(reason, mu=mu, sigma=sigma)
@@ -235,9 +269,9 @@ class SingleQoIEvaluator:
                     raise DecisionRefusalError(reason)
                 return self._insufficient(reason, mu=mu, sigma=sigma)
 
-            dwr_rel = dwr_indicator / ref_scale
+            dwr_rel = effective_dwr / ref_scale
             quality_tol = self.contract.evidence.numerical_quality_threshold
-            if dwr_rel > quality_tol:
+            if quality_tol is not None and dwr_rel > quality_tol:
                 dwr_breached = True
 
         # ----------------------------------------------------------------------
@@ -293,6 +327,7 @@ class SingleQoIEvaluator:
             "numerical_quality_threshold": self.contract.evidence.numerical_quality_threshold,
             "dwr_gate_breached": dwr_breached,
             "assessment_id": evidence_assessment.assessment_id,
+            "record_reports": reports_by_cat,
         }
 
         # ----------------------------------------------------------------------

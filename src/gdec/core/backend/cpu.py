@@ -172,7 +172,7 @@ class CPUBackend:
         b_arr = np.asarray(b)
 
         # Enforce unified structural and SPD eligibility checks
-        n, _, _ = verify_cg_eligibility(
+        eligibility = verify_cg_eligibility(
             A=A,
             b=b_arr,
             rtol=rtol,
@@ -180,15 +180,33 @@ class CPUBackend:
             max_iter=max_iter,
             caller_certified_spd=caller_certified_spd,
         )
+        n = eligibility.n
+        spd_status = eligibility.status
 
-        # Preconditioner SPD check
+        # Preconditioner SPD and dimension check
         if M is not None:
+            if hasattr(M, "shape") and tuple(M.shape) != tuple(A.shape):
+                raise InputValidationError(
+                    f"Preconditioner shape {M.shape} does not match matrix shape {A.shape}."
+                )
             if not getattr(M, "is_spd", False):
                 p_name = getattr(M, "name", type(M).__name__)
                 raise NumericalBackendError(
                     f"Preconditioner '{p_name}' does not declare is_spd=True. "
                     "Conjugate Gradient strictly requires an SPD preconditioner."
                 )
+
+        # Zero RHS edge case: exact solution is x = 0
+        norm_b = float(np.linalg.norm(b_arr))
+        if norm_b == 0.0:
+            return np.zeros(n, dtype=np.float64), {
+                "converged": True,
+                "iterations": 0,
+                "residual_norm": 0.0,
+                "exit_code": 0,
+                "breakdown_reason": None,
+                "spd_status": spd_status.value,
+            }
 
         if max_iter is None:
             max_iter = n * 2
@@ -212,6 +230,7 @@ class CPUBackend:
             "residual_norm": res_norm,
             "exit_code": info,
             "breakdown_reason": None if converged else f"SciPy CG exit code {info}",
+            "spd_status": spd_status.value,
         }
 
     def synchronize(self) -> None:

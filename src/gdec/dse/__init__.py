@@ -33,6 +33,8 @@ from gdec.dse.evidence import (
     ValidationStatus,
     EvidenceRecord,
     EvidenceAssessment,
+    EvidenceEligibility,
+    RecordEvaluationReport,
 )
 from gdec.dse.scaling import (
     RestrictedLinearElasticScaling,
@@ -61,6 +63,8 @@ __all__ = [
     "ValidationStatus",
     "EvidenceRecord",
     "EvidenceAssessment",
+    "EvidenceEligibility",
+    "RecordEvaluationReport",
     "RestrictedLinearElasticScaling",
     "ScalingAssumptions",
     "ReferenceBaseline",
