@@ -59,6 +59,14 @@ class ConstitutiveTensor:
         return np.linalg.inv(self.matrix_3x3)
 
 
+class SolverConvergenceError(RuntimeError):
+    """Raised when an iterative linear solver fails to converge to the required tolerance."""
+    def __init__(self, message: str, result: Optional[Any] = None, system: str = "primal"):
+        super().__init__(message)
+        self.result = result
+        self.system = system
+
+
 @dataclass
 class FEMSolution:
     u: np.ndarray             # primal displacement vector (N_dofs,)
@@ -74,13 +82,20 @@ class FEMSolution:
     assembly_time_sec: float = 0.0
     condensation_time_sec: float = 0.0
     factorization_time_sec: float = 0.0
+    preconditioner_setup_time_sec: float = 0.0
     primal_solve_time_sec: float = 0.0
     adjoint_solve_time_sec: float = 0.0
     total_solver_time_sec: float = 0.0
     factorization_reused: bool = True
     solver_backend: str = "direct"
+    converged: bool = True
+    primal_converged: bool = True
+    adjoint_converged: bool = True
     primal_iterations: int = 0
     adjoint_iterations: int = 0
+    primal_relative_residual: float = 0.0
+    adjoint_relative_residual: float = 0.0
+    termination_reason: Optional[str] = None
 
 
 class LinearElasticitySolver:
@@ -224,6 +239,9 @@ class LinearElasticitySolver:
         solver_type: str = "direct",
         solver_rtol: float = 1e-8,
         solver_atol: float = 1e-12,
+        solver_max_iter: Optional[int] = None,
+        raise_on_nonconvergence: bool = True,
+        caller_certified_spd: bool = True,
     ) -> FEMSolution:
         """
         Solve primal and adjoint systems with discrete stage timings and optional factorization reuse.
@@ -261,6 +279,12 @@ class LinearElasticitySolver:
 
         primal_iters = 0
         adjoint_iters = 0
+        primal_rel_res = 0.0
+        adjoint_rel_res = 0.0
+        primal_conv = True
+        adjoint_conv = True
+        term_reason: Optional[str] = None
+        t_precond_setup = 0.0
 
         if solver_type == "direct":
             if reuse_factorization:
@@ -268,6 +292,7 @@ class LinearElasticitySolver:
                 t0 = time.perf_counter()
                 solve_fac = spla.factorized(K_free.tocsc())
                 t_factor = time.perf_counter() - t0
+                actual_fac_reused = True
 
                 # Step 4: Primal solve (fast triangular back-solve)
                 t0 = time.perf_counter()
@@ -292,6 +317,7 @@ class LinearElasticitySolver:
                 u = fem.solve(K_free, f_free, u_full, I)
                 t_primal = time.perf_counter() - t0
                 t_factor = 0.0
+                actual_fac_reused = False
 
                 z = None
                 t_adjoint = 0.0
@@ -299,6 +325,16 @@ class LinearElasticitySolver:
                     t0 = time.perf_counter()
                     z = fem.solve(*fem.condense(K, g, D=dofs_fixed))
                     t_adjoint = time.perf_counter() - t0
+
+            term_reason = "direct_solve_success"
+            # Compute direct relative residual
+            f_norm = float(np.linalg.norm(f_free))
+            res_dir = f_free - K_free.dot(u[I])
+            primal_rel_res = float(np.linalg.norm(res_dir)) / max(f_norm, 1e-15)
+            if solve_adjoint and z is not None:
+                g_norm = float(np.linalg.norm(g[I]))
+                res_adj_dir = g[I] - K_free.dot(z[I])
+                adjoint_rel_res = float(np.linalg.norm(res_adj_dir)) / max(g_norm, 1e-15)
         else:
             # Experimental iterative Krylov solver
             from gdec.fem.solvers.iterative import (
@@ -308,6 +344,9 @@ class LinearElasticitySolver:
                 IncompleteCholeskyPreconditioner,
                 AMGPreconditioner,
             )
+
+            actual_fac_reused = False  # Iterative solvers never reuse direct factorization
+            t_factor = 0.0
 
             t0 = time.perf_counter()
             if solver_type in ["cg", "identity"]:
@@ -323,35 +362,70 @@ class LinearElasticitySolver:
                     f"Unknown solver_type: '{solver_type}'. "
                     "Supported: 'direct', 'cg', 'pcg_jacobi', 'pcg_ic0', 'pcg_amg'."
                 )
-            t_factor = time.perf_counter() - t0
+            t_precond_setup = time.perf_counter() - t0
 
             cg = ConjugateGradientSolver(default_rtol=solver_rtol, default_atol=solver_atol)
-            res_primal = cg.solve(K_free, f_free, preconditioner=prec)
-            if not res_primal.converged:
-                import warnings
-                warnings.warn(f"Primal CG did not converge: {res_primal.breakdown_reason or 'max iterations reached'}")
+            res_primal = cg.solve(
+                K_free,
+                f_free,
+                preconditioner=prec,
+                max_iter=solver_max_iter,
+                caller_certified_spd=caller_certified_spd,
+            )
+            primal_conv = res_primal.converged
+            primal_rel_res = res_primal.relative_residual
+            primal_iters = res_primal.iterations
+            t_primal = res_primal.time_sec
+
+            if not primal_conv:
+                term_reason = f"primal_failed: {res_primal.breakdown_reason or 'max_iter_exhausted'}"
+                if raise_on_nonconvergence:
+                    raise SolverConvergenceError(
+                        f"Primal linear solve failed to converge: {res_primal.breakdown_reason or 'max iterations reached'}",
+                        result=res_primal,
+                        system="primal",
+                    )
+            else:
+                term_reason = "primal_converged"
 
             u = u_full.copy()
             u[I] = res_primal.x
-            t_primal = res_primal.time_sec
-            primal_iters = res_primal.iterations
 
             z = None
             t_adjoint = 0.0
             if solve_adjoint:
                 g_free = g[I]
-                res_adj = cg.solve(K_free, g_free, preconditioner=prec)
-                if not res_adj.converged:
-                    import warnings
-                    warnings.warn(f"Adjoint CG did not converge: {res_adj.breakdown_reason or 'max iterations reached'}")
+                res_adj = cg.solve(
+                    K_free,
+                    g_free,
+                    preconditioner=prec,
+                    max_iter=solver_max_iter,
+                    caller_certified_spd=caller_certified_spd,
+                )
+                adjoint_conv = res_adj.converged
+                adjoint_rel_res = res_adj.relative_residual
+                adjoint_iters = res_adj.iterations
+                t_adjoint = res_adj.time_sec
+
+                if not adjoint_conv:
+                    term_reason = f"adjoint_failed: {res_adj.breakdown_reason or 'max_iter_exhausted'}"
+                    if raise_on_nonconvergence:
+                        raise SolverConvergenceError(
+                            f"Adjoint linear solve failed to converge: {res_adj.breakdown_reason or 'max iterations reached'}",
+                            result=res_adj,
+                            system="adjoint",
+                        )
+                else:
+                    if primal_conv:
+                        term_reason = "primal_and_adjoint_converged"
+
                 z = np.zeros(basis.N)
                 z[I] = res_adj.x
-                t_adjoint = res_adj.time_sec
-                adjoint_iters = res_adj.iterations
 
         qoi = float(g @ u)
         qoi_mm = qoi * 1000.0
         t_total = time.perf_counter() - t_total_start
+        overall_converged = primal_conv and (adjoint_conv if solve_adjoint else True)
 
         return FEMSolution(
             u=u,
@@ -366,13 +440,20 @@ class LinearElasticitySolver:
             assembly_time_sec=t_assembly,
             condensation_time_sec=t_condensation,
             factorization_time_sec=t_factor,
+            preconditioner_setup_time_sec=t_precond_setup,
             primal_solve_time_sec=t_primal,
             adjoint_solve_time_sec=t_adjoint,
             total_solver_time_sec=t_total,
-            factorization_reused=reuse_factorization,
+            factorization_reused=actual_fac_reused,
             solver_backend=solver_type,
+            converged=overall_converged,
+            primal_converged=primal_conv,
+            adjoint_converged=adjoint_conv,
             primal_iterations=primal_iters,
             adjoint_iterations=adjoint_iters,
+            primal_relative_residual=primal_rel_res,
+            adjoint_relative_residual=adjoint_rel_res,
+            termination_reason=term_reason,
         )
 
     def check_reactions_equilibrium(

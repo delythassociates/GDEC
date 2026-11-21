@@ -1,5 +1,10 @@
 from gdec.fem.mesh import GDECMesh
-from gdec.fem.elasticity import ConstitutiveTensor, FEMSolution, LinearElasticitySolver
+from gdec.fem.elasticity import (
+    ConstitutiveTensor,
+    FEMSolution,
+    LinearElasticitySolver,
+    SolverConvergenceError,
+)
 from gdec.fem.boundary_conditions import parse_boundary_conditions, parse_loads
 from gdec.fem.estimators import RefinementEstimator, IndicatorResult
 from gdec.fem.adaptivity import MeshAdaptor
@@ -25,6 +30,7 @@ __all__ = [
     "ConstitutiveTensor",
     "FEMSolution",
     "LinearElasticitySolver",
+    "SolverConvergenceError",
     "parse_boundary_conditions",
     "parse_loads",
     "RefinementEstimator",

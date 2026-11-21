@@ -3,9 +3,11 @@ Stiffness Matrix Diagnostics and Conditioning Analysis for GDEC.
 Provides rigorous verification of matrix properties:
 - Dimension and sparsity
 - Symmetry defect: delta_sym = ||K - K^T||_F / max(||K||_F, eps)
-- Spectrum: smallest and largest eigenvalues via sparse/dense estimators
+- Spectrum: smallest algebraic and largest eigenvalues via sparse/dense estimators
 - Condition number: kappa_2(K) = lambda_max / lambda_min
+- Definiteness: positive-definite, positive-semidefinite, indefinite, or undetermined
 - Solver eligibility (SPD, CG-eligible, singular, rigid-body modes)
+- Scale-invariant null-mode detection and multiplicity reporting
 """
 
 from __future__ import annotations
@@ -33,9 +35,16 @@ class MatrixDiagnostics:
     is_symmetric: bool
     is_positive_definite: bool
     is_cg_eligible: bool
-    null_modes_count: int
+    null_modes_detected: int          # Count of near-zero modes detected in inspected spectrum
+    exact_nullity: Optional[int]       # Exact nullity if complete spectrum computed, else None
+    has_null_modes: bool               # True if null_modes_detected > 0
     warnings: List[str] = field(default_factory=list)
     eigenvalue_method: str = "none"
+
+    @property
+    def null_modes_count(self) -> int:
+        """Backward compatibility alias for null_modes_detected."""
+        return self.null_modes_detected
 
     def summary(self) -> str:
         lines = [
@@ -47,14 +56,14 @@ class MatrixDiagnostics:
             cond_str = f"{self.condition_number:.2e}" if self.condition_number is not None else "N/A"
             lines.extend([
                 f"Eigenvalue Spectrum [{self.eigenvalue_method}]:",
-                f"  lambda_min: {self.lambda_min:.6e}",
+                f"  lambda_min (smallest algebraic): {self.lambda_min:.6e}",
                 f"  lambda_max: {self.lambda_max:.6e}",
                 f"  kappa_2 (cond): {cond_str}",
             ])
         lines.extend([
             f"Positive Definite: {self.is_positive_definite}",
             f"CG Eligible: {self.is_cg_eligible}",
-            f"Near-Zero Modes (Rigid-body/Null): {self.null_modes_count}",
+            f"Near-Zero Modes Detected: {self.null_modes_detected} (Exact nullity: {self.exact_nullity})",
         ])
         if self.warnings:
             lines.append("Warnings:")
@@ -94,6 +103,8 @@ def analyze_stiffness_matrix(
 ) -> MatrixDiagnostics:
     r"""
     Analyze a stiffness matrix for symmetry, conditioning, null modes, and solver eligibility.
+    Uses scale-invariant spectral thresholds derived from lambda_max and smallest algebraic
+    eigenvalues to reliably distinguish positive-definite, indefinite, and singular systems.
 
     Parameters
     ----------
@@ -141,7 +152,9 @@ def analyze_stiffness_matrix(
             is_symmetric=False,
             is_positive_definite=False,
             is_cg_eligible=False,
-            null_modes_count=0,
+            null_modes_detected=0,
+            exact_nullity=None,
+            has_null_modes=False,
             warnings=warnings,
             eigenvalue_method="none",
         )
@@ -149,6 +162,14 @@ def analyze_stiffness_matrix(
     total_entries = n_rows * n_cols
     density = float(nnz / total_entries) if total_entries > 0 else 0.0
     sparsity = 1.0 - density
+
+    # Check for NaN / Inf in matrix entries
+    if sp.issparse(K_sparse):
+        has_invalid = np.any(np.isnan(K_sparse.data)) or np.any(np.isinf(K_sparse.data))
+    else:
+        has_invalid = np.any(np.isnan(K_arr)) or np.any(np.isinf(K_arr))
+    if has_invalid:
+        warnings.append("Matrix contains non-finite (NaN or Inf) values.")
 
     # Symmetry defect
     delta_sym = compute_symmetry_defect(K_sparse)
@@ -168,17 +189,18 @@ def analyze_stiffness_matrix(
     lambda_min: Optional[float] = None
     lambda_max: Optional[float] = None
     condition_number: Optional[float] = None
-    null_modes_count = 0
+    null_modes_detected = 0
+    exact_nullity: Optional[int] = None
+    has_null_modes = False
     is_positive_definite = False
     is_cg_eligible = False
     eigenvalue_method = "none"
 
-    if compute_spectrum and n_rows >= 2:
+    if compute_spectrum and n_rows >= 2 and not has_invalid:
         if n_rows <= dense_threshold:
             # Small systems: dense exact eigensolver
             eigenvalue_method = "dense_exact"
             K_dense = K_sparse.toarray()
-            # For symmetric matrices use eigh (which uses only lower/upper triangle)
             if is_symmetric:
                 eigvals = la.eigvalsh(K_dense)
             else:
@@ -186,50 +208,66 @@ def analyze_stiffness_matrix(
             eigvals = np.sort(eigvals)
             lambda_min = float(eigvals[0])
             lambda_max = float(eigvals[-1])
-            norm_scale = max(abs(lambda_max), 1.0)
-            null_modes_count = int(np.sum(np.abs(eigvals) < null_tol * norm_scale))
+            
+            # Scale-invariant reference norm
+            norm_scale = max(abs(lambda_max), np.finfo(float).tiny)
+            exact_nullity = int(np.sum(np.abs(eigvals) <= null_tol * norm_scale))
+            null_modes_detected = exact_nullity
+            has_null_modes = (exact_nullity > 0)
         else:
             # Large sparse systems: ARPACK via scipy.sparse.linalg.eigsh
             eigenvalue_method = "sparse_eigsh"
             try:
-                # Symmetrize for eigsh to ensure numerical stability if matrix is theoretically symmetric
                 K_sym = 0.5 * (K_sparse + K_sparse.T) if is_symmetric else K_sparse
                 
-                # Largest eigenvalue
+                # Largest algebraic eigenvalue
                 lmax_arr = spla.eigsh(K_sym, k=1, which="LA", return_eigenvectors=False)
                 lambda_max = float(lmax_arr[0])
 
-                # Smallest eigenvalue: shift-invert near 0 is most reliable for SPD
-                try:
-                    lmin_arr = spla.eigsh(K_sym, k=1, sigma=0.0, which="LM", return_eigenvectors=False)
-                    lambda_min = float(lmin_arr[0])
-                except Exception:
-                    # Fallback to which='SA' if shift-invert encounters singular matrix
-                    lmin_arr = spla.eigsh(K_sym, k=1, which="SA", return_eigenvectors=False)
-                    lambda_min = float(lmin_arr[0])
+                # Smallest algebraic eigenvalues: request several (up to 6) to detect
+                # both negative eigenvalues (indefiniteness) and multiple null modes (rigid-body modes)
+                k_sa = min(6, n_rows - 2)
+                lmin_arr = spla.eigsh(K_sym, k=k_sa, which="SA", return_eigenvectors=False)
+                lmin_arr = np.sort(lmin_arr)
+                lambda_min = float(lmin_arr[0])
 
-                norm_scale = max(abs(lambda_max), 1.0)
-                if abs(lambda_min) < null_tol * norm_scale:
-                    null_modes_count = 1
+                norm_scale = max(abs(lambda_max), np.finfo(float).tiny)
+                null_modes_detected = int(np.sum(np.abs(lmin_arr) <= null_tol * norm_scale))
+                exact_nullity = None  # Incomplete spectrum: exact multiplicity cannot be guaranteed
+                has_null_modes = (null_modes_detected > 0)
             except Exception as e:
                 warnings.append(f"Sparse eigenvalue computation encountered exception: {e}")
 
-        norm_scale = max(abs(lambda_max), 1.0)
         if lambda_min is not None and lambda_max is not None:
-            if null_modes_count > 0 or lambda_min <= null_tol * norm_scale:
+            norm_scale = max(abs(lambda_max), np.finfo(float).tiny)
+            
+            # Definiteness classification:
+            # 1. Indefinite: smallest algebraic eigenvalue is significantly negative
+            if lambda_min < -null_tol * norm_scale:
+                is_positive_definite = False
+                condition_number = float("nan")
+                warnings.append(
+                    f"Smallest algebraic eigenvalue is negative (lambda_min = {lambda_min:.2e}, "
+                    f"lambda_max = {lambda_max:.2e}). Matrix is indefinite."
+                )
+            # 2. Non-positive definite: largest eigenvalue is non-positive
+            elif lambda_max <= null_tol * norm_scale:
+                is_positive_definite = False
+                condition_number = float("nan")
+                warnings.append(
+                    f"Largest eigenvalue is non-positive (lambda_max = {lambda_max:.2e}). "
+                    "Matrix is non-positive definite or zero."
+                )
+            # 3. Singular / Null modes: near-zero mode detected
+            elif has_null_modes or (abs(lambda_min) <= null_tol * norm_scale):
                 is_positive_definite = False
                 condition_number = float("inf")
-                if lambda_min <= 0.0:
-                    warnings.append(
-                        f"Smallest eigenvalue is non-positive (lambda_min = {lambda_min:.2e}). "
-                        "Matrix is singular or indefinite."
-                    )
-                else:
-                    warnings.append(
-                        f"Smallest eigenvalue is within null/rigid-body tolerance (lambda_min = {lambda_min:.2e}, "
-                        f"ratio = {lambda_min / norm_scale:.2e} <= null_tol {null_tol:.2e}). "
-                        "Matrix is mathematically singular due to unconstrained rigid-body motion."
-                    )
+                warnings.append(
+                    f"Detected {null_modes_detected} near-zero / rigid-body mode(s) "
+                    f"(lambda_min = {lambda_min:.2e}, ratio = {lambda_min / norm_scale:.2e} <= null_tol {null_tol:.2e}). "
+                    "Matrix is mathematically singular due to unconstrained modes."
+                )
+            # 4. Strictly positive definite
             else:
                 is_positive_definite = True
                 condition_number = float(lambda_max / lambda_min)
@@ -239,13 +277,15 @@ def analyze_stiffness_matrix(
                         f"kappa_2 = {condition_number:.2e}."
                     )
 
-    is_cg_eligible = is_square and is_symmetric and is_positive_definite and (null_modes_count == 0)
-
-    if null_modes_count > 0:
-        warnings.append(
-            f"Detected {null_modes_count} near-zero / rigid-body mode(s). "
-            "Boundary conditions may be insufficient to prevent rigid-body motion."
-        )
+    # CG eligibility: strictly requires square, symmetric, verified SPD, no null modes, and positive diagonals
+    is_cg_eligible = (
+        is_square
+        and is_symmetric
+        and is_positive_definite
+        and (not has_null_modes)
+        and (min_diag > 0.0)
+        and (not has_invalid)
+    )
 
     return MatrixDiagnostics(
         n_rows=n_rows,
@@ -261,7 +301,9 @@ def analyze_stiffness_matrix(
         is_symmetric=is_symmetric,
         is_positive_definite=is_positive_definite,
         is_cg_eligible=is_cg_eligible,
-        null_modes_count=null_modes_count,
+        null_modes_detected=null_modes_detected,
+        exact_nullity=exact_nullity,
+        has_null_modes=has_null_modes,
         warnings=warnings,
         eigenvalue_method=eigenvalue_method,
     )

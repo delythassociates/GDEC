@@ -65,10 +65,20 @@ Similarly, when only $u_x$ is constrained along the left edge (roller boundary),
 
 ## 4. Sparse vs Dense Eigenvalue Estimation
 
-For small systems ($N \le 400$), full dense eigensolves (`scipy.linalg.eigh`) are fast and compute the complete spectrum without iterative convergence issues.
+For small systems ($N \le 400$), full dense eigensolves (`scipy.linalg.eigh`) are fast and compute the complete spectrum without iterative convergence issues, providing the exact nullity `exact_nullity`.
 For large sparse systems ($N > 400$ up to $100,000+$), dense conversion is prohibitive ($\mathcal{O}(N^3)$ operations and $\mathcal{O}(N^2)$ memory). GDEC uses ARPACK via `scipy.sparse.linalg.eigsh`:
 - **Largest Eigenvalue $\lambda_{\max}$:** Computed with `which="LA"` (Largest Algebraic).
-- **Smallest Eigenvalue $\lambda_{\min}$:** Computed with shift-invert mode at $\sigma = 0.0$ (`sigma=0.0, which="LM"`). Shift-invert solves $(K - 0 I)^{-1} v = \mu v$, where the largest $\mu$ corresponds to $1 / \lambda_{\min}$.
+- **Smallest Eigenvalues:** Computed directly with `which="SA"` (Smallest Algebraic), requesting $k = \min(6, n - 2)$ eigenvalues.
+- **Scale-Invariant Thresholding:** Spectral filtering uses:
+  $$\text{norm\_scale} = \max(|\lambda_{\max}|, \epsilon_{\text{tiny}})$$
+  where $\epsilon_{\text{tiny}} = \text{np.finfo(float).tiny} \approx 2.22 \times 10^{-308}$. This eliminates arbitrary unit-dependent threshold artifacts (such as $\max(\dots, 1.0)$), ensuring consistent behavior whether stiffness is measured in Pa, kPa, or GPa.
+- **Why `which="SA"` Replaced Shift-Invert:**
+  Shift-invert mode (`eigsh(..., sigma=0.0, which="LM")`) locates eigenvalues with largest $1/|\lambda|$, which corresponds to smallest *magnitude* $|\lambda|$. On indefinite matrices (e.g., matrices with eigenvalues $-1.0$ and $+3.0$), the smallest algebraic eigenvalue is negative ($-1.0$), but a shift-invert search near zero can return positive eigenvalues or miss negative modes with larger magnitudes, failing to identify indefiniteness. `which="SA"` searches algebraically from the negative end of the spectrum, reliably catching negative eigenvalues and proving indefiniteness.
+- **Null Mode Multiplicity Telemetry:**
+  In sparse mode, computing the full dimension of the nullspace would require dense rank or full singular value decomposition. GDEC explicitly reports:
+  - `null_modes_detected`: The integer count of null modes discovered among the $k$ requested eigenvalues satisfying $|\lambda_i| \le \text{null\_tol} \times \text{norm\_scale}$.
+  - `exact_nullity`: Returns the exact algebraic nullity in dense mode ($N \le 400$), and `None` in sparse mode to prevent false claims of complete nullspace dimension.
+  - `has_null_modes`: Boolean flag indicating whether any null modes were detected.
 
 ### Validation of Agreement (Dense vs Sparse)
 On a $6 \times 4$ cantilever mesh ($N = 40$ free DOFs):

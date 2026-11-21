@@ -57,7 +57,40 @@ For a condensed finite-element system $K_{ff} u = f$ with symmetric positive-def
 
 ---
 
-## 3. Preconditioner Implementations and Mathematical Distinctions
+## 3. Conjugate Gradient Eligibility Contracts & Compatibility Gates
+
+Ordinary Conjugate Gradient is mathematically defined solely for symmetric positive-definite (SPD) linear operators. GDEC enforces a multi-tier eligibility contract:
+
+### 3.1 Upfront Structural and Numerical Necessary Checks
+Before initiating Krylov iterations, `ConjugateGradientSolver.solve()` executes:
+1. **Finite Value Validation:** Verifies that $A$, $b$, and initial guess $x_0$ contain no NaNs or Infs.
+2. **Dimension and Shape:** Verifies $A$ is square ($n \times n$) and compatible with $b$ ($n$).
+3. **Diagonal Positivity:** Checks $A_{ii} > 0$ for all $i \in \{1, \dots, n\}$. Any non-positive diagonal entry violates positive-definiteness and raises `ValueError`.
+4. **Symmetry Metric:** Measures relative Frobenius defect $\delta_{\mathrm{sym}} = \|A - A^T\|_F / \max(\|A\|_F, \epsilon)$. If $\delta_{\mathrm{sym}} > 10^{-8}$, it raises `ValueError`.
+5. **Algebraic Eigenvalue Validation (`caller_certified_spd=False`):**
+   When `caller_certified_spd=False`, the solver calculates the smallest algebraic eigenvalue using ARPACK (`which="SA"`). If $\lambda_{\min} \le \text{null\_tol} \times \text{norm\_scale}$, it rejects the system as non-positive-definite or singular before starting iterations.
+6. **Runtime Curvature Safeguard:**
+   When `caller_certified_spd=True` (skipping the expensive $\mathcal{O}(N)$ upfront eigensolve during production runs), CG dynamically checks the Rayleigh quotient denominator $\kappa_k = p_k^T A p_k$ at every iteration. If $\kappa_k \le 0$, the operator has non-positive curvature along $p_k$, and the solver terminates immediately with a breakdown notice.
+
+### 3.2 Preconditioner SPD Compatibility Gate
+Ordinary CG requires that the preconditioned system remains self-adjoint with respect to the preconditioner inner product $\langle u, v \rangle_M = u^T M v$. This requires $M$ to be SPD.
+GDEC establishes a strict preconditioner contract:
+- Every preconditioner defines property `is_spd: bool`.
+- `IdentityPreconditioner`, `JacobiPreconditioner`, and `IncompleteCholeskyPreconditioner` define `is_spd = True`.
+- `AMGPreconditioner` defines `is_spd = self.symmetric` (defaults to `True` for symmetric smoothed aggregation).
+- `ILUPreconditioner` defines `is_spd = False`.
+- In `ConjugateGradientSolver.solve()`, passing a preconditioner with `preconditioner.is_spd is False` triggers an upfront `ValueError("Conjugate Gradient requires a symmetric positive-definite preconditioner...")`.
+
+### 3.3 Non-Convergence Error Contract
+When an iterative solver exhausts `max_iter` or encounters breakdown:
+- `ConjugateGradientSolver` returns `LinearSolverResult(converged=False, breakdown_reason="max iterations reached", ...)`.
+- In `LinearElasticitySolver.solve(raise_on_nonconvergence=True)` (the default), this raises `SolverConvergenceError(RuntimeError)`, preventing un-converged displacement fields from propagating into QoI calculation or mesh adaptation.
+- When `raise_on_nonconvergence=False`, `LinearElasticitySolver` returns `FEMSolution` with `converged=False`, `primal_converged=False`, and detailed diagnostic telemetry in `termination_reason`.
+- Telemetry accuracy: Iterative solvers set `factorization_reused=False` and `factorization_time_sec=0.0` (direct factorization is not performed), recording setup cost in `preconditioner_setup_time_sec`.
+
+---
+
+## 4. Preconditioner Implementations and Mathematical Distinctions
 
 ### 3.1 Identity Preconditioner ($M = I$)
 Serves as the rigorous baseline for unpreconditioned Krylov convergence.
@@ -103,7 +136,7 @@ To solve this rigorously, GDEC provides two separate components:
 
 ---
 
-## 4. Empirical Performance and Convergence Comparison
+## 5. Empirical Performance and Convergence Comparison
 
 Measurements collected on the Cantilever Shear benchmark ($E = 70\text{ GPa}, \nu = 0.33$, clamped left edge, tolerance $\text{rtol} = 10^{-8}$):
 

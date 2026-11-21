@@ -78,6 +78,20 @@ Element distortion severely degrades matrix conditioning. When elements are stre
 | 10.0 | 0.100 | $5.71^\circ$ | $2.00 \times 10^6$ | $957\times$ |
 | 20.0 | 0.050 | $2.86^\circ$ | $1.16 \times 10^7$ | **5,550** $\times$ |
 
-Notice that $\kappa_2$ scales approximately as $\mathcal{O}(AR^2)$:
-$$\frac{\kappa_2(AR=20)}{\kappa_2(AR=1)} = \frac{1.16 \times 10^7}{2.09 \times 10^3} \approx 5,550 \approx 14^2$$
-Meshes with needle-like elements ($AR \ge 10$) push the condition number into the millions even on coarse grids ($N \approx 200$), necessitating robust preconditioning.
+### Physical and Numerical Mechanics Analysis of Aspect Ratio Scaling:
+A log-log linear regression of the measured condition numbers against $AR$ ($\ln \kappa_2 = \alpha \ln(AR) + \beta$) yields:
+$$\kappa_2(AR) \approx 2,090 \times AR^{2.95} \quad (R^2 = 0.9978)$$
+The empirical growth factor across the range $AR \in [1, 20]$ is:
+$$\frac{\kappa_2(AR=20)}{\kappa_2(AR=1)} = \frac{1.16 \times 10^7}{2.09 \times 10^3} \approx 5,550 \approx 20^{2.88}$$
+
+This rapid cubic-order degradation arises from the physical coupling of two distinct structural and finite element mechanisms:
+1. **Local Finite Element Distortion:**
+   As the aspect ratio $h_x / h_y$ increases, triangular element angles collapse from $45^\circ$ to $2.86^\circ$. In linear Lagrange triangles, element stiffness matrix eigenvalues in the compressed direction scale as $\mathcal{O}(h_x / h_y)$, inflating the local conditioning by $\mathcal{O}(AR^2)$.
+2. **Global Structural Bending Flexural Stiffness:**
+   For a slender cantilever beam of length $L$ and height $H$, the structural flexural stiffness scales with the second moment of area $I = \frac{1}{12} b H^3$:
+   $$k_{\text{bending}} \sim \frac{E I}{L^3} = \frac{E b}{12} \left(\frac{H}{L}\right)^3 \propto AR^{-3}$$
+   In contrast, the global axial stiffness scales with cross-sectional area $A = b H$:
+   $$k_{\text{axial}} \sim \frac{E A}{L} = E b \left(\frac{H}{L}\right) \propto AR^{-1}$$
+   The global stiffness matrix spectrum contains both axial modes ($\lambda_{\max} \propto AR^{-1}$) and transverse bending modes ($\lambda_{\min} \propto AR^{-3}$ to $AR^{-4}$ when boundary-constrained). Consequently, the spectral condition number $\kappa_2 = \lambda_{\max} / \lambda_{\min}$ scales intrinsically as $\mathcal{O}(AR^2)$ to $\mathcal{O}(AR^3)$.
+
+Meshes with slender aspect ratios ($AR \ge 10$) push the condition number into the millions even on coarse grids ($N \approx 200$), necessitating robust preconditioning.

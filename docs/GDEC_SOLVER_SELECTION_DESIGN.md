@@ -65,33 +65,38 @@ If a matrix fails CG eligibility (e.g., asymmetric or non-positive-definite due 
 
 ## 3. Stage 2: Performance Prediction Models
 
-Based on Phase 4 empirical measurements across 2D linear elasticity problems ($N \in [50, 10,000]$ DOFs):
+Based on Phase 4 empirical measurements across 2D linear elasticity problems ($N \in [56, 9,120]$ DOFs) on the standardized cantilever benchmark:
 
-### 3.1 Direct Sparse Solver (SuperLU via `factorized`)
-- **Factorization Time:**
-  $$T_{\text{fac}}(N) \approx 4.6 \times 10^{-5} \cdot N^{1.5} \text{ ms}$$
-  (e.g., $2.3\text{ ms}$ at $N=1,000$; $43\text{ ms}$ at $N=9,120$).
-- **Triangular Backsolve Time (Per RHS):**
-  $$T_{\text{solve}}(N) \approx 2.0 \times 10^{-4} \cdot N \text{ ms}$$
-  (e.g., $0.12\text{ ms}$ at $N=1,000$; $1.8\text{ ms}$ at $N=9,120$).
-- **Combined Primal + Adjoint Solve (with Factorization Reuse):**
-  $$T_{\text{direct, total}}(N) = T_{\text{fac}}(N) + 2 \cdot T_{\text{solve}}(N)$$
+### 3.1 Empirical Wall-Clock Scaling Models
+From log-log regression across the measured benchmark dataset ($N \ge 992$ asymptotic regime):
 
-### 3.2 Preconditioned Conjugate Gradient (Jacobi-PCG)
-- **Setup Time:** $T_{\text{setup}}(N) \approx 1.2 \times 10^{-5} \cdot N \text{ ms}$ (negligible).
-- **Per-Iteration Time:** $T_{\text{iter}}(N) \approx 8.5 \times 10^{-5} \cdot N \text{ ms}$.
-- **Iteration Count Scaling:**
-  For quasi-uniform 2D elasticity:
-  $$N_{\text{iter}}(N) \approx 12 \cdot \sqrt{N}$$
-  (e.g., 380 iterations at $N=1,000$; 1,100 iterations at $N=9,120$).
-- **Combined Primal + Adjoint Solve (Without Reuse):**
-  Since the adjoint problem must be solved from scratch:
-  $$T_{\text{pcg, total}}(N) = T_{\text{setup}}(N) + 2 \cdot \left( N_{\text{iter}}(N) \cdot T_{\text{iter}}(N) \right) \approx 2.0 \times 10^{-3} \cdot N^{1.5} \text{ ms}$$
+1. **Direct Sparse Solver (SuperLU via `factorized` with Reuse):**
+   - Total primal + adjoint solve time:
+     $$T_{\text{direct, total}}(N) \approx 2.9 \times 10^{-4} \cdot N^{1.31} \text{ ms}$$
+     (e.g., $2.51\text{ ms}$ at $N=992$; $16.17\text{ ms}$ at $N=4,032$; $46.21\text{ ms}$ at $N=9,120$).
+   - Factorization accounts for over $92\%$ of total direct time; subsequent triangular backsolves take $< 1.85\text{ ms}$ even at $N=9,120$.
 
-### 3.3 Complexity Ratio and Crossover Analysis
-Comparing $T_{\text{pcg, total}}(N)$ to $T_{\text{direct, total}}(N)$:
-$$\frac{T_{\text{pcg, total}}(N)}{T_{\text{direct, total}}(N)} \approx \frac{2.0 \times 10^{-3} \cdot N^{1.5}}{4.6 \times 10^{-5} \cdot N^{1.5}} \approx 4.3$$
-Across all tested 2D problem sizes, **the direct sparse solver with factorization reuse is between $4\times$ and $8\times$ faster than Jacobi-PCG**.
+2. **Preconditioned Conjugate Gradient (Jacobi-PCG without Reuse):**
+   - Total primal + adjoint solve time:
+     $$T_{\text{pcg, total}}(N) \approx 2.5 \times 10^{-2} \cdot N^{0.98} \text{ ms}$$
+     (e.g., $21.78\text{ ms}$ at $N=992$; $69.96\text{ ms}$ at $N=4,032$; $190.54\text{ ms}$ at $N=9,120$).
+   - Preconditioner setup time is negligible ($\le 0.12\text{ ms}$), but each solve requires independent Krylov iterations ($N_{\text{iter}} \approx 12 \sqrt{N}$), totaling $2,184$ iterations for primal and adjoint combined at $N=9,120$.
+
+### 3.2 Measured Speedup Ratio and Crossover Analysis
+Comparing total wall-clock times $T_{\text{pcg, total}}$ to $T_{\text{direct, total}}$ directly from the empirical benchmark table:
+
+| DOFs $N$ | Direct Total Time (ms) | Jacobi-PCG Total Time (ms) | Measured Ratio $\frac{T_{\text{pcg}}}{T_{\text{direct}}}$ |
+|---|---|---|---|
+| 56 | 0.22 | 1.80 | **8.18** $\times$ |
+| 240 | 0.50 | 5.16 | **10.32** $\times$ |
+| 992 | 2.51 | 21.78 | **8.68** $\times$ |
+| 4,032 | 16.17 | 69.96 | **4.33** $\times$ |
+| 9,120 | 46.21 | 190.54 | **4.12** $\times$ |
+
+**Summary of Empirical Scaling Findings:**
+- Across all tested 2D discretization scales ($N \le 9,120$), **the direct sparse solver with factorization reuse is between $4.1\times$ and $10.3\times$ faster than Jacobi-PCG**.
+- Because the direct solver scales as $\mathcal{O}(N^{1.31})$ in 2D while PCG scales as $\mathcal{O}(N^{1.5})$ theoretically (or $\mathcal{O}(N)$ when memory-bandwidth-bound in Python/NumPy), direct factorization with reuse maintains a decisive speed advantage for all typical 2D mesh sizes ($N < 50,000$).
+- Krylov methods become competitive only for 3D elasticity where direct fill-in scales as $\mathcal{O}(N^2)$ and memory exceeds RAM, or when multiple right-hand sides are not required.
 
 ---
 

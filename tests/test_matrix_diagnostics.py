@@ -130,3 +130,73 @@ def test_diagnostics_on_non_square_and_invalid_matrices():
     diag_neg = analyze_stiffness_matrix(neg_mat, compute_spectrum=True)
     assert any("non-positive" in w for w in diag_neg.warnings)
     assert diag_neg.is_positive_definite is False
+
+
+def test_sparse_indefinite_matrix_detection():
+    """
+    P0 Regression Test:
+    500x500 sparse symmetric matrix with positive diagonal entries, but
+    indefinite due to eigenvalues -1 and 3 in the first 2x2 block.
+    Must be identified as indefinite and NOT CG-eligible by the sparse branch.
+    """
+    A = sp.eye(500, format="lil")
+    A[0, 0] = 1.0
+    A[0, 1] = 2.0
+    A[1, 0] = 2.0
+    A[1, 1] = 1.0
+    A = A.tocsr()
+
+    # dense_threshold=400 forces execution through the sparse eigensolver branch
+    diag = analyze_stiffness_matrix(A, compute_spectrum=True, dense_threshold=400)
+
+    assert diag.is_square is True
+    assert diag.is_symmetric is True
+    assert diag.lambda_min is not None
+    assert diag.lambda_min < 0.0
+    assert np.isclose(diag.lambda_min, -1.0, atol=1e-5)
+    assert diag.is_positive_definite is False
+    assert diag.is_cg_eligible is False
+    assert any("indefinite" in w.lower() for w in diag.warnings)
+
+
+def test_scale_invariance_across_orders_of_magnitude():
+    """
+    P1 Regression Test:
+    Verify that relative spectral condition number, definiteness, and null mode
+    classifications are strictly scale-invariant across 18 orders of magnitude.
+    """
+    K1 = np.diag([1e-11, 1e-3])
+    scales = [1e-12, 1e-6, 1.0, 1e6, 1e12, 1e18]
+
+    for s in scales:
+        Ks = s * K1
+        diag = analyze_stiffness_matrix(Ks, compute_spectrum=True)
+        assert diag.is_positive_definite is True, f"Failed at scale {s}"
+        assert diag.is_cg_eligible is True, f"Failed at scale {s}"
+        assert diag.has_null_modes is False, f"Failed at scale {s}"
+        assert np.isclose(diag.condition_number, 1e8, rtol=1e-4), f"Failed at scale {s}"
+
+
+def test_sparse_null_mode_multiplicity_and_detection():
+    """
+    P0 Regression Test:
+    Verify that the sparse branch correctly detects all 3 rigid-body modes of an
+    unconstrained elasticity system with N > 400 DOFs, and reports null_modes_detected == 3.
+    """
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    mesh = GDECMesh.create_cantilever_mesh(width=2.0, height=0.5, nx=24, ny=12)
+    basis = solver.create_basis(mesh)
+    K = solver.assemble_stiffness(basis)
+
+    # 576 DOFs: sparse branch evaluated with dense_threshold=400
+    diag = analyze_stiffness_matrix(K, compute_spectrum=True, dense_threshold=400)
+
+    assert diag.n_rows == 576
+    assert diag.is_symmetric is True
+    assert diag.null_modes_detected == 3
+    assert diag.has_null_modes is True
+    assert diag.exact_nullity is None  # Incomplete spectrum in sparse mode
+    assert diag.is_positive_definite is False
+    assert diag.is_cg_eligible is False
+

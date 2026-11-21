@@ -18,6 +18,7 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
+import scipy.linalg as la
 
 from gdec.fem.matrix_diagnostics import compute_symmetry_defect
 
@@ -86,6 +87,10 @@ class IdentityPreconditioner(Preconditioner):
     def name(self) -> str:
         return "Identity (None)"
 
+    @property
+    def is_spd(self) -> bool:
+        return True
+
 
 class JacobiPreconditioner(Preconditioner):
     r"""
@@ -122,6 +127,10 @@ class JacobiPreconditioner(Preconditioner):
     @property
     def name(self) -> str:
         return "Jacobi (Diagonal)"
+
+    @property
+    def is_spd(self) -> bool:
+        return True
 
 
 class IncompleteCholeskyPreconditioner(Preconditioner):
@@ -178,13 +187,17 @@ class IncompleteCholeskyPreconditioner(Preconditioner):
     def name(self) -> str:
         return "Incomplete Cholesky IC(0)"
 
+    @property
+    def is_spd(self) -> bool:
+        return True
+
 
 class AMGPreconditioner(Preconditioner):
     """
     Algebraic Multigrid (AMG) preconditioner using PyAMG smoothed aggregation.
     """
 
-    def __init__(self, A: sp.spmatrix, **pyamg_kwargs):
+    def __init__(self, A: sp.spmatrix, symmetric: bool = True, **pyamg_kwargs):
         if not _PYAMG_AVAILABLE:
             raise ImportError(
                 "PyAMG is not installed in the current environment. "
@@ -192,6 +205,7 @@ class AMGPreconditioner(Preconditioner):
             )
         if not sp.issparse(A):
             A = sp.csr_matrix(A)
+        self.symmetric = symmetric
         self.ml = pyamg.smoothed_aggregation_solver(A.tocsr(), **pyamg_kwargs)
         self.M = self.ml.aspreconditioner(cycle="V")
 
@@ -207,13 +221,17 @@ class AMGPreconditioner(Preconditioner):
     def name(self) -> str:
         return "Algebraic Multigrid (PyAMG Smoothed Aggregation)"
 
+    @property
+    def is_spd(self) -> bool:
+        return self.symmetric
+
 
 class ILUPreconditioner(Preconditioner):
     r"""
     Incomplete LU factorization via scipy.sparse.linalg.spilu.
-    Note: ILU produces M = L U where U != L^T. It is generally NOT symmetric positive-definite.
-    Using ILU inside ordinary symmetric CG is mathematically uncertified and can cause
-    loss of conjugacy or breakdown. It is included for comparative evaluation only.
+    Note: ILU produces M = L U where U != L^T. It is NOT symmetric positive-definite.
+    Using ILU inside ordinary symmetric CG is mathematically invalid and rejected by
+    the CG eligibility compatibility gate.
     """
 
     def __init__(self, A: sp.spmatrix, drop_tol: float = 1e-4, fill_factor: float = 10.0):
@@ -229,7 +247,7 @@ class ILUPreconditioner(Preconditioner):
 
     @property
     def name(self) -> str:
-        return "Incomplete LU (ILU - Warning: Non-SPD)"
+        return "Incomplete LU (ILU - Non-SPD)"
 
     @property
     def is_spd(self) -> bool:
@@ -240,6 +258,14 @@ class ConjugateGradientSolver:
     """
     Standard Preconditioned Conjugate Gradient (PCG) solver for symmetric
     positive-definite linear systems K x = b.
+
+    Eligibility contract:
+    - Verifies matrix dimensions, finiteness, symmetry (delta_sym <= sym_tol),
+      and positive diagonal entries upfront.
+    - Rejects non-SPD preconditioners (such as ILU) via preconditioner.is_spd.
+    - If caller_certified_spd is False, performs algebraic eigenvalue checks to
+      verify positive definiteness before iterating.
+    - Detects non-positive curvature (p^T K p <= 0) during iterations.
     """
 
     def __init__(
@@ -264,6 +290,7 @@ class ConjugateGradientSolver:
         atol: Optional[float] = None,
         max_iter: Optional[int] = None,
         check_eligibility: bool = True,
+        caller_certified_spd: bool = False,
     ) -> CGSolverResult:
         r"""
         Solve K x = b using preconditioned conjugate gradient.
@@ -278,14 +305,20 @@ class ConjugateGradientSolver:
             Initial displacement guess (n,). Defaults to zeros.
         preconditioner : Preconditioner, optional
             Preconditioner M^{-1}. Defaults to IdentityPreconditioner.
+            Must have preconditioner.is_spd == True.
         rtol : float, optional
-            Relative residual tolerance.
+            Relative residual tolerance. Must be > 0 and finite.
         atol : float, optional
-            Absolute residual tolerance.
+            Absolute residual tolerance. Must be >= 0 and finite.
         max_iter : int, optional
-            Maximum allowed iterations. Defaults to min(10000, 10 * n).
+            Maximum allowed iterations. Must be > 0.
         check_eligibility : bool
-            Whether to enforce symmetry and diagonal positivity checks.
+            Whether to enforce symmetry, diagonal positivity, and definiteness checks.
+        caller_certified_spd : bool
+            If True, caller certifies that K is SPD by structural/domain physics
+            (e.g., condensed FEM matrix with fixed Dirichlet boundaries), skipping
+            upfront eigenvalue solve while still performing necessary diagonal, symmetry,
+            and runtime curvature checks.
 
         Returns
         -------
@@ -304,6 +337,39 @@ class ConjugateGradientSolver:
         if len(b) != n_rows:
             raise ValueError(f"RHS dimension mismatch: matrix has {n_rows} rows, b has {len(b)} elements.")
 
+        # Check finiteness of matrix entries
+        if np.any(np.isnan(K_mat.data)) or np.any(np.isinf(K_mat.data)):
+            raise ValueError("Matrix K contains non-finite (NaN or Inf) values.")
+        if np.any(np.isnan(b)) or np.any(np.isinf(b)):
+            raise ValueError("Right-hand side b contains non-finite (NaN or Inf) values.")
+        if x0 is not None:
+            if len(x0) != n_rows:
+                raise ValueError(f"Initial guess x0 shape mismatch: expected {n_rows}, got {len(x0)}.")
+            if np.any(np.isnan(x0)) or np.any(np.isinf(x0)):
+                raise ValueError("Initial guess x0 contains non-finite (NaN or Inf) values.")
+
+        _rtol = rtol if rtol is not None else self.default_rtol
+        _atol = atol if atol is not None else self.default_atol
+        _max_iter = max_iter if max_iter is not None else (
+            self.default_max_iter if self.default_max_iter is not None else max(100, min(10000, 10 * n_rows))
+        )
+
+        if _rtol <= 0 or not np.isfinite(_rtol):
+            raise ValueError(f"Relative tolerance rtol must be positive and finite, got {_rtol}.")
+        if _atol < 0 or not np.isfinite(_atol):
+            raise ValueError(f"Absolute tolerance atol must be non-negative and finite, got {_atol}.")
+        if _max_iter <= 0:
+            raise ValueError(f"Maximum iterations max_iter must be positive, got {_max_iter}.")
+
+        # Check preconditioner SPD compatibility gate
+        M = preconditioner if preconditioner is not None else IdentityPreconditioner()
+        if not M.is_spd:
+            raise ValueError(
+                f"Preconditioner '{M.name}' is not symmetric positive-definite (is_spd=False). "
+                "Ordinary Conjugate Gradient strictly requires an SPD preconditioner to guarantee "
+                "energy-norm self-adjointness and prevent breakdown or divergence."
+            )
+
         # Check eligibility
         if check_eligibility:
             delta_sym = compute_symmetry_defect(K_mat)
@@ -317,24 +383,39 @@ class ConjugateGradientSolver:
                 min_d = float(np.min(diag))
                 raise ValueError(
                     f"Matrix diagonal contains non-positive entries (min: {min_d:.2e}). "
-                    "Conjugate Gradient requires a positive-definite matrix."
+                    "Necessary condition for positive definiteness failed."
                 )
 
-        M = preconditioner if preconditioner is not None else IdentityPreconditioner()
-
-        _rtol = rtol if rtol is not None else self.default_rtol
-        _atol = atol if atol is not None else self.default_atol
-        _max_iter = max_iter if max_iter is not None else (
-            self.default_max_iter if self.default_max_iter is not None else max(100, min(10000, 10 * n_rows))
-        )
+            # SPD verification if not caller-certified
+            if not caller_certified_spd:
+                if n_rows <= 300:
+                    e_min = float(la.eigvalsh(K_mat.toarray())[0])
+                    if e_min <= 0.0:
+                        raise ValueError(
+                            f"Matrix is not positive-definite: smallest eigenvalue is non-positive "
+                            f"(lambda_min = {e_min:.2e})."
+                        )
+                else:
+                    try:
+                        lmin_sa = spla.eigsh(K_mat, k=1, which="SA", return_eigenvectors=False)[0]
+                        if lmin_sa <= 0.0:
+                            raise ValueError(
+                                f"Matrix is not positive-definite: smallest algebraic eigenvalue is "
+                                f"non-positive (lambda_min = {lmin_sa:.2e})."
+                            )
+                    except Exception as e:
+                        if isinstance(e, ValueError):
+                            raise
+                        raise ValueError(
+                            f"Positive-definiteness could not be established by eigensolve: {e}. "
+                            "If this matrix is physically guaranteed to be SPD, pass caller_certified_spd=True."
+                        )
 
         b_norm = float(np.linalg.norm(b))
         stopping_threshold = max(_atol, _rtol * b_norm)
 
         # Initial state
         if x0 is not None:
-            if len(x0) != n_rows:
-                raise ValueError(f"Initial guess x0 shape mismatch: expected {n_rows}, got {len(x0)}.")
             x = np.asarray(x0, dtype=float).copy()
             r = b - K_mat.dot(x)
         else:

@@ -210,3 +210,174 @@ def test_linear_elasticity_solver_pcg_integration():
     rel_qoi_err = abs(sol_pcg.qoi - sol_direct.qoi) / abs(sol_direct.qoi)
     assert rel_qoi_err < 1e-6
 
+
+def test_cg_rejects_indefinite_matrix_with_positive_diagonal():
+    """
+    P0 Regression Test:
+    A matrix with positive diagonal entries that is indefinite must be rejected by CG
+    during upfront eligibility verification (caller_certified_spd=False).
+    """
+    A = sp.csr_matrix([[1.0, 2.0], [2.0, 1.0]])
+    b = np.array([1.0, 1.0])
+    cg = ConjugateGradientSolver()
+
+    with pytest.raises(ValueError, match="not positive-definite"):
+        cg.solve(A, b, check_eligibility=True, caller_certified_spd=False)
+
+
+def test_cg_rejects_singular_matrix():
+    """P0 Regression Test: A singular matrix must be rejected by CG upfront."""
+    # Singular matrix with null mode (1, 1)
+    A = sp.csr_matrix([[1.0, -1.0], [-1.0, 1.0]])
+    b = np.array([1.0, 1.0])
+    cg = ConjugateGradientSolver()
+
+    with pytest.raises(ValueError, match="not positive-definite"):
+        cg.solve(A, b, check_eligibility=True, caller_certified_spd=False)
+
+
+def test_cg_rejects_non_finite_inputs():
+    """P0 Regression Test: Non-finite inputs in K, b, x0 must be rejected."""
+    cg = ConjugateGradientSolver()
+    A = sp.eye(4, format="csr")
+    b = np.ones(4)
+
+    # NaN in K
+    A_nan = A.copy().astype(float)
+    A_nan[0, 0] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        cg.solve(A_nan, b)
+
+    # Inf in b
+    b_inf = b.copy()
+    b_inf[1] = np.inf
+    with pytest.raises(ValueError, match="non-finite"):
+        cg.solve(A, b_inf)
+
+    # NaN in x0
+    x0_nan = np.array([0.0, np.nan, 0.0, 0.0])
+    with pytest.raises(ValueError, match="non-finite"):
+        cg.solve(A, b, x0=x0_nan)
+
+
+def test_cg_preconditioner_spd_compatibility_gate():
+    """
+    P0 Regression Test:
+    Passing ILUPreconditioner (which has is_spd=False) to ordinary CG must be
+    rejected by the compatibility gate with a clear ValueError.
+    """
+    from gdec.fem.solvers import ILUPreconditioner
+    A = sp.diags([-1.0, 2.5, -1.0], [-1, 0, 1], shape=(10, 10), format="csc")
+    b = np.ones(10)
+    cg = ConjugateGradientSolver()
+
+    ilu = ILUPreconditioner(A)
+    assert ilu.is_spd is False
+
+    with pytest.raises(ValueError, match="not symmetric positive-definite"):
+        cg.solve(A, b, preconditioner=ilu)
+
+
+def test_linear_elasticity_solver_non_convergence_handling():
+    """
+    P1 Regression Test:
+    When iterative solver cannot converge within max iterations:
+    1. By default (raise_on_nonconvergence=True), raises SolverConvergenceError.
+    2. When raise_on_nonconvergence=False, returns FEMSolution with converged=False.
+    """
+    from gdec.fem.elasticity import SolverConvergenceError
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    mesh = GDECMesh.create_cantilever_mesh(width=2.0, height=0.5, nx=10, ny=5)
+
+    loads = [("right", 0.0, -1e6)]
+    bcs = [("left", ["x", "y"])]
+
+    # Deliberately impossible tolerance with tight max_iter (isolate primal)
+    with pytest.raises(SolverConvergenceError) as exc_info:
+        solver.solve(
+            mesh,
+            loads=loads,
+            fixed_boundaries=bcs,
+            solver_type="cg",
+            solver_rtol=1e-18,
+            solver_atol=0.0,
+            solver_max_iter=2,
+            raise_on_nonconvergence=True,
+        )
+    assert "Primal linear solve failed to converge" in str(exc_info.value)
+
+    # With raise_on_nonconvergence=False, returns FEMSolution with converged=False
+    sol = solver.solve(
+        mesh,
+        loads=loads,
+        fixed_boundaries=bcs,
+        solver_type="cg",
+        solver_rtol=1e-18,
+        solver_atol=0.0,
+        solver_max_iter=2,
+        raise_on_nonconvergence=False,
+    )
+    assert sol.converged is False
+    assert sol.primal_converged is False
+    assert "failed" in sol.termination_reason.lower()
+
+
+def test_linear_elasticity_solver_telemetry_corrections():
+    """
+    P1 Regression Test:
+    Verify that iterative solvers report factorization_reused=False and
+    factorization_time_sec=0.0 even when reuse_factorization=True is passed.
+    """
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    mesh = GDECMesh.create_cantilever_mesh(width=2.0, height=0.5, nx=8, ny=4)
+
+    loads = [("right", 0.0, -1e6)]
+    bcs = [("left", ["x", "y"])]
+
+    # Direct solve with reuse
+    sol_dir_reuse = solver.solve(mesh, loads=loads, fixed_boundaries=bcs, solver_type="direct", reuse_factorization=True)
+    assert sol_dir_reuse.factorization_reused is True
+    assert sol_dir_reuse.factorization_time_sec > 0.0
+    assert sol_dir_reuse.preconditioner_setup_time_sec == 0.0
+
+    # Direct solve without reuse
+    sol_dir_noreuse = solver.solve(mesh, loads=loads, fixed_boundaries=bcs, solver_type="direct", reuse_factorization=False)
+    assert sol_dir_noreuse.factorization_reused is False
+    assert sol_dir_noreuse.factorization_time_sec == 0.0
+
+    # Iterative solve with reuse_factorization=True passed
+    sol_pcg = solver.solve(mesh, loads=loads, fixed_boundaries=bcs, solver_type="pcg_jacobi", reuse_factorization=True)
+    assert sol_pcg.factorization_reused is False
+    assert sol_pcg.factorization_time_sec == 0.0
+    assert sol_pcg.preconditioner_setup_time_sec > 0.0
+
+
+def test_qoi_accuracy_across_multiple_configurations():
+    """
+    P1 Regression Test:
+    Verify QoI behavior across different load types and QoI functional components
+    without assuming universal O(e_u^2) super-convergence.
+    """
+    c = ConstitutiveTensor.from_properties(E=70e9, nu=0.33, assumption="plane_stress", thickness=0.02)
+    solver = LinearElasticitySolver(c)
+    mesh = GDECMesh.create_cantilever_mesh(2.0, 0.5, 8, 4)
+
+    configs = [
+        ("Shear Y", [("right", 0.0, -1e6)], "right", "y"),
+        ("Axial X", [("right", 1e7, 0.0)], "right", "x"),
+    ]
+
+    for name, loads, qbnd, qcomp in configs:
+        sol_ref = solver.solve(mesh, loads=loads, fixed_boundaries=[("left", ["x", "y"])], solver_type="direct", qoi_boundary=qbnd, qoi_component=qcomp)
+        sol_pcg = solver.solve(mesh, loads=loads, fixed_boundaries=[("left", ["x", "y"])], solver_type="pcg_jacobi", solver_rtol=1e-4, qoi_boundary=qbnd, qoi_component=qcomp)
+
+        rel_disp_err = np.linalg.norm(sol_pcg.u - sol_ref.u) / np.linalg.norm(sol_ref.u)
+        rel_qoi_err = abs(sol_pcg.qoi - sol_ref.qoi) / abs(sol_ref.qoi)
+
+        # QoI error is bounded by displacement error, demonstrating consistency
+        assert rel_disp_err < 1e-4
+        assert rel_qoi_err < 1e-4
+
+
