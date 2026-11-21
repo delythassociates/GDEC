@@ -54,12 +54,32 @@ Before applying any solver, the system matrix $K_{ff}$ must pass mathematical el
 | Gate | Check Metric | Requirement for Direct (SuperLU) | Requirement for Standard CG | Requirement for Preconditioned CG (PCG) |
 |---|---|---|---|---|
 | **Dimensionality** | Matrix dimensions | $n_{\text{rows}} == n_{\text{cols}}$ | $n_{\text{rows}} == n_{\text{cols}}$ | $n_{\text{rows}} == n_{\text{cols}}$ |
-| **Symmetry** | $\delta_{\text{sym}} = \frac{\|K - K^T\|_F}{\max(\|K\|_F, \epsilon)}$ | Any (SuperLU supports unsymmetric) | $\delta_{\text{sym}} \le 10^{-8}$ | $\delta_{\text{sym}} \le 10^{-8}$ |
-| **Positive Definiteness** | Smallest eigenvalue $\lambda_{\min}$ | $\lambda_{\min} \ne 0$ (Non-singular) | $\lambda_{\min} > 0$ (SPD) | $\lambda_{\min} > 0$ (SPD) |
-| **Rigid-Body Null Modes** | $\lambda_i / \lambda_{\max} < 10^{-10}$ | $0$ null modes | $0$ null modes | $0$ null modes |
-| **Preconditioner Symmetry** | $M \approx K$ operator | N/A | N/A | $M = M^T$ (SPD) — ILU rejected |
+| **Symmetry** | Scale-invariant defect: $\delta_{\text{sym}} = 0$ if $\|K\|_F = 0$ else $\frac{\|K - K^T\|_F}{\|K\|_F}$ | Any (SuperLU supports unsymmetric) | $\delta_{\text{sym}} \le 10^{-8}$ | $\delta_{\text{sym}} \le 10^{-8}$ |
+| **Positive Definiteness** | Smallest algebraic eigenvalue $\lambda_{\min} > \tau_{\text{null}} \lambda_{\text{scale}}$ | $\lambda_{\min} \ne 0$ (Non-singular) | $\lambda_{\min} > \tau_{\text{null}} \lambda_{\text{scale}}$ (SPD) | $\lambda_{\min} > \tau_{\text{null}} \lambda_{\text{scale}}$ (SPD) |
+| **Rigid-Body Null Modes** | Scale-aware null test: $\|\lambda_i\| \le \tau_{\text{null}} \lambda_{\text{scale}}$ | $0$ null modes | $0$ null modes | $0$ null modes |
+| **Preconditioner Symmetry & Definiteness** | $M \approx K$ operator action | N/A | N/A | $M = M^T > 0$ (SPD required; unknown fail closed; ILU rejected; AMG verified only) |
 
-If a matrix fails CG eligibility (e.g., asymmetric or non-positive-definite due to unconstrained rigid-body motion), the system must reject CG immediately with a clear diagnostic error rather than silently falling back.
+### 2.1 CG Eligibility and Safety Gating Contract
+1. **Mandatory Safety Gate (`check_eligibility` & `caller_certified_spd`):**
+   - In both `LinearElasticitySolver` and `ConjugateGradientSolver`, the default configuration is `caller_certified_spd=False`.
+   - Bypassing eligibility checks via `check_eligibility=False` without providing `caller_certified_spd=True` is strictly forbidden and raises a `ValueError`.
+   - Structural necessary checks (finiteness of matrix and vectors, square dimensions, symmetry defect $\delta_{\text{sym}} \le 10^{-8}$, positive diagonal entries $K_{ii} > 0$, and preconditioner SPD compatibility $M.\text{is\_spd} == \text{True}$) are **always** enforced.
+2. **Caller SPD Certification:**
+   - Passing `caller_certified_spd=True` is an explicit, opt-in caller assertion based on physical domain constraints (e.g. condensed FEM stiffness matrix with kinematically sufficient Dirichlet boundary conditions). It is an assertion by the caller, not an automated solver certificate.
+   - It bypasses only the upfront spectral eigensolve while retaining all structural checks and runtime curvature checks.
+3. **Runtime Curvature Monitoring:**
+   - During CG iterations, runtime curvature $p_k^T K p_k > 0$ is monitored at every step.
+   - However, runtime curvature checks along the Krylov trajectory are explicitly **not a global proof of positive-definiteness**: an indefinite matrix with a positive diagonal and an initial right-hand side restricted to its positive invariant eigenspace can satisfy $p_k^T K p_k > 0$ along the entire search trajectory without ever probing negative eigenspaces.
+4. **Preconditioner SPD Contract:**
+   - Preconditioners fail closed: the base `Preconditioner.is_spd` returns `False`, rejecting uncertified custom implementations.
+   - For Algebraic Multigrid (`AMGPreconditioner` via PyAMG), `is_spd` returns `True` only when a mathematically verified configuration is used:
+     - Galerkin coarse-grid operator hierarchy ($A_c = P^T A P$).
+     - Symmetric cycle: V-cycle or W-cycle (`cycle in ("V", "W")`).
+     - Adjoint smoothing relaxation: Gauss-Seidel with an explicit forward/backward sweep pair (forward pre-smoother, backward post-smoother), symmetric Gauss-Seidel, or Jacobi smoothing.
+     - Verified coarse-grid solver: sparse direct (`splu`), pseudoinverse (`pinv`, `pinv2`), or default direct factorization; arbitrary callables or unsymmetric solvers evaluate `is_spd = False`.
+     - Permitted kwargs restricted to structural hierarchy depth (`{"max_levels", "max_coarse"}`).
+
+If a matrix fails CG eligibility (e.g., asymmetric or non-positive-definite due to unconstrained rigid-body motion), the system rejects CG immediately with a clear diagnostic error rather than silently falling back.
 
 ---
 

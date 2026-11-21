@@ -61,12 +61,15 @@ def test_cg_rejects_asymmetric_matrix_when_checked():
 
 def test_cg_breakdown_detection_on_indefinite_matrix():
     """An indefinite matrix should trigger non-positive curvature breakdown."""
-    # Saddle point matrix with negative eigenvalue
-    A = sp.csr_matrix([[2.0, 0.0], [0.0, -1.0]])
-    b = np.array([1.0, 1.0])
+    # Indefinite matrix with positive diagonal entries (eigenvalues +5 and -1)
+    A = sp.csr_matrix([[2.0, 3.0], [3.0, 2.0]])
+    b = np.array([1.0, 0.0])
     cg = ConjugateGradientSolver()
 
-    res = cg.solve(A, b, check_eligibility=False)
+    # When upfront spectral verification is bypassed via caller certification,
+    # structural checks (symmetry, diagonal positivity) pass, but the runtime
+    # curvature check along the Krylov trajectory detects non-positive curvature.
+    res = cg.solve(A, b, caller_certified_spd=True)
     assert res.converged is False
     assert res.breakdown_reason is not None
     assert "curvature" in res.breakdown_reason.lower()
@@ -423,11 +426,12 @@ def test_default_fem_cg_interface_spd_verification():
 
 def test_direct_cg_indefinite_matrix_positive_eigenspace_rhs():
     """
-    P0 Regression Test (Phase 4.1.2):
+    P0 Regression Test (Phase 4.1.2 & Phase 4.1.3):
     Direct CG regression using an indefinite matrix with positive diagonal and a
     right-hand side confined entirely to its positive eigenspace.
     Demonstrates why runtime curvature checks alone along the Krylov trajectory are
     NOT a global proof of positive-definiteness.
+    Also verifies that check_eligibility=False CANNOT bypass checks without explicit caller certification.
     """
     # A has eigenvalues -1.0 (vector [1, -1]) and +5.0 (vector [1, 1])
     # Both diagonal entries are +2.0 (positive diagonal)
@@ -440,9 +444,36 @@ def test_direct_cg_indefinite_matrix_positive_eigenspace_rhs():
     # Upfront scale-aware spectral verification catches the negative eigenvalue -1.0
     # and strictly rejects the matrix as indefinite!
     with pytest.raises(ValueError, match="indefinite"):
+        cg.solve(A, b)
+
+    with pytest.raises(ValueError, match="indefinite"):
         cg.solve(A, b, caller_certified_spd=False)
 
-    # 2. Bypassing upfront check with caller_certified_spd=True:
+    # 2. Independent check_eligibility=False bypass without caller_certified_spd=True:
+    # Strictly rejected by mandatory safety gate!
+    with pytest.raises(ValueError, match="Cannot bypass matrix eligibility checks"):
+        cg.solve(A, b, check_eligibility=False)
+
+    with pytest.raises(ValueError, match="Cannot bypass matrix eligibility checks"):
+        cg.solve(A, b, check_eligibility=False, caller_certified_spd=False)
+
+    # 3. Structural necessary checks are ALWAYS enforced, even when caller_certified_spd=True:
+    # 3a. Nonsymmetric matrix
+    A_unsym = sp.csr_matrix([[2.0, 1.0], [3.0, 2.0]])
+    with pytest.raises(ValueError, match="Matrix is not symmetric"):
+        cg.solve(A_unsym, b, caller_certified_spd=True)
+
+    # 3b. Non-positive diagonal
+    A_zero_diag = sp.csr_matrix([[0.0, 1.0], [1.0, 2.0]])
+    with pytest.raises(ValueError, match="Matrix diagonal contains non-positive entries"):
+        cg.solve(A_zero_diag, b, caller_certified_spd=True)
+
+    # 3c. Non-SPD preconditioner
+    ilu = ILUPreconditioner(A)
+    with pytest.raises(ValueError, match="not symmetric positive-definite"):
+        cg.solve(A, b, preconditioner=ilu, caller_certified_spd=True)
+
+    # 4. Explicit opt-in caller assertion caller_certified_spd=True:
     # Search direction p0 = r0 = [1, 1], curvature p0^T A p0 = 10.0 > 0.
     # CG terminates in 1 iteration without ever encountering negative curvature,
     # because the Krylov subspace never probed the negative eigenspace span([1, -1]).
@@ -493,8 +524,6 @@ def test_cg_scale_aware_near_null_rejection():
         cg.solve(A_sparse_near_null, np.ones(350), caller_certified_spd=False)
 
     # 5. Sparse path with negative eigenvalue (indefinite)
-    diag_vals_indef = np.ones(350)
-    diag_vals_indef[0] = -0.5
     # Note: to ensure diagonal positivity passes so it reaches the spectral test, use 2x2 block
     A_sparse_indef = sp.eye(350, format="lil")
     A_sparse_indef[0, 0] = 2.0
@@ -505,16 +534,26 @@ def test_cg_scale_aware_near_null_rejection():
         cg.solve(A_sparse_indef.tocsr(), np.ones(350), caller_certified_spd=False)
 
 
-def test_preconditioner_fail_closed_and_amg_configuration():
+def test_preconditioner_fail_closed_and_amg_configuration(monkeypatch):
     """
-    P1 Regression Test (Phase 4.1.2):
+    P1 Regression Test (Phase 4.1.2 & Phase 4.1.3):
     1. Base Preconditioner class fails closed (is_spd == False).
     2. Unknown custom preconditioner inheriting Preconditioner without overriding is_spd is rejected by CG.
     3. Identity, Jacobi, and IC(0) declare is_spd == True.
     4. ILU declares is_spd == False.
     5. AMG verified configuration check: supported symmetric configuration vs unverified configuration.
+    6. Numerical symmetry and positive-definiteness testing of PyAMG preconditioner action.
+    7. Missing-PyAMG environment behavior raises informative ImportError.
     """
-    from gdec.fem.solvers.iterative import Preconditioner, IdentityPreconditioner, JacobiPreconditioner, IncompleteCholeskyPreconditioner, ILUPreconditioner, AMGPreconditioner
+    from gdec.fem.solvers.iterative import (
+        Preconditioner,
+        IdentityPreconditioner,
+        JacobiPreconditioner,
+        IncompleteCholeskyPreconditioner,
+        ILUPreconditioner,
+        AMGPreconditioner,
+    )
+    import gdec.fem.solvers.iterative as iter_module
 
     # 1. Custom preconditioner inheriting Preconditioner without overriding is_spd
     class UnknownCustomPreconditioner(Preconditioner):
@@ -543,21 +582,101 @@ def test_preconditioner_fail_closed_and_amg_configuration():
     # 3. Known non-SPD preconditioner
     assert ILUPreconditioner(A).is_spd is False
 
-    # 4. AMGPreconditioner configuration verification
+    # 4. AMGPreconditioner configuration verification and numerical symmetry
     if AMGPreconditioner.is_available():
-        # Supported symmetric configuration: V-cycle, symmetric=True
-        amg_sym = AMGPreconditioner(A, cycle="V", symmetric=True)
-        assert amg_sym.is_spd is True
+        # 4a. Supported symmetric configurations
+        amg_v = AMGPreconditioner(A, cycle="V", symmetric=True)
+        assert amg_v.is_spd is True
 
-        # Unsupported unsymmetric configuration: symmetric=False
+        amg_w = AMGPreconditioner(A, cycle="W", symmetric=True)
+        assert amg_w.is_spd is True
+
+        amg_gs = AMGPreconditioner(A, cycle="V", symmetric=True, smoother="gauss_seidel")
+        assert amg_gs.is_spd is True
+
+        amg_sgs = AMGPreconditioner(A, cycle="V", symmetric=True, smoother="symmetric_gauss_seidel")
+        assert amg_sgs.is_spd is True
+
+        amg_jac = AMGPreconditioner(A, cycle="V", symmetric=True, smoother="jacobi")
+        assert amg_jac.is_spd is True
+
+        amg_coarse = AMGPreconditioner(A, cycle="V", symmetric=True, coarse_solver="splu")
+        assert amg_coarse.is_spd is True
+
+        amg_levels = AMGPreconditioner(A, cycle="V", symmetric=True, max_levels=10, max_coarse=50)
+        assert amg_levels.is_spd is True
+
+        # 4b. Unsupported / unverified configurations fail closed (is_spd is False)
+        # Unsymmetric flag
         amg_unsym = AMGPreconditioner(A, cycle="V", symmetric=False)
         assert amg_unsym.is_spd is False
         with pytest.raises(ValueError, match="not symmetric positive-definite"):
             cg.solve(A, b, preconditioner=amg_unsym)
-    else:
-        # Clear optional dependency error
-        with pytest.raises(ImportError, match="PyAMG is not installed"):
-            AMGPreconditioner(A)
+
+        # Unverified cycle
+        amg_bad_cycle = AMGPreconditioner(A, cycle="F", symmetric=True)
+        assert amg_bad_cycle.is_spd is False
+
+        # Unverified smoother (e.g. unsymmetric SOR)
+        amg_bad_smoother = AMGPreconditioner(A, cycle="V", symmetric=True, smoother="sor")
+        assert amg_bad_smoother.is_spd is False
+
+        # Unverified coarse solver (e.g. dense LU)
+        amg_bad_coarse = AMGPreconditioner(A, cycle="V", symmetric=True, coarse_solver="lu")
+        assert amg_bad_coarse.is_spd is False
+
+        # Unverified callable coarse solver
+        amg_callable_coarse = AMGPreconditioner(A, cycle="V", symmetric=True, coarse_solver=lambda A, b: np.zeros_like(b))
+        assert amg_callable_coarse.is_spd is False
+
+        # Unverified arbitrary kwargs
+        amg_bad_kwarg = AMGPreconditioner(A, cycle="V", symmetric=True, keep=False)
+        assert amg_bad_kwarg.is_spd is False
+
+        # 4c. Numerical symmetry and positive-definiteness verification of preconditioner operator M^{-1}
+        # Construct a 2D 5-point discrete Laplacian matrix
+        n_grid = 10
+        N_pts = n_grid * n_grid
+        # Poisson matrix (known SPD)
+        e = np.ones(n_grid)
+        D1 = sp.spdiags([-e, 2 * e, -e], [-1, 0, 1], n_grid, n_grid)
+        A_poisson = (sp.kron(sp.eye(n_grid), D1) + sp.kron(D1, sp.eye(n_grid))).tocsr()
+
+        amg_poisson = AMGPreconditioner(A_poisson, cycle="V", symmetric=True, smoother="gauss_seidel")
+        assert amg_poisson.is_spd is True
+
+        # Test operator symmetry: x^T M^{-1} y == y^T M^{-1} x
+        rng = np.random.default_rng(42)
+        for _ in range(5):
+            x_test = rng.standard_normal(N_pts)
+            y_test = rng.standard_normal(N_pts)
+
+            Minv_x = amg_poisson.apply(x_test)
+            Minv_y = amg_poisson.apply(y_test)
+
+            x_Minv_y = float(np.dot(x_test, Minv_y))
+            y_Minv_x = float(np.dot(y_test, Minv_x))
+
+            # Discrepancy should be at machine precision
+            denom = max(abs(x_Minv_y), abs(y_Minv_x), 1e-12)
+            rel_sym_err = abs(x_Minv_y - y_Minv_x) / denom
+            assert rel_sym_err < 1e-12, f"AMG operator symmetry defect too large: {rel_sym_err:.2e}"
+
+            # Test positive definiteness: x^T M^{-1} x > 0
+            x_Minv_x = float(np.dot(x_test, Minv_x))
+            assert x_Minv_x > 0.0, f"AMG operator failed positive-definiteness: {x_Minv_x:.2e}"
+
+        # Solve with PCG-AMG and confirm convergence
+        b_poisson = np.ones(N_pts)
+        res_amg = cg.solve(A_poisson, b_poisson, preconditioner=amg_poisson)
+        assert res_amg.converged is True
+        assert res_amg.iterations < 20
+
+    # 5. Missing-PyAMG environment behavior
+    # Mock _PYAMG_AVAILABLE = False to verify informative ImportError
+    monkeypatch.setattr(iter_module, "_PYAMG_AVAILABLE", False)
+    with pytest.raises(ImportError, match="PyAMG is not installed in the current environment"):
+        AMGPreconditioner(A)
 
 
 

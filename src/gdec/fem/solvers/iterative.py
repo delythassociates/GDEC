@@ -201,16 +201,23 @@ class AMGPreconditioner(Preconditioner):
     Algebraic Multigrid (AMG) preconditioner using PyAMG smoothed aggregation.
 
     Mathematical Verification Contract:
-    To be mathematically guaranteed SPD for Conjugate Gradient, AMG must use:
-    1. A symmetric hierarchy (Galerkin coarse grids A_c = R A P where R = P^T).
-    2. A symmetric cycle (V-cycle or W-cycle).
-    3. Symmetric relaxation (pre- and post-smoothing, e.g. symmetric Gauss-Seidel or Jacobi).
-    Arbitrary unverified kwargs or unsymmetric smoother/cycle selections break self-adjointness
-    and are rejected for ordinary CG (is_spd evaluates to False).
+    To be mathematically guaranteed symmetric positive-definite (SPD) for ordinary CG,
+    an Algebraic Multigrid preconditioner must satisfy four strict requirements:
+    1. Symmetric Galerkin hierarchy: Coarse grids formed via A_c = R A P with R = P^T.
+    2. Symmetric cycling: Symmetric V-cycle or W-cycle traversal.
+    3. Symmetric relaxation: The post-smoothing operation must be the exact adjoint of the
+       pre-smoothing operation. When Gauss-Seidel is used, an adjoint sweep pair
+       (forward pre-smoother, backward post-smoother) or symmetric Gauss-Seidel is required.
+    4. Symmetric coarse solver: The coarse grid solver must produce an SPD action (e.g. direct
+       sparse/dense factorizations; arbitrary callables or unsymmetric solvers are rejected).
+
+    Any configuration not meeting these explicit verified constraints evaluates is_spd = False,
+    causing ordinary Conjugate Gradient to fail-closed and reject the preconditioner.
     """
 
-    SUPPORTED_CYCLES = ("V", "W")
-    SUPPORTED_SMOOTHERS = ("gauss_seidel", "symmetric_gauss_seidel", "jacobi", "block_gauss_seidel", None)
+    VERIFIED_CYCLES = ("V", "W")
+    VERIFIED_COARSE_SOLVERS = ("splu", "pinv", "pinv2", "default", None)
+    VERIFIED_SMOOTHERS = ("gauss_seidel", "symmetric_gauss_seidel", "jacobi", None)
 
     def __init__(
         self,
@@ -218,6 +225,7 @@ class AMGPreconditioner(Preconditioner):
         cycle: str = "V",
         symmetric: bool = True,
         smoother: Optional[str] = None,
+        coarse_solver: Optional[str] = None,
         **pyamg_kwargs,
     ):
         if not _PYAMG_AVAILABLE:
@@ -230,29 +238,47 @@ class AMGPreconditioner(Preconditioner):
         self.symmetric = symmetric
         self.cycle = cycle.upper() if isinstance(cycle, str) else str(cycle)
         self.smoother = smoother
+        self.coarse_solver = coarse_solver
         self.pyamg_kwargs = pyamg_kwargs
 
         # Verify whether the configuration satisfies SPD requirements
         self._is_verified_spd = self._verify_spd_configuration()
 
-        # Build solver
+        # Build solver kwargs with explicit symmetric smoothing
         solver_kwargs = pyamg_kwargs.copy()
-        if smoother is not None:
-            solver_kwargs["presmoother"] = smoother
-            solver_kwargs["postsmoother"] = smoother
+        if symmetric:
+            solver_kwargs["symmetry"] = "symmetric"
+        if coarse_solver is not None:
+            solver_kwargs["coarse_solver"] = coarse_solver
+
+        if smoother == "gauss_seidel":
+            # Explicit adjoint sweep pair: forward pre-smoothing, backward post-smoothing
+            solver_kwargs["presmoother"] = ("gauss_seidel", {"sweep": "forward"})
+            solver_kwargs["postsmoother"] = ("gauss_seidel", {"sweep": "backward"})
+        elif smoother == "symmetric_gauss_seidel":
+            solver_kwargs["presmoother"] = ("symmetric_gauss_seidel", {})
+            solver_kwargs["postsmoother"] = ("symmetric_gauss_seidel", {})
+        elif smoother == "jacobi":
+            solver_kwargs["presmoother"] = ("jacobi", {})
+            solver_kwargs["postsmoother"] = ("jacobi", {})
+
         self.ml = pyamg.smoothed_aggregation_solver(A.tocsr(), **solver_kwargs)
         self.M = self.ml.aspreconditioner(cycle=self.cycle)
 
     def _verify_spd_configuration(self) -> bool:
-        """Verify whether the requested AMG configuration satisfies SPD requirements."""
+        """Verify whether the requested AMG configuration satisfies strict SPD requirements."""
         if not self.symmetric:
             return False
-        if self.cycle not in self.SUPPORTED_CYCLES:
+        if self.cycle not in self.VERIFIED_CYCLES:
             return False
-        if self.smoother not in self.SUPPORTED_SMOOTHERS:
+        if self.smoother not in self.VERIFIED_SMOOTHERS:
             return False
-        # Unverified arbitrary kwargs that could introduce unsymmetric operators
-        unverified_keys = set(self.pyamg_kwargs.keys()) - {"max_levels", "max_coarse", "coarse_solver"}
+        if self.coarse_solver not in self.VERIFIED_COARSE_SOLVERS:
+            return False
+        if callable(self.coarse_solver):
+            return False
+        # Reject unverified arbitrary kwargs that could introduce unsymmetric operators
+        unverified_keys = set(self.pyamg_kwargs.keys()) - {"max_levels", "max_coarse"}
         if unverified_keys:
             return False
         return True
@@ -273,7 +299,7 @@ class AMGPreconditioner(Preconditioner):
     def is_spd(self) -> bool:
         """
         Whether this AMG configuration is verified to be SPD.
-        Returns True ONLY for supported symmetric cycle and smoother configurations.
+        Returns True ONLY for supported symmetric cycle, smoother, and coarse solver configurations.
         """
         return self._is_verified_spd
 
@@ -424,66 +450,77 @@ class ConjugateGradientSolver:
                 "energy-norm self-adjointness and prevent breakdown or divergence."
             )
 
-        # Check eligibility
-        if check_eligibility:
-            delta_sym = compute_symmetry_defect(K_mat)
-            if delta_sym > self.sym_tol:
+        # Mandatory Safety Gate: Eligibility checks may only be skipped when caller_certified_spd=True
+        # is explicitly provided. The combination check_eligibility=False and caller_certified_spd=False
+        # is strictly forbidden.
+        if not check_eligibility and not caller_certified_spd:
+            raise ValueError(
+                "Cannot bypass matrix eligibility checks (check_eligibility=False) without explicit caller "
+                "certification (caller_certified_spd=True). Ordinary Conjugate Gradient strictly requires verified "
+                "symmetric positive-definite operators. To bypass upfront spectral eigensolve verification based on "
+                "domain physics or boundary conditions, explicitly pass caller_certified_spd=True."
+            )
+
+        # Structural necessary checks: always enforced
+        delta_sym = compute_symmetry_defect(K_mat)
+        if delta_sym > self.sym_tol:
+            raise ValueError(
+                f"Matrix is not symmetric (delta_sym = {delta_sym:.2e} > tol {self.sym_tol:.2e}). "
+                "Conjugate Gradient requires a symmetric matrix."
+            )
+        diag = K_mat.diagonal()
+        if np.any(diag <= 0.0):
+            min_d = float(np.min(diag))
+            raise ValueError(
+                f"Matrix diagonal contains non-positive entries (min: {min_d:.2e}). "
+                "Necessary condition for positive definiteness failed."
+            )
+
+        # Scale-aware SPD verification if not caller-certified
+        if not caller_certified_spd:
+            if n_rows <= 300:
+                eigvals = la.eigvalsh(K_mat.toarray())
+                lambda_min = float(eigvals[0])
+                lambda_max = float(eigvals[-1])
+            else:
+                try:
+                    ncv_val = min(n_rows - 1, 25)
+                    lambda_max = float(spla.eigsh(K_mat, k=1, which="LA", return_eigenvectors=False, ncv=ncv_val)[0])
+                    lambda_min = float(spla.eigsh(K_mat, k=1, which="SA", return_eigenvectors=False, ncv=ncv_val)[0])
+                except Exception as e:
+                    if isinstance(e, ValueError):
+                        raise
+                    raise ValueError(
+                        f"Positive-definiteness could not be established by eigensolve: {e}. "
+                        "If this matrix is physically guaranteed to be SPD, pass caller_certified_spd=True."
+                    )
+
+            scale = max(abs(lambda_min), abs(lambda_max), np.finfo(float).tiny)
+            null_threshold = self.null_tol * scale
+
+            # 1. Indefinite: smallest algebraic eigenvalue is negative
+            if lambda_min < -null_threshold:
                 raise ValueError(
-                    f"Matrix is not symmetric (delta_sym = {delta_sym:.2e} > tol {self.sym_tol:.2e}). "
-                    "Conjugate Gradient requires a symmetric matrix."
+                    f"Matrix is not positive-definite: matrix is indefinite "
+                    f"(lambda_min = {lambda_min:.2e}, lambda_scale = {scale:.2e}, "
+                    f"ratio = {lambda_min / scale:.2e} < -{self.null_tol:.2e}). "
+                    "Conjugate Gradient strictly requires a symmetric positive-definite matrix."
                 )
-            diag = K_mat.diagonal()
-            if np.any(diag <= 0.0):
-                min_d = float(np.min(diag))
+            # 2. Non-positive: largest algebraic eigenvalue is non-positive
+            if lambda_max <= null_threshold:
                 raise ValueError(
-                    f"Matrix diagonal contains non-positive entries (min: {min_d:.2e}). "
-                    "Necessary condition for positive definiteness failed."
+                    f"Matrix is not positive-definite: largest algebraic eigenvalue is non-positive "
+                    f"(lambda_max = {lambda_max:.2e}, lambda_scale = {scale:.2e}). "
+                    "Conjugate Gradient strictly requires a positive-definite matrix."
                 )
-
-            # Scale-aware SPD verification if not caller-certified
-            if not caller_certified_spd:
-                if n_rows <= 300:
-                    eigvals = la.eigvalsh(K_mat.toarray())
-                    lambda_min = float(eigvals[0])
-                    lambda_max = float(eigvals[-1])
-                else:
-                    try:
-                        lambda_max = float(spla.eigsh(K_mat, k=1, which="LA", return_eigenvectors=False)[0])
-                        lambda_min = float(spla.eigsh(K_mat, k=1, which="SA", return_eigenvectors=False)[0])
-                    except Exception as e:
-                        if isinstance(e, ValueError):
-                            raise
-                        raise ValueError(
-                            f"Positive-definiteness could not be established by eigensolve: {e}. "
-                            "If this matrix is physically guaranteed to be SPD, pass caller_certified_spd=True."
-                        )
-
-                scale = max(abs(lambda_min), abs(lambda_max), np.finfo(float).tiny)
-                null_threshold = self.null_tol * scale
-
-                # 1. Indefinite: smallest algebraic eigenvalue is negative
-                if lambda_min < -null_threshold:
-                    raise ValueError(
-                        f"Matrix is not positive-definite: matrix is indefinite "
-                        f"(lambda_min = {lambda_min:.2e}, lambda_scale = {scale:.2e}, "
-                        f"ratio = {lambda_min / scale:.2e} < -{self.null_tol:.2e}). "
-                        "Conjugate Gradient strictly requires a symmetric positive-definite matrix."
-                    )
-                # 2. Non-positive: largest algebraic eigenvalue is non-positive
-                if lambda_max <= null_threshold:
-                    raise ValueError(
-                        f"Matrix is not positive-definite: largest algebraic eigenvalue is non-positive "
-                        f"(lambda_max = {lambda_max:.2e}, lambda_scale = {scale:.2e}). "
-                        "Conjugate Gradient strictly requires a positive-definite matrix."
-                    )
-                # 3. Numerically near-singular / null modes: |lambda_min| <= null_threshold
-                if abs(lambda_min) <= null_threshold:
-                    raise ValueError(
-                        f"Matrix is not positive-definite: matrix is numerically near-singular or possesses "
-                        f"unconstrained null modes (lambda_min = {lambda_min:.2e}, lambda_scale = {scale:.2e}, "
-                        f"ratio = {lambda_min / scale:.2e} <= null_tol {self.null_tol:.2e}). "
-                        "Conjugate Gradient strictly requires a positive-definite matrix."
-                    )
+            # 3. Numerically near-singular / null modes: |lambda_min| <= null_threshold
+            if abs(lambda_min) <= null_threshold:
+                raise ValueError(
+                    f"Matrix is not positive-definite: matrix is numerically near-singular or possesses "
+                    f"unconstrained null modes (lambda_min = {lambda_min:.2e}, lambda_scale = {scale:.2e}, "
+                    f"ratio = {lambda_min / scale:.2e} <= null_tol {self.null_tol:.2e}). "
+                    "Conjugate Gradient strictly requires a positive-definite matrix."
+                )
 
         b_norm = float(np.linalg.norm(b))
         stopping_threshold = max(_atol, _rtol * b_norm)

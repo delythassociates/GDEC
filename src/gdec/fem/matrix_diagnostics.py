@@ -260,7 +260,8 @@ def analyze_stiffness_matrix(
                 # Smallest algebraic eigenvalues: request several (up to 6) to detect
                 # both negative eigenvalues (indefiniteness) and multiple null modes (rigid-body modes)
                 k_sa = min(6, n_rows - 2)
-                lmin_arr = spla.eigsh(K_sym, k=k_sa, which="SA", return_eigenvectors=False)
+                ncv_sa = min(n_rows - 1, max(4 * k_sa, 25))
+                lmin_arr = spla.eigsh(K_sym, k=k_sa, which="SA", return_eigenvectors=False, ncv=ncv_sa)
                 lmin_arr = np.sort(lmin_arr)
                 lambda_min = float(lmin_arr[0])
 

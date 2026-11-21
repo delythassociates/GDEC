@@ -30,6 +30,9 @@ dependencies = [
 test = [
     "pytest>=8.0.0",
 ]
+amg = [
+    "pyamg>=5.0.0",
+]
 
 [project.scripts]
 gdec = "gdec.cli:main"
