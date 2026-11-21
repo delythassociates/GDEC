@@ -41,7 +41,8 @@ def test_estimator_indicators():
     assert len(dwr_res.indicators) == mesh.nelements
     assert np.all(dwr_res.indicators >= 0.0)
     assert np.max(dwr_res.indicators) > 0.0
-    assert dwr_res.details["signed_qoi_error_estimate"] > 0.0
+    # Tip deflection under downward load is negative, so error is negative
+    assert dwr_res.details["signed_qoi_error_estimate"] < 0.0
     assert dwr_res.details["classification"] == "goal_oriented_dwr_estimator"
     assert dwr_res.details["is_certified_dwr_bound"] is False
 

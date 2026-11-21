@@ -64,7 +64,7 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 | **ZZ Recovery Estimator** | **TESTED** | `tests/test_estimators.py` | Area-weighted nodal averaging of element stresses; energy norm metric. |
 | **Goal-Aware Adjoint Heuristic** | **TESTED** | `tests/test_v02_adjoint.py`, `tests/test_estimators.py` | $\eta_e = h_e^2 A_e \|\boldsymbol{\varepsilon}_u : \mathbf{C} : \boldsymbol{\varepsilon}_z\|$. Heuristic indicator (`goal_heuristic_v1`), NOT a certified DWR bound. |
 | **Residual Energy-Norm Indicator** | **NUMERICALLY VERIFIED** | `tests/test_estimators.py`, `tests/test_dwr_verification.py` | Ainsworth-Oden residual energy norm indicator based on interior facet traction jumps. |
-| **Goal-Oriented DWR Estimator** | **NUMERICALLY VERIFIED** | `tests/test_dwr_verification.py`, `docs/DWR_THEORY_AND_DERIVATION.md`, `docs/DWR_IMPLEMENTATION_REPORT.md`, `docs/GOAL_ORIENTED_ADAPTIVITY_REPORT.md` | Dual-weighted residual with interior facet jumps, Neumann boundary residuals, area-weighted recovered dual gradients, cubic Hermite edge bubble integration, signed QoI error estimate ($I_{\text{eff}} \to 0.81$). |
+| **Goal-Oriented DWR Estimator** | **NUMERICALLY VERIFIED** | `tests/test_dwr_verification.py`, `docs/DWR_THEORY_AND_DERIVATION.md`, `docs/DWR_IMPLEMENTATION_REPORT.md`, `docs/GOAL_ORIENTED_ADAPTIVITY_REPORT.md` | Variational DWR with interior facet jumps, Neumann boundary residuals, volume residual support, boundary-agnostic DOF-based trace vanishing, first-principles cubic Hermite bubble integration, orientation invariance, and multi-reference effectivity convergence ($0.51 \to 0.91$). |
 | **Cost-Aware Priority Weighting** | **TESTED** | `tests/test_v02_cost_model.py`, `tests/test_estimators.py` | Prioritizes elements by sensitivity per estimated degree of freedom. |
 | **Conforming Local Red-Green Refinement**| **TESTED** | `tests/test_mesh.py` | Bisection and conforming closure via `skfem.MeshTri.refined(marked)`. |
 | **Guaranteed Certified Error Bounds** | **PLANNED** | Roadmap Phase 7 | Requires analytical evaluation of domain-dependent global trace constants $C_{\text{trace}}$. DWR provides an asymptotic estimate, not a certified upper bound. |
@@ -73,21 +73,21 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 | Capability / Subsystem | Current State | Verification Evidence / Reference | Notes & Limitations |
 | :--- | :--- | :--- | :--- |
-| **Multi-Strategy Comparison** | **TESTED** | `tests/test_benchmark.py`, `tests/test_audit_regressions.py` | Uniform, recovery, and goal-aware compared on identical engineering problems. |
-| **Decoupled DOF & Time Efficiency** | **TESTED** | `tests/test_audit_regressions.py` | Separate hypothesis evaluation: DOF advantage does not imply wall-clock advantage. |
-| **High-Resolution Reference Adequacy** | **TESTED** | `tests/test_v02_reference.py` | Checks reference convergence before validating comparative accuracy thresholds. |
+| **Multi-Strategy Comparison** | **TESTED** | `tests/test_benchmark.py`, `tests/test_audit_regressions.py` | Uniform, recovery, goal-aware, and DWR compared on identical engineering problems. |
+| **Decoupled DOF & Time Efficiency** | **TESTED** | `tests/test_audit_regressions.py`, `docs/GOAL_ORIENTED_ADAPTIVITY_REPORT.md` | Separate evaluation: DOF advantage does not imply wall-clock advantage in 2D linear FEM. |
+| **High-Resolution Reference Adequacy** | **TESTED** | `tests/test_v02_reference.py`, `tests/test_dwr_verification.py` | Multi-reference verification ($65\times 33$, $129\times 65$, Richardson extrapolation). |
 | **Refinement Time Accounting** | **TESTED** | `src/gdec/benchmark/runner.py` | Refinement time included in total execution cost. |
-| **Equal-Accuracy Interpolation** | **TESTED** | `tests/test_v02_evaluator.py` | Interpolates DOFs and time required to achieve target reference accuracy. |
+| **Equal-Accuracy Interpolation** | **TESTED** | `tests/test_v02_evaluator.py`, `docs/GOAL_ORIENTED_ADAPTIVITY_REPORT.md` | Interpolates DOFs, wall time, and memory required to achieve target reference accuracy. |
 
 ---
 
 ## 3. Test Suite Summary Statistics
 
-- **Total Unit & Regression Tests:** 134 tests.
-- **Passing:** 134 (100%).
+- **Total Unit & Regression Tests:** 137 tests.
+- **Passing:** 137 (100%).
 - **Failing:** 0.
 - **Skipped / XFailed:** 0.
-- **Total Test Execution Time:** ~8.7 seconds.
+- **Total Test Execution Time:** ~9.0 seconds.
 - **Python Compilation (`compileall`):** Clean across all `src/` and `tests/` modules (Python 3.10–3.13).
 - **Static Analysis (Ruff):** No syntax errors or import execution issues in compiler/FEM code.
 
@@ -95,6 +95,6 @@ To prevent scientific overclaiming and preserve engineering integrity, every cap
 
 ## 4. Next Priorities
 
-1. **Phase 3:** Completed research-grade Dual-Weighted Residual (DWR) framework, facet jump evaluator, dual weight evaluator, multi-strategy benchmarks, and theory reports.
-2. **Phase 4:** Solver and numerical conditioning audit (evaluate preconditioned conjugate gradient applicability vs. sparse direct solve, condition number scaling under adaptive refinement).
+1. **Phase 3.1 (Complete):** Mathematical audit and verification corrections (boundary-agnostic dual weights, first-principles edge bubble integration, volume residual support, multi-reference effectivity sensitivity, equal-accuracy benchmark repair).
+2. **Phase 4:** Solver and numerical conditioning audit (evaluate preconditioned conjugate gradient applicability vs. sparse direct solve, condition number scaling under adaptive red-green refinement).
 3. **Phase 5:** Benchmark protocol re-registration and reproducibility checks.

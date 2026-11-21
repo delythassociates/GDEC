@@ -171,6 +171,7 @@ class DualWeightEvaluator:
         sol: FEMSolution,
         facet_data: FacetResidualData,
         fixed_boundary_names: Optional[List[str]] = None,
+        fixed_boundaries: Optional[List[Tuple[str, List[str]]]] = None,
     ) -> np.ndarray:
         """
         Compute edge-integrated dual weights along each facet:
@@ -200,13 +201,14 @@ class DualWeightEvaluator:
             np.add.at(nodal_weights, nodes, areas)
         nodal_grad_z /= np.maximum(nodal_weights, 1e-14)
 
-        # For each facet, compute edge bubble integral
+        # For each facet, compute edge bubble integral from first-principles Hermite interpolation:
+        # W_F = int_F (z - Pi_h z) ds = (h_F^2 / 12) * (z'_0 - z'_1)
+        #     = (h_F^2 / 12) * [(grad_z*(v0) - grad_z*(v1)) . t_F]
         v0 = skm.facets[0]
         v1 = skm.facets[1]
         h_F = facet_data.lengths
         t_F = facet_data.tangents
 
-        # w_F_comp = (h_F^2 / 12.0) * sum_coord (grad_z(v0)[comp, coord] - grad_z(v1)[comp, coord]) * t_F[coord]
         dual_weights = np.zeros((2, len(h_F)), dtype=float)
         for comp in range(2):
             diff_0 = nodal_grad_z[comp, 0, v0] - nodal_grad_z[comp, 0, v1]
@@ -214,56 +216,131 @@ class DualWeightEvaluator:
             directional_diff = diff_0 * t_F[0] + diff_1 * t_F[1]
             dual_weights[comp] = (h_F**2 / 12.0) * directional_diff
 
-        # On Dirichlet boundaries where z is constrained to zero, dual error vanishes
-        fixed_names = set(fixed_boundary_names or ["left"])
-        bnd_idx = np.where(~facet_data.is_interior)[0]
-        midpoints = 0.5 * (p[:, v0] + p[:, v1])
-        for f in bnd_idx:
-            mx, my = midpoints[0, f], midpoints[1, f]
-            is_fixed = False
-            if "left" in fixed_names and np.isclose(mx, 0.0, atol=1e-5):
-                is_fixed = True
-            elif "right" in fixed_names and np.isclose(mx, gdec_mesh.width, atol=1e-5):
-                is_fixed = True
-            elif "bottom" in fixed_names and np.isclose(my, 0.0, atol=1e-5):
-                is_fixed = True
-            elif "top" in fixed_names and np.isclose(my, gdec_mesh.height, atol=1e-5):
-                is_fixed = True
+        # On Dirichlet boundaries where adjoint trace is constrained to zero, dual error vanishes.
+        # We determine constrained facets component-by-component without assuming any fixed boundary name.
+        # 1. Primary ground-truth: inspect sol.dofs_fixed directly from the condensed linear system
+        if sol.dofs_fixed is not None and len(sol.dofs_fixed) > 0:
+            is_dof_fixed = np.zeros(sol.basis.N, dtype=bool)
+            is_dof_fixed[sol.dofs_fixed] = True
+            for comp in range(2):
+                dofs_v0 = sol.basis.nodal_dofs[comp, v0]
+                dofs_v1 = sol.basis.nodal_dofs[comp, v1]
+                # Facet trace is Dirichlet-constrained if both endpoint nodes are constrained
+                facet_constrained = is_dof_fixed[dofs_v0] & is_dof_fixed[dofs_v1]
+                dual_weights[comp, facet_constrained] = 0.0
 
-            if is_fixed:
-                dual_weights[:, f] = 0.0
+        # 2. Supplementary/fallback: check boundary condition metadata if provided
+        elif fixed_boundaries or fixed_boundary_names:
+            bnd_idx = np.where(~facet_data.is_interior)[0]
+            midpoints = 0.5 * (p[:, v0] + p[:, v1])
+
+            constrained_map: Dict[str, List[str]] = {}
+            if fixed_boundaries:
+                for b_name, comps in fixed_boundaries:
+                    constrained_map[b_name.lower().strip()] = [c.lower().strip() for c in comps]
+            elif fixed_boundary_names:
+                for b_name in fixed_boundary_names:
+                    constrained_map[b_name.lower().strip()] = ["x", "y"]
+
+            for f in bnd_idx:
+                mx, my = midpoints[0, f], midpoints[1, f]
+                bnd_name = None
+                if np.isclose(mx, 0.0, atol=1e-5):
+                    bnd_name = "left"
+                elif np.isclose(mx, gdec_mesh.width, atol=1e-5):
+                    bnd_name = "right"
+                elif np.isclose(my, 0.0, atol=1e-5):
+                    bnd_name = "bottom"
+                elif np.isclose(my, gdec_mesh.height, atol=1e-5):
+                    bnd_name = "top"
+
+                if bnd_name and bnd_name in constrained_map:
+                    comps = constrained_map[bnd_name]
+                    if "x" in comps:
+                        dual_weights[0, f] = 0.0
+                    if "y" in comps:
+                        dual_weights[1, f] = 0.0
 
         return dual_weights
 
 
 class ElementResidualEvaluator:
-    """Evaluates element interior equilibrium residuals R_K = b + div(sigma_h)."""
+    """
+    Evaluates element interior equilibrium residuals:
+      R_K = b + div(sigma_h).
+    For linear triangular elements (P1), element stresses sigma_h are spatially constant,
+    so div(sigma_h) is identically zero inside each element.
+    Therefore, R_K = b(x).
+    
+    When body forces are zero (the standard for supported benchmark BVPs),
+    the interior volume residual vanishes identically (R_K = 0).
+    When nonzero body forces are provided, the volume residual is integrated
+    using 3-point midpoint quadrature against the quadratic reconstructed dual bubble.
+    """
 
     @staticmethod
     def evaluate(
         gdec_mesh: GDECMesh,
         sol: FEMSolution,
         body_force_fn: Optional[Any] = None,
-    ) -> np.ndarray:
+        dual_evaluator: Optional[DualWeightEvaluator] = None,
+        facet_data: Optional[FacetResidualData] = None,
+    ) -> Tuple[np.ndarray, np.ndarray, float]:
         """
-        In linear P1 triangles, element stresses are constant, so div(sigma_h) is identically zero.
-        Returns element-wise body force residuals if applicable.
+        Returns:
+          elem_signed_dwr: (nelements,) array of signed volume contributions
+          elem_abs_dwr: (nelements,) array of absolute volume indicators
+          total_volume_residual_norm: L2 norm of R_K over the domain
         """
         ne = gdec_mesh.nelements
+        elem_signed = np.zeros(ne, dtype=float)
+        elem_abs = np.zeros(ne, dtype=float)
+
         if body_force_fn is None:
-            return np.zeros((2, ne), dtype=float)
+            return elem_signed, elem_abs, 0.0
+
         centroids = gdec_mesh.element_centroids
-        b_val = body_force_fn(centroids)  # shape (2, ne)
-        return np.asarray(b_val, dtype=float)
+        b_val = np.asarray(body_force_fn(centroids), dtype=float)  # shape (2, ne)
+        b_norm = float(np.linalg.norm(b_val))
+        if b_norm < 1e-14:
+            return elem_signed, elem_abs, 0.0
+
+        # Nonzero body force: integrate b . (z - Pi_h z) dOmega over each triangle
+        # For quadratic adjoint enrichment, the bubble vanishes at the 3 vertices.
+        # We evaluate via 3-point edge midpoint quadrature on triangle K:
+        # int_K b . (z - Pi_h z) dOmega = Area_K * (1/3) * sum_{edge j} b(m_j) . w_mid_j
+        areas = gdec_mesh.element_areas
+        thickness = sol.c.thickness if hasattr(sol, "c") and sol.c else 1.0
+
+        if facet_data is not None:
+            e0 = facet_data.element_0
+            e1 = facet_data.element_1
+            h_F = facet_data.lengths
+            int_idx = np.where(facet_data.is_interior)[0]
+            bnd_idx = np.where(~facet_data.is_interior)[0]
+
+            # bubble at midpoint = (1.5 / h_F) * dual_weights
+            bubble_mid = (1.5 / np.maximum(h_F, 1e-14))[None, :] * facet_data.dual_weights
+
+            for c in range(2):
+                # Interior facets contribute to e0 and e1
+                np.add.at(elem_signed, e0[int_idx], thickness * (areas[e0[int_idx]] / 3.0) * b_val[c, e0[int_idx]] * bubble_mid[c, int_idx])
+                np.add.at(elem_signed, e1[int_idx], thickness * (areas[e1[int_idx]] / 3.0) * b_val[c, e1[int_idx]] * bubble_mid[c, int_idx])
+                # Boundary facets contribute to e0
+                np.add.at(elem_signed, e0[bnd_idx], thickness * (areas[e0[bnd_idx]] / 3.0) * b_val[c, e0[bnd_idx]] * bubble_mid[c, bnd_idx])
+
+            elem_abs = np.abs(elem_signed)
+
+        return elem_signed, elem_abs, b_norm
 
 
 class DWREstimator(GoalOrientedEstimator):
     """
     Goal-Oriented Dual-Weighted Residual (DWR) a posteriori error estimator.
     Evaluates:
-      J(u) - J(u_h) = sum_{F in F_I} int_F -[[sigma_h n]] . (z - Pi_h z) dGamma
+      J(u) - J(u_h) = sum_{K} int_K (b + div(sigma_h)) . (z - Pi_h z) dOmega
+                    - sum_{F in F_I} int_F [[sigma_h n]] . (z - Pi_h z) dGamma
                     + sum_{F in F_N} int_F (t - sigma_h n) . (z - Pi_h z) dGamma
-                    + sum_{K} int_K (b + div(sigma_h)) . (z - Pi_h z) dOmega
     """
 
     def __init__(self, constitutive: ConstitutiveTensor):
@@ -277,6 +354,9 @@ class DWREstimator(GoalOrientedEstimator):
         gdec_mesh: GDECMesh,
         sol: FEMSolution,
         loads: Optional[List[Tuple[str, float, float]]] = None,
+        fixed_boundary_names: Optional[List[str]] = None,
+        fixed_boundaries: Optional[List[Tuple[str, List[str]]]] = None,
+        body_force_fn: Optional[Any] = None,
         cost_aware: bool = True,
     ) -> IndicatorResult:
         if sol.z is None:
@@ -298,18 +378,25 @@ class DWREstimator(GoalOrientedEstimator):
         facet_data = self.jump_evaluator.evaluate(gdec_mesh, stresses, loads=loads)
 
         # 3. Evaluate dual weights along facets
-        dual_weights = self.dual_evaluator.evaluate(gdec_mesh, sol, facet_data)
+        dual_weights = self.dual_evaluator.evaluate(
+            gdec_mesh,
+            sol,
+            facet_data,
+            fixed_boundary_names=fixed_boundary_names,
+            fixed_boundaries=fixed_boundaries,
+        )
         facet_data.dual_weights = dual_weights
 
         # 4. Integrate facet DWR contributions
-        # On interior facets: -[[sigma_h n]] . (z - Pi_h z)
-        # On boundary facets: (t_applied - sigma_h n) . (z - Pi_h z)
+        # Mathematical Residual Definition:
+        #   rho(u_h)(w) = sum_K int_K R_K . w dOmega - sum_{F in F_I} int_F [[sigma_h n]] . w ds + sum_{F in F_N} int_F r_F . w ds
+        # Note the exact minus sign on interior facet jumps arising from integration by parts: -a(u_h, w).
         thickness = self.c.thickness
         signed_facet_dwr = np.zeros(len(facet_data.lengths), dtype=float)
         abs_facet_dwr = np.zeros(len(facet_data.lengths), dtype=float)
 
         int_idx = np.where(facet_data.is_interior)[0]
-        signed_facet_dwr[int_idx] = thickness * (
+        signed_facet_dwr[int_idx] = - thickness * (
             facet_data.traction_jumps[0, int_idx] * dual_weights[0, int_idx]
             + facet_data.traction_jumps[1, int_idx] * dual_weights[1, int_idx]
         )
@@ -325,7 +412,16 @@ class DWREstimator(GoalOrientedEstimator):
         facet_data.signed_dwr_contributions = signed_facet_dwr
         facet_data.abs_dwr_contributions = abs_facet_dwr
 
-        # 5. Distribute facet indicators to elements
+        # 5. Evaluate element interior volume residuals
+        elem_signed_vol, elem_abs_vol, vol_res_norm = self.elem_evaluator.evaluate(
+            gdec_mesh=gdec_mesh,
+            sol=sol,
+            body_force_fn=body_force_fn,
+            dual_evaluator=self.dual_evaluator,
+            facet_data=facet_data,
+        )
+
+        # 6. Distribute facet and volume indicators to elements
         ne = gdec_mesh.nelements
         elem_indicators = np.zeros(ne, dtype=float)
         e0 = facet_data.element_0
@@ -338,11 +434,14 @@ class DWREstimator(GoalOrientedEstimator):
         # Boundary facets assigned 100% to e0
         np.add.at(elem_indicators, e0[bnd_idx], abs_facet_dwr[bnd_idx])
 
-        # 6. Global error estimates
-        signed_qoi_error = float(np.sum(signed_facet_dwr))
+        # Add element volume residual indicator
+        elem_indicators += elem_abs_vol
+
+        # 7. Global error estimates
+        signed_qoi_error = float(np.sum(signed_facet_dwr) + np.sum(elem_signed_vol))
         abs_indicator_sum = float(np.sum(elem_indicators))
 
-        # 7. Cost-aware priority
+        # 8. Cost-aware priority
         est_dofs = np.full(ne, 4.0)
         if cost_aware:
             priorities = elem_indicators / np.maximum(est_dofs, 1.0)
@@ -363,6 +462,9 @@ class DWREstimator(GoalOrientedEstimator):
                 "absolute_error_indicator_sum": abs_indicator_sum,
                 "interior_jump_contribution": float(np.sum(signed_facet_dwr[int_idx])),
                 "boundary_residual_contribution": float(np.sum(signed_facet_dwr[bnd_idx])),
+                "volume_residual_contribution": float(np.sum(elem_signed_vol)),
+                "volume_residual_norm": vol_res_norm,
+                "is_zero_body_force": bool(body_force_fn is None or vol_res_norm < 1e-14),
                 "max_traction_jump": float(np.max(np.sqrt(facet_data.traction_jumps[0]**2 + facet_data.traction_jumps[1]**2))),
                 "cost_aware": cost_aware,
                 "max_indicator": float(np.max(elem_indicators)),
@@ -578,6 +680,9 @@ class RefinementEstimator:
         gdec_mesh: GDECMesh,
         sol: FEMSolution,
         loads: Optional[List[Tuple[str, float, float]]] = None,
+        fixed_boundary_names: Optional[List[str]] = None,
+        fixed_boundaries: Optional[List[Tuple[str, List[str]]]] = None,
+        body_force_fn: Optional[Any] = None,
         cost_aware: bool = True,
     ) -> IndicatorResult:
         """
@@ -585,7 +690,13 @@ class RefinementEstimator:
         indicators and signed QoI error estimates.
         """
         return self.dwr_estimator.estimate(
-            gdec_mesh=gdec_mesh, sol=sol, loads=loads, cost_aware=cost_aware
+            gdec_mesh=gdec_mesh,
+            sol=sol,
+            loads=loads,
+            fixed_boundary_names=fixed_boundary_names,
+            fixed_boundaries=fixed_boundaries,
+            body_force_fn=body_force_fn,
+            cost_aware=cost_aware,
         )
 
     def compute_residual_energy_indicator(

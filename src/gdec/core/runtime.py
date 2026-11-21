@@ -125,7 +125,11 @@ class GDECRuntime:
                 )
             elif self.plan.refinement_strategy in ["dwr", "goal_oriented_dwr"]:
                 ind_res = self.estimator.compute_dwr_indicator(
-                    current_mesh, sol, loads=self.loads, cost_aware=self.ir.adaptivity.cost_aware
+                    current_mesh,
+                    sol,
+                    loads=self.loads,
+                    fixed_boundaries=self.fixed_boundaries,
+                    cost_aware=self.ir.adaptivity.cost_aware,
                 )
             else:
                 raise ValueError(f"Unknown strategy: {self.plan.refinement_strategy}")
