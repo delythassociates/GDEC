@@ -132,8 +132,20 @@ To solve this rigorously, GDEC provides two separate components:
    Wraps `scipy.sparse.linalg.spilu` with property `is_spd = False` and an explicit non-SPD warning, intended only for comparative research.
 
 ### 3.4 Algebraic Multigrid (PyAMG)
-- **Status in Environment:** `pyamg` is not installed by default in the active environment or standard GDEC CI image.
-- **Contract:** `AMGPreconditioner` provides an explicit query `is_available() -> bool`. If instantiated when PyAMG is absent, it raises `ImportError("PyAMG is not installed in the current environment...")`.
+- **Status in Environment:** `pyamg>=5.0.0` is registered as an optional extra in `pyproject.toml` (`[project.optional-dependencies] amg = ["pyamg>=5.0.0"]`) and included in the CI test matrix.
+- **Contract & Admissibility:** `AMGPreconditioner` provides an explicit query `is_available() -> bool`. If instantiated when PyAMG is absent, it raises `ImportError("PyAMG is not installed in the current environment...")`.
+  Its property `is_spd` indicates that the AMG configuration is admissible as an SPD operator *for an SPD input operator*, under verified cycle ("V", "W"), smoother, and coarse-solver configurations.
+- **Smoother Configuration Mapping:**
+  - `"gauss_seidel"`: configured with an explicit adjoint sweep pair (`presmoother=('gauss_seidel', {'sweep': 'forward'})`, `postsmoother=('gauss_seidel', {'sweep': 'backward'})`).
+  - `"symmetric_gauss_seidel"`: mapped to PyAMG's verified symmetric sweep (`presmoother=('gauss_seidel', {'sweep': 'symmetric'})`, `postsmoother=('gauss_seidel', {'sweep': 'symmetric'})`).
+  - `"jacobi"`: diagonal relaxation.
+  - `None`: PyAMG's default smoothed aggregation smoothing (`'block_gauss_seidel'`, `{'sweep': 'symmetric'}`).
+  - Unsupported smoother names raise a clear `ValueError` and are never silently ignored or replaced with defaults.
+- **Coarse Solver Mapping:**
+  - `"splu"`: sparse direct LU factorization.
+  - `"pinv"`, `"pinv2"`: pseudoinverse SVD solve.
+  - `"default"` and `None`: normalized to omit the argument, selecting PyAMG's documented default coarse solver (`"pinv"` in PyAMG 5.4.1), not sparse direct.
+  - Dense LU (`"lu"`), callables, or unsymmetric solvers evaluate `is_spd = False`.
 - **Theoretical Assessment for 2D Elasticity:**
   Algebraic Multigrid with Smoothed Aggregation (SA-AMG) is the gold standard for elliptic PDEs, achieving $\mathcal{O}(1)$ iteration counts. However, for 2D elasticity:
   - SA-AMG must be supplied with the near-nullspace (rigid body translations and rotation) to build coarse grids effectively.

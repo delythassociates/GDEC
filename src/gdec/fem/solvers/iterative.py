@@ -201,23 +201,36 @@ class AMGPreconditioner(Preconditioner):
     Algebraic Multigrid (AMG) preconditioner using PyAMG smoothed aggregation.
 
     Mathematical Verification Contract:
-    To be mathematically guaranteed symmetric positive-definite (SPD) for ordinary CG,
-    an Algebraic Multigrid preconditioner must satisfy four strict requirements:
+    To be admissible as a symmetric positive-definite (SPD) preconditioner for an SPD input operator,
+    an Algebraic Multigrid preconditioner must satisfy four strict mathematical requirements:
     1. Symmetric Galerkin hierarchy: Coarse grids formed via A_c = R A P with R = P^T.
     2. Symmetric cycling: Symmetric V-cycle or W-cycle traversal.
     3. Symmetric relaxation: The post-smoothing operation must be the exact adjoint of the
-       pre-smoothing operation. When Gauss-Seidel is used, an adjoint sweep pair
-       (forward pre-smoother, backward post-smoother) or symmetric Gauss-Seidel is required.
-    4. Symmetric coarse solver: The coarse grid solver must produce an SPD action (e.g. direct
-       sparse/dense factorizations; arbitrary callables or unsymmetric solvers are rejected).
+       pre-smoothing operation.
+       - 'gauss_seidel': Configured with an exact adjoint sweep pair (forward pre-smoother, backward post-smoother).
+       - 'symmetric_gauss_seidel': Configured with symmetric sweep ('gauss_seidel', {'sweep': 'symmetric'})
+         for both pre- and post-smoothing.
+       - 'jacobi': Diagonal relaxation for both pre- and post-smoothing.
+       - None: PyAMG's default smoothed aggregation smoothing (block Gauss-Seidel with symmetric sweep).
+    4. Symmetric coarse solver: Coarse grid solver must produce an SPD action.
+       - 'splu': Sparse direct LU factorization (acting on SPD coarse Galerkin operator).
+       - 'pinv' / 'pinv2': Pseudoinverse SVD solve.
+       - 'default' / None: PyAMG's documented default coarse solver ('pinv' in PyAMG 5.4.1).
+       Arbitrary callables, unsymmetric factorizations (e.g., 'lu'), or unverified solvers evaluate is_spd = False.
 
-    Any configuration not meeting these explicit verified constraints evaluates is_spd = False,
-    causing ordinary Conjugate Gradient to fail-closed and reject the preconditioner.
+    Admissibility Semantics of `is_spd`:
+    `AMGPreconditioner.is_spd` indicates that the AMG operator configuration is mathematically
+    admissible as an SPD preconditioner *when applied to an SPD input operator*.
+    It does NOT imply that setting PyAMG's symmetry='symmetric' independently proves positive-definiteness
+    of an arbitrary or indefinite input matrix. System positive definiteness must be verified upfront
+    or asserted by domain physics via caller_certified_spd=True.
     """
 
     VERIFIED_CYCLES = ("V", "W")
     VERIFIED_COARSE_SOLVERS = ("splu", "pinv", "pinv2", "default", None)
     VERIFIED_SMOOTHERS = ("gauss_seidel", "symmetric_gauss_seidel", "jacobi", None)
+    KNOWN_PYAMG_SMOOTHERS = ("gauss_seidel", "symmetric_gauss_seidel", "jacobi", "sor", "chebyshev", "richardson", None)
+    KNOWN_PYAMG_COARSE_SOLVERS = ("splu", "pinv", "pinv2", "default", "lu", "cholesky", None)
 
     def __init__(
         self,
@@ -231,7 +244,7 @@ class AMGPreconditioner(Preconditioner):
         if not _PYAMG_AVAILABLE:
             raise ImportError(
                 "PyAMG is not installed in the current environment. "
-                "To enable AMG preconditioning, install pyamg (`pip install pyamg`)."
+                "To enable AMG preconditioning, install pyamg (`pip install pyamg` or `pip install -e \".[amg]\"`)."
             )
         if not sp.issparse(A):
             A = sp.csr_matrix(A)
@@ -241,6 +254,24 @@ class AMGPreconditioner(Preconditioner):
         self.coarse_solver = coarse_solver
         self.pyamg_kwargs = pyamg_kwargs
 
+        # Validate smoother against known methods to prevent unhandled internal errors or silent defaults
+        if smoother is not None and smoother not in self.KNOWN_PYAMG_SMOOTHERS:
+            raise ValueError(
+                f"Unsupported or invalid smoother '{smoother}'. "
+                f"Supported verified smoothers for SPD operators are: {self.VERIFIED_SMOOTHERS}."
+            )
+
+        # Validate coarse solver against known methods to prevent unhandled internal errors
+        if (
+            coarse_solver is not None
+            and coarse_solver not in self.KNOWN_PYAMG_COARSE_SOLVERS
+            and not callable(coarse_solver)
+        ):
+            raise ValueError(
+                f"Unsupported or invalid coarse_solver '{coarse_solver}'. "
+                f"Supported verified coarse solvers are: {self.VERIFIED_COARSE_SOLVERS}."
+            )
+
         # Verify whether the configuration satisfies SPD requirements
         self._is_verified_spd = self._verify_spd_configuration()
 
@@ -248,19 +279,30 @@ class AMGPreconditioner(Preconditioner):
         solver_kwargs = pyamg_kwargs.copy()
         if symmetric:
             solver_kwargs["symmetry"] = "symmetric"
-        if coarse_solver is not None:
+
+        # Coarse solver configuration:
+        # None and 'default' both select PyAMG's documented default coarse solver ('pinv' in PyAMG 5.4.1)
+        # by omitting coarse_solver from kwargs.
+        if coarse_solver is not None and coarse_solver != "default":
             solver_kwargs["coarse_solver"] = coarse_solver
 
+        # Smoother configuration: never silently ignore or replace requested smoother with defaults
         if smoother == "gauss_seidel":
             # Explicit adjoint sweep pair: forward pre-smoothing, backward post-smoothing
             solver_kwargs["presmoother"] = ("gauss_seidel", {"sweep": "forward"})
             solver_kwargs["postsmoother"] = ("gauss_seidel", {"sweep": "backward"})
         elif smoother == "symmetric_gauss_seidel":
-            solver_kwargs["presmoother"] = ("symmetric_gauss_seidel", {})
-            solver_kwargs["postsmoother"] = ("symmetric_gauss_seidel", {})
+            # Map GDEC symmetric_gauss_seidel to valid PyAMG symmetric sweep configuration
+            solver_kwargs["presmoother"] = ("gauss_seidel", {"sweep": "symmetric"})
+            solver_kwargs["postsmoother"] = ("gauss_seidel", {"sweep": "symmetric"})
         elif smoother == "jacobi":
             solver_kwargs["presmoother"] = ("jacobi", {})
             solver_kwargs["postsmoother"] = ("jacobi", {})
+        elif smoother is not None:
+            # Explicitly configure requested non-standard smoother (e.g. sor)
+            solver_kwargs["presmoother"] = (smoother, {})
+            solver_kwargs["postsmoother"] = (smoother, {})
+        # If smoother is None, PyAMG's default ('block_gauss_seidel', {'sweep': 'symmetric'}) is retained
 
         self.ml = pyamg.smoothed_aggregation_solver(A.tocsr(), **solver_kwargs)
         self.M = self.ml.aspreconditioner(cycle=self.cycle)
@@ -393,12 +435,18 @@ class ConjugateGradientSolver:
         max_iter : int, optional
             Maximum allowed iterations. Must be > 0.
         check_eligibility : bool
-            Whether to enforce symmetry, diagonal positivity, and definiteness checks.
+            [Deprecated compatibility parameter]. Structural necessary checks (entry finiteness,
+            square dimensions, symmetry, diagonal positivity, and preconditioner SPD compatibility)
+            are unconditional and always enforced. Upfront spectral eigensolve verification of positive
+            definiteness is governed by `caller_certified_spd` (default False).
+            Setting `check_eligibility=False` without `caller_certified_spd=True` is strictly forbidden
+            and raises a ValueError.
         caller_certified_spd : bool
-            If True, caller certifies that K is SPD by structural/domain physics
-            (e.g., condensed FEM matrix with fixed Dirichlet boundaries), skipping
-            upfront eigenvalue solve while still performing necessary diagonal, symmetry,
-            and runtime curvature checks.
+            If True, caller asserts that K is SPD by structural domain physics
+            (e.g., condensed FEM matrix with kinematically sufficient Dirichlet boundaries), skipping
+            the upfront spectral eigensolve while still unconditionally performing necessary diagonal,
+            symmetry, preconditioner compatibility, and runtime curvature checks.
+            Default is False (spectral eigensolve verification is performed upfront).
 
         Returns
         -------

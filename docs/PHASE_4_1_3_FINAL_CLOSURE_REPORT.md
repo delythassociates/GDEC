@@ -72,19 +72,28 @@ For an AMG preconditioner $M^{-1}$ to be self-adjoint and positive-definite ($x^
 - **Cycle Validation:** `VERIFIED_CYCLES = ("V", "W")`.
 - **Smoother Validation & Adjoint Pairing:**
   - `'gauss_seidel'`: explicitly configured as `presmoother=('gauss_seidel', {'sweep': 'forward'})` and `postsmoother=('gauss_seidel', {'sweep': 'backward'})`.
-  - `'symmetric_gauss_seidel'`: symmetric sweep for both pre and post.
+  - `'symmetric_gauss_seidel'`: mapped to PyAMG's verified symmetric relaxation `presmoother=('gauss_seidel', {'sweep': 'symmetric'})` and `postsmoother=('gauss_seidel', {'sweep': 'symmetric'})`.
   - `'jacobi'`: diagonal scaling for both pre and post.
-- **Coarse Solver Validation:** `VERIFIED_COARSE_SOLVERS = ("splu", "pinv", "pinv2", "default", None)`. Dense LU (`'lu'`), callables, or unverified solvers evaluate `is_spd = False`.
+  - `None`: PyAMG's default smoothed aggregation smoothing (`'block_gauss_seidel'`, `{'sweep': 'symmetric'}`).
+  - Unsupported smoother names raise a clear `ValueError` and are never silently ignored or replaced with defaults.
+- **Coarse Solver Validation:** `VERIFIED_COARSE_SOLVERS = ("splu", "pinv", "pinv2", "default", None)`.
+  - `"default"` and `None` both select PyAMG's documented default coarse solver (`"pinv"` in PyAMG 5.4.1) by omitting the argument.
+  - `"splu"` invokes sparse direct LU factorization.
+  - Dense LU (`'lu'`), callables, or unverified solvers evaluate `is_spd = False`.
+  - Unsupported coarse solver tokens raise a clear `ValueError`.
 - **Kwargs Whitelist:** Kwargs are strictly whitelisted to `{"max_levels", "max_coarse"}`. Any extraneous kwarg causes `is_spd = False`.
 - **Packaging & Dependency Isolation:** PyAMG is declared as an optional dependency in `pyproject.toml` (`amg = ["pyamg>=5.0.0"]`) and CI (`python -m pip install -e ".[test,amg]"`). If PyAMG is not installed, attempting to instantiate `AMGPreconditioner` raises an informative `ImportError`.
 
 ### 3.3 Empirical Operator Verification
-On a 2D 5-point discrete Laplacian matrix ($N = 100$ DOFs), operator self-adjointness and positive definiteness were tested with random vectors $x, y \sim \mathcal{N}(0, I)$:
+On a 2D 5-point discrete Laplacian matrix ($N = 100$ DOFs), complete finite-dimensional operator verification was performed by applying $M^{-1}$ to each coordinate basis vector $e_j$ ($j = 1 \dots 100$) to assemble the full dense operator matrix $M^{-1}$:
 - **Relative Symmetry Defect:**
-  $$\frac{|x^T M^{-1} y - y^T M^{-1} x|}{\max(|x^T M^{-1} y|, |y^T M^{-1} x|)} < 1.0 \times 10^{-12}$$
-  (Machine-precision numerical symmetry confirmed).
-- **Positive Definiteness:**
-  $$x^T M^{-1} x > 0 \quad \forall x \ne 0$$
+  $$\frac{\|M^{-1} - (M^{-1})^T\|_F}{\|M^{-1}\|_F} < 1.0 \times 10^{-12}$$
+  (Machine-precision numerical symmetry confirmed across the complete finite-dimensional operator).
+- **Complete Spectrum Positive Definiteness:**
+  Full algebraic eigensolve via `scipy.linalg.eigvalsh` confirms all 100 eigenvalues are strictly positive:
+  $$\lambda_{\min}(M^{-1}) \approx 0.115 > 0$$
+- **Sampled Random-Vector Sanity Checks:**
+  Additional empirical checks with random vectors $x, y \sim \mathcal{N}(0, I)$ confirmed $x^T M^{-1} y \approx y^T M^{-1} x$ and $x^T M^{-1} x > 0$ for the sampled vectors.
 - **Preconditioned CG Convergence:** PCG with the verified AMG preconditioner converged in 5 iterations to residual tolerance $10^{-6}$.
 
 ---

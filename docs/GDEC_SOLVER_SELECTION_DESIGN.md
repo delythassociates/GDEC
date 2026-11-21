@@ -62,8 +62,8 @@ Before applying any solver, the system matrix $K_{ff}$ must pass mathematical el
 ### 2.1 CG Eligibility and Safety Gating Contract
 1. **Mandatory Safety Gate (`check_eligibility` & `caller_certified_spd`):**
    - In both `LinearElasticitySolver` and `ConjugateGradientSolver`, the default configuration is `caller_certified_spd=False`.
-   - Bypassing eligibility checks via `check_eligibility=False` without providing `caller_certified_spd=True` is strictly forbidden and raises a `ValueError`.
-   - Structural necessary checks (finiteness of matrix and vectors, square dimensions, symmetry defect $\delta_{\text{sym}} \le 10^{-8}$, positive diagonal entries $K_{ii} > 0$, and preconditioner SPD compatibility $M.\text{is\_spd} == \text{True}$) are **always** enforced.
+   - `check_eligibility` is a deprecated compatibility parameter. Setting `check_eligibility=False` without providing `caller_certified_spd=True` is strictly forbidden and raises a `ValueError`.
+   - Structural necessary checks (finiteness of matrix and vectors, square dimensions, symmetry defect $\delta_{\text{sym}} \le 10^{-8}$, positive diagonal entries $K_{ii} > 0$, and preconditioner SPD compatibility $M.\text{is\_spd} == \text{True}$) are unconditional and **always** enforced for both `check_eligibility=True` and `check_eligibility=False`.
 2. **Caller SPD Certification:**
    - Passing `caller_certified_spd=True` is an explicit, opt-in caller assertion based on physical domain constraints (e.g. condensed FEM stiffness matrix with kinematically sufficient Dirichlet boundary conditions). It is an assertion by the caller, not an automated solver certificate.
    - It bypasses only the upfront spectral eigensolve while retaining all structural checks and runtime curvature checks.
@@ -73,10 +73,21 @@ Before applying any solver, the system matrix $K_{ff}$ must pass mathematical el
 4. **Preconditioner SPD Contract:**
    - Preconditioners fail closed: the base `Preconditioner.is_spd` returns `False`, rejecting uncertified custom implementations.
    - For Algebraic Multigrid (`AMGPreconditioner` via PyAMG), `is_spd` returns `True` only when a mathematically verified configuration is used:
+     - Admissibility semantics: `is_spd=True` certifies that the AMG configuration is admissible as an SPD operator *for an SPD input operator*; it does not imply that AMG independently proves positive-definiteness of an uncertified input matrix.
      - Galerkin coarse-grid operator hierarchy ($A_c = P^T A P$).
      - Symmetric cycle: V-cycle or W-cycle (`cycle in ("V", "W")`).
-     - Adjoint smoothing relaxation: Gauss-Seidel with an explicit forward/backward sweep pair (forward pre-smoother, backward post-smoother), symmetric Gauss-Seidel, or Jacobi smoothing.
-     - Verified coarse-grid solver: sparse direct (`splu`), pseudoinverse (`pinv`, `pinv2`), or default direct factorization; arbitrary callables or unsymmetric solvers evaluate `is_spd = False`.
+     - Adjoint smoothing relaxation:
+       - `"gauss_seidel"`: configured with an explicit forward/backward adjoint sweep pair (forward pre-smoother, backward post-smoother).
+       - `"symmetric_gauss_seidel"`: mapped to PyAMG's verified symmetric sweep configuration (`("gauss_seidel", {"sweep": "symmetric"})`) for both pre- and post-smoothing.
+       - `"jacobi"`: diagonal relaxation.
+       - `None`: PyAMG's default smoothed aggregation smoothing (block Gauss-Seidel with symmetric sweep).
+       - Unsupported smoother names raise a clear `ValueError` and are never silently ignored or replaced with defaults.
+     - Verified coarse-grid solver:
+       - `"splu"`: sparse direct LU factorization.
+       - `"pinv"`, `"pinv2"`: pseudoinverse SVD solve.
+       - `"default"` and `None`: normalized to omit the argument, selecting PyAMG's documented default coarse solver (`"pinv"` in PyAMG 5.4.1), not sparse direct.
+       - Dense LU (`"lu"`), callables, or unsymmetric solvers evaluate `is_spd = False`.
+       - Unsupported coarse solver tokens raise a clear `ValueError`.
      - Permitted kwargs restricted to structural hierarchy depth (`{"max_levels", "max_coarse"}`).
 
 If a matrix fails CG eligibility (e.g., asymmetric or non-positive-definite due to unconstrained rigid-body motion), the system rejects CG immediately with a clear diagnostic error rather than silently falling back.
