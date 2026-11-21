@@ -15,6 +15,7 @@ import numpy as np
 import scipy.sparse as sp
 
 from gdec.core.backend.capabilities import BackendCapabilities, CapabilityStatus
+from gdec.core.backend.spd_check import verify_cg_eligibility
 from gdec.core.backend.exceptions import (
     BackendNotAvailableError,
     UnsupportedCapabilityError,
@@ -321,40 +322,85 @@ class CUDABackend:
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         """
         Minimal experimental GPU Conjugate Gradient solver for SPD systems.
+        Enforces identical structural and SPD verification checks as CPUBackend.
         """
         self._ensure_operational()
-        # Transfer inputs to device
-        A_gpu = A if cp_sp.issparse(A) else self.to_device(A.tocsr())
-        b_gpu = b if isinstance(b, cp.ndarray) else self.to_device(np.asarray(b, dtype=np.float64))
 
-        n = A_gpu.shape[0]
-        if A_gpu.shape[0] != A_gpu.shape[1]:
-            raise InputValidationError("Matrix A must be square.")
-        if n != b_gpu.shape[0]:
-            raise InputValidationError("Dimension mismatch between A and b.")
+        # Extract host arrays for structural and SPD verification
+        A_host = self.to_host(A) if (cp_sp is not None and cp_sp.issparse(A)) else (
+            A.tocsr() if sp.issparse(A) else np.asarray(A)
+        )
+        b_host = self.to_host(b) if (cp is not None and isinstance(b, cp.ndarray)) else np.asarray(b)
 
-        # Diagonal check
-        diag = A_gpu.diagonal().get()
-        if np.any(diag <= 0):
-            raise NumericalBackendError("Matrix A has non-positive diagonal entries; not SPD.")
+        # Enforce unified eligibility policy
+        n, _, _ = verify_cg_eligibility(
+            A=A_host,
+            b=b_host,
+            rtol=rtol,
+            atol=atol,
+            max_iter=max_iter,
+            caller_certified_spd=caller_certified_spd,
+        )
 
         if max_iter is None:
             max_iter = n * 2
 
+        # Transfer verified inputs to device
+        A_gpu = A if (cp_sp is not None and cp_sp.issparse(A)) else self.to_device(sp.csr_matrix(A_host))
+        b_gpu = b if (cp is not None and isinstance(b, cp.ndarray)) else self.to_device(b_host)
+
+        # Preconditioner handling: support GPU Jacobi or reject unsupported CPU preconditioners
+        M_gpu = None
+        if M is not None:
+            if isinstance(M, str) and M.lower() == "jacobi":
+                diag_gpu = A_gpu.diagonal()
+                M_gpu = cp_spla.LinearOperator(A_gpu.shape, matvec=lambda v: v / diag_gpu, dtype=A_gpu.dtype)
+            elif hasattr(M, "is_spd"):
+                if not M.is_spd:
+                    p_name = getattr(M, "name", type(M).__name__)
+                    raise NumericalBackendError(
+                        f"Preconditioner '{p_name}' is not SPD (is_spd=False). "
+                        "Conjugate Gradient strictly requires an SPD preconditioner."
+                    )
+                p_name = getattr(M, "name", "").lower()
+                if "jacobi" in p_name:
+                    diag_gpu = A_gpu.diagonal()
+                    M_gpu = cp_spla.LinearOperator(A_gpu.shape, matvec=lambda v: v / diag_gpu, dtype=A_gpu.dtype)
+                elif "identity" in p_name:
+                    M_gpu = None
+                else:
+                    raise UnsupportedCapabilityError(
+                        f"Preconditioner '{getattr(M, 'name', type(M).__name__)}' is a CPU operator. "
+                        "CUDABackend requires a GPU-resident preconditioner (e.g. 'jacobi' or cupyx LinearOperator)."
+                    )
+            elif cp_spla is not None and isinstance(M, cp_spla.LinearOperator):
+                M_gpu = M
+            else:
+                raise UnsupportedCapabilityError(
+                    f"Unsupported preconditioner type '{type(M).__name__}' passed to CUDABackend. "
+                    "Only GPU-resident preconditioners or 'jacobi' are supported on CUDA."
+                )
+
         try:
-            x_gpu, info = cp_spla.cg(A_gpu, b_gpu, rtol=rtol, atol=atol, maxiter=max_iter)
+            x_gpu, info = cp_spla.cg(A_gpu, b_gpu, rtol=rtol, atol=atol, maxiter=max_iter, M=M_gpu)
             self.synchronize()
+
+            # Residual evaluated directly on GPU without transferring matrix A
+            r_gpu = b_gpu - A_gpu.dot(x_gpu)
+            res_norm = float(cp.linalg.norm(r_gpu).get())
             x = self.to_host(x_gpu)
-            b_host = self.to_host(b_gpu)
-            A_host = self.to_host(A_gpu)
-            res_norm = float(np.linalg.norm(b_host - A_host @ x))
+
+            converged = (info == 0)
             return x, {
-                "converged": (info == 0),
-                "iterations": max_iter if info != 0 else 0, # CuPy CG does not report raw iteration counts
+                "converged": converged,
+                "iterations": None, # CuPy CG does not return iteration telemetry; documented limitation
                 "residual_norm": res_norm,
                 "exit_code": info,
+                "breakdown_reason": None if converged else f"CuPy CG did not converge (exit code {info})",
             }
         except Exception as e:
+            if isinstance(e, (UnsupportedCapabilityError, NumericalBackendError, InputValidationError)):
+                raise
             raise NumericalBackendError(f"GPU CG solve failed: {str(e)}") from e
 
     def synchronize(self) -> None:

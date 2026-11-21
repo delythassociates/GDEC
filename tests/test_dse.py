@@ -22,6 +22,9 @@ from gdec.dse import (
     DecisionRecommendation,
     DecisionRefusalError,
     ContractValidationError,
+    ValidationStatus,
+    EvidenceRecord,
+    EvidenceAssessment,
     RestrictedLinearElasticScaling,
     ReferenceBaseline,
     ScalingAssumptions,
@@ -78,6 +81,54 @@ def valid_contract():
             max_wall_clock_seconds=60.0,
             enforced=False,
         ),
+    )
+
+
+@pytest.fixture
+def valid_evidence():
+    """Create a fully valid canonical EvidenceAssessment matching valid_contract."""
+    return EvidenceAssessment(
+        assessment_id="ASSESS-TEST-001",
+        evidence_records=[
+            EvidenceRecord(
+                id="EV-DISC-001",
+                category="discretization_error",
+                provenance="FEM solver with DWR",
+                model_reference="LinearElasticity-Cantilever",
+                applicable_domain="cantilever_length_to_height_ratio_ge_5",
+                validation_status=ValidationStatus.VERIFIED,
+                numerical_metric=0.01,
+            ),
+            EvidenceRecord(
+                id="EV-BC-001",
+                category="boundary_conditions",
+                provenance="Physical clamping fixture verification",
+                model_reference="LinearElasticity-Cantilever",
+                applicable_domain="cantilever_length_to_height_ratio_ge_5",
+                validation_status=ValidationStatus.VERIFIED,
+            ),
+        ],
+        validated_assumptions=["linear_elasticity", "small_strain", "isotropic"],
+        model_reference="LinearElasticity-Cantilever",
+        applicable_domain="cantilever_length_to_height_ratio_ge_5",
+        validation_status=ValidationStatus.VERIFIED,
+        reference_scale=10.0,
+        provenance="Lead Verification Engineer",
+    )
+
+
+@pytest.fixture
+def valid_assumptions():
+    """Create valid attested scaling assumptions."""
+    return ScalingAssumptions(
+        uniform_material_scaling=True,
+        fixed_geometry=True,
+        fixed_poisson_ratio=True,
+        linear_elastic_regime=True,
+        proportional_loading=True,
+        compatible_displacement_qoi=True,
+        qoi_type="fixed_displacement",
+        attested_by="structural_analyst_01",
     )
 
 
@@ -160,10 +211,10 @@ def test_contract_rejects_unsupported_schema_version():
 
 
 # ==============================================================================
-# WORKSTREAM D TESTS: SINGLE-QOI DECISION EVALUATOR & MATHEMATICS
+# WORKSTREAM B & C TESTS: DECISION EVALUATOR & EVIDENCE ENFORCEMENT
 # ==============================================================================
 
-def test_evaluator_known_gaussian_calculation(valid_contract):
+def test_evaluator_known_gaussian_calculation(valid_contract, valid_evidence):
     """
     Test exact expected-loss calculation on a known Gaussian problem.
     Contract effective limit: limit (10.0) - margin (0.5) = 9.5 mm
@@ -177,7 +228,7 @@ def test_evaluator_known_gaussian_calculation(valid_contract):
     R_release << R_reject -> Decision: RELEASE
     """
     evaluator = SingleQoIEvaluator(valid_contract)
-    res = evaluator.evaluate()
+    res = evaluator.evaluate(evidence_assessment=valid_evidence)
 
     assert res.recommendation == DecisionRecommendation.RELEASE
     assert pytest.approx(res.threshold_value, abs=1e-8) == 9.5
@@ -189,7 +240,7 @@ def test_evaluator_known_gaussian_calculation(valid_contract):
     assert res.is_conclusive() is True
 
 
-def test_evaluator_selects_reject_when_risk_exceeds(valid_contract):
+def test_evaluator_selects_reject_when_risk_exceeds(valid_contract, valid_evidence):
     """
     Test that REJECT is selected when the design is likely unsafe.
     mu = 10.5 mm (effective limit = 9.5 mm)
@@ -199,7 +250,14 @@ def test_evaluator_selects_reject_when_risk_exceeds(valid_contract):
     R_reject = 100 * 0.0228 = 2.28 -> REJECT
     """
     evaluator = SingleQoIEvaluator(valid_contract)
-    res = evaluator.evaluate(mean=10.5, std=0.5)
+    high_dist = PredictiveDistribution(
+        family="normal",
+        mean=10.5,
+        std=0.5,
+        unit="mm",
+        provenance="Test high deflection distribution",
+    )
+    res = evaluator.evaluate(predictive_distribution=high_dist, evidence_assessment=valid_evidence)
 
     assert res.recommendation == DecisionRecommendation.REJECT
     assert res.expected_loss_release > res.expected_loss_reject
@@ -214,12 +272,34 @@ def test_evaluator_zero_variance_deterministic():
         criterion=AcceptanceCriterion(operator="<=", limit=10.0, unit="mm", safety_margin=0.0),
         predictive_distribution=PredictiveDistribution(family="normal", mean=9.0, std=0.0, unit="mm", provenance="det"),
         loss=DecisionLoss(cost_false_acceptance=500.0, cost_false_rejection=50.0),
-        evidence=EvidenceRequirements(model_assumptions=["beam"], applicable_domain="linear"),
+        evidence=EvidenceRequirements(
+            required_categories=["beam"],
+            model_assumptions=["beam"],
+            applicable_domain="linear",
+        ),
+    )
+    ev_det = EvidenceAssessment(
+        assessment_id="ASSESS-DET",
+        evidence_records=[
+            EvidenceRecord(
+                id="EV-DET-01",
+                category="beam",
+                provenance="Deterministic Euler-Bernoulli analytical formula",
+                model_reference="beam",
+                applicable_domain="linear",
+                validation_status=ValidationStatus.VERIFIED,
+            )
+        ],
+        validated_assumptions=["beam"],
+        model_reference="beam",
+        applicable_domain="linear",
+        validation_status=ValidationStatus.VERIFIED,
+        provenance="Lead Engineer",
     )
     evaluator = SingleQoIEvaluator(contract)
 
     # mu = 9.0 <= 10.0 -> Safe with probability 1.0
-    res = evaluator.evaluate()
+    res = evaluator.evaluate(evidence_assessment=ev_det)
     assert res.recommendation == DecisionRecommendation.RELEASE
     assert res.probability_safe == 1.0
     assert res.probability_fail == 0.0
@@ -249,18 +329,32 @@ def test_evaluator_refusal_on_missing_uncertainty():
         evaluator.evaluate(raise_on_refusal=True)
 
 
-def test_evaluator_refusal_on_non_finite_inputs(valid_contract):
+def test_evaluator_refusal_on_non_finite_inputs(valid_contract, valid_evidence):
     """Evaluator refuses when mean, std, or limit are NaN or Inf."""
     evaluator = SingleQoIEvaluator(valid_contract)
 
+    nan_dist = PredictiveDistribution(
+        family="normal",
+        mean=float("nan"),
+        std=0.5,
+        unit="mm",
+        provenance="NaN test",
+    )
     with pytest.raises(DecisionRefusalError, match="Non-finite input values"):
-        evaluator.evaluate(mean=float("nan"), std=0.5, raise_on_refusal=True)
+        evaluator.evaluate(predictive_distribution=nan_dist, evidence_assessment=valid_evidence, raise_on_refusal=True)
 
+    inf_dist = PredictiveDistribution(
+        family="normal",
+        mean=8.0,
+        std=float("inf"),
+        unit="mm",
+        provenance="Inf test",
+    )
     with pytest.raises(DecisionRefusalError, match="Non-finite input values"):
-        evaluator.evaluate(mean=8.0, std=float("inf"), raise_on_refusal=True)
+        evaluator.evaluate(predictive_distribution=inf_dist, evidence_assessment=valid_evidence, raise_on_refusal=True)
 
 
-def test_evaluator_dwr_quality_gate(valid_contract):
+def test_evaluator_dwr_quality_gate(valid_contract, valid_evidence):
     """
     CRITICAL GUARDRAIL TEST:
     Verify that DWR error indicator is treated as an asymptotic indicator
@@ -269,25 +363,25 @@ def test_evaluator_dwr_quality_gate(valid_contract):
     """
     evaluator = SingleQoIEvaluator(valid_contract)
 
-    # Case 1: DWR indicator = 0.1 mm on mean = 8.0 mm -> 0.1 / 8.0 = 1.25% <= 5% -> Passes quality gate
-    res_pass = evaluator.evaluate(mean=8.0, std=0.5, dwr_indicator=0.1)
+    # Case 1: DWR indicator = 0.1 mm on reference scale 10.0 mm -> 0.1 / 10.0 = 1.0% <= 5% -> Passes quality gate
+    res_pass = evaluator.evaluate(evidence_assessment=valid_evidence, dwr_indicator=0.1)
     assert res_pass.recommendation == DecisionRecommendation.RELEASE
     assert res_pass.dwr_asymptotic_indicator == 0.1
     # Check that std remained exactly 0.5 (DWR was NOT combined into sigma!)
     assert res_pass.qoi_std == 0.5
 
-    # Case 2: DWR indicator = 0.8 mm on mean = 8.0 mm -> 0.8 / 8.0 = 10% > 5% -> Triggers REFINE
-    res_refine = evaluator.evaluate(mean=8.0, std=0.5, dwr_indicator=0.8)
+    # Case 2: DWR indicator = 0.8 mm on reference scale 10.0 mm -> 0.8 / 10.0 = 8.0% > 5% -> Triggers REFINE
+    res_refine = evaluator.evaluate(evidence_assessment=valid_evidence, dwr_indicator=0.8)
     assert res_refine.recommendation == DecisionRecommendation.REFINE
-    assert "Numerical discretization error indicator (10.0000%) exceeds contract quality threshold" in res_refine.refusal_reason
+    assert "Mandatory Quality Breach" in res_refine.refusal_reason
     assert res_refine.diagnostics["dwr_gate_breached"] is True
 
 
 # ==============================================================================
-# WORKSTREAM D TESTS: ANALYTICAL PARAMETER SCALING
+# WORKSTREAM C TESTS: ANALYTICAL PARAMETER SCALING
 # ==============================================================================
 
-def test_analytical_scaling_exactness():
+def test_analytical_scaling_exactness(valid_assumptions):
     """
     Verify exact analytical scaling formula:
     J(E, P) = (P / P_0) * (E_0 / E) * J_0
@@ -300,7 +394,7 @@ def test_analytical_scaling_exactness():
         dof_count=1200,
         qoi_name="tip_deflection",
     )
-    scaler = RestrictedLinearElasticScaling(baseline)
+    scaler = RestrictedLinearElasticScaling(baseline, assumptions=valid_assumptions)
 
     # Exact scaling tests
     # Double load P -> 2 * J_0 = 9.0
@@ -313,7 +407,7 @@ def test_analytical_scaling_exactness():
     assert scaler.evaluate_scalar(E=420e3, P=2000.0) == pytest.approx(4.5, abs=1e-12)
 
 
-def test_analytical_scaling_batch_evaluation():
+def test_analytical_scaling_batch_evaluation(valid_assumptions):
     """Verify batch evaluation over sampled parameter distributions."""
     baseline = ReferenceBaseline(
         E_0=200e3,
@@ -323,7 +417,7 @@ def test_analytical_scaling_batch_evaluation():
         dof_count=500,
         qoi_name="tip_deflection",
     )
-    scaler = RestrictedLinearElasticScaling(baseline)
+    scaler = RestrictedLinearElasticScaling(baseline, assumptions=valid_assumptions)
 
     E_samples = np.array([200e3, 100e3, 400e3])
     P_samples = np.array([10.0, 10.0, 20.0])
@@ -349,19 +443,62 @@ def test_analytical_scaling_assumption_rejection():
     )
 
     # Rejection of negative Young's modulus in baseline
-    with pytest.raises(ScalingAssumptionError, match="must be positive"):
+    with pytest.raises(ScalingAssumptionError, match="positive finite"):
         ReferenceBaseline(E_0=-100.0, P_0=10.0, J_0=1.0, poisson_ratio=0.3, dof_count=10, qoi_name="tip")
 
     # Rejection of zero load in baseline
-    with pytest.raises(ScalingAssumptionError, match="cannot be zero"):
+    with pytest.raises(ScalingAssumptionError, match="non-zero finite"):
         ReferenceBaseline(E_0=100.0, P_0=0.0, J_0=1.0, poisson_ratio=0.3, dof_count=10, qoi_name="tip")
 
+    # Rejection when missing attestation
+    unattested = ScalingAssumptions(
+        uniform_material_scaling=True,
+        fixed_geometry=True,
+        fixed_poisson_ratio=True,
+        linear_elastic_regime=True,
+        proportional_loading=True,
+        compatible_displacement_qoi=True,
+        attested_by="",
+    )
+    with pytest.raises(ScalingAssumptionError, match="explicit attestation provenance"):
+        RestrictedLinearElasticScaling(baseline, assumptions=unattested)
+
     # Rejection when non-uniform material scaling is flagged
-    invalid_assumptions = ScalingAssumptions(uniform_material_scaling=False)
+    invalid_assumptions = ScalingAssumptions(
+        uniform_material_scaling=False,
+        fixed_geometry=True,
+        fixed_poisson_ratio=True,
+        linear_elastic_regime=True,
+        proportional_loading=True,
+        compatible_displacement_qoi=True,
+        attested_by="analyst",
+    )
     with pytest.raises(ScalingAssumptionError, match="Multi-material or spatially heterogeneous"):
         RestrictedLinearElasticScaling(baseline, assumptions=invalid_assumptions)
 
     # Rejection when stress QoI is flagged
-    stress_assumptions = ScalingAssumptions(compatible_displacement_qoi=False)
+    stress_assumptions = ScalingAssumptions(
+        uniform_material_scaling=True,
+        fixed_geometry=True,
+        fixed_poisson_ratio=True,
+        linear_elastic_regime=True,
+        proportional_loading=True,
+        compatible_displacement_qoi=False,
+        attested_by="analyst",
+    )
     with pytest.raises(ScalingAssumptionError, match="Stress QoIs or non-linear functionals"):
         RestrictedLinearElasticScaling(baseline, assumptions=stress_assumptions)
+
+    # Rejection when compliance QoI type is specified
+    compliance_assumptions = ScalingAssumptions(
+        uniform_material_scaling=True,
+        fixed_geometry=True,
+        fixed_poisson_ratio=True,
+        linear_elastic_regime=True,
+        proportional_loading=True,
+        compatible_displacement_qoi=True,
+        qoi_type="compliance",
+        attested_by="analyst",
+    )
+    with pytest.raises(ScalingAssumptionError, match="compliance .* scales quadratically"):
+        RestrictedLinearElasticScaling(baseline, assumptions=compliance_assumptions)

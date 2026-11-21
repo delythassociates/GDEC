@@ -161,8 +161,18 @@ def test_cpu_solve_cg_rejects_non_spd():
 
     # Non-positive diagonal
     A_zero_diag = sp.csr_matrix([[0.0, 1.0], [1.0, 3.0]])
-    with pytest.raises(NumericalBackendError, match="non-positive diagonal"):
+    with pytest.raises(NumericalBackendError, match="non-positive"):
         backend.solve_cg(A_zero_diag, np.array([1.0, 1.0]))
+
+    # Symmetric indefinite matrix with positive diagonal (Counterexample: A = [[1, 2], [2, 1]])
+    # diag = [1, 1] > 0, but eigenvalues are -1 and 3
+    A_indef = sp.csr_matrix([[1.0, 2.0], [2.0, 1.0]])
+    with pytest.raises(NumericalBackendError, match="Matrix A is indefinite"):
+        backend.solve_cg(A_indef, np.array([1.0, 1.0]), caller_certified_spd=False)
+
+    # Allowed when caller explicitly certifies SPD
+    x_cert, info_cert = backend.solve_cg(A_indef, np.array([3.0, 3.0]), caller_certified_spd=True)
+    assert np.all(np.isfinite(x_cert))
 
 
 def test_cpu_evaluate_parameter_scaling_batch():

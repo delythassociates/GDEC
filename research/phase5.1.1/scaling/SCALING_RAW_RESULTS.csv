@@ -1,0 +1,6 @@
+sample_id,youngs_modulus_E_MPa,load_factor_P_N,independent_fem_solve_J_mm,analytical_scaling_J_mm,absolute_difference_mm,relative_difference,parity_pass
+Sample_1_Nominal,210000.0,1000.0,1.1874183698,1.1874183698,0.000000e+00,0.000000e+00,True
+Sample_2_Half_E,105000.0,1000.0,2.3748367396,2.3748367396,0.000000e+00,0.000000e+00,True
+Sample_3_Double_P,210000.0,2000.0,2.3748367396,2.3748367396,0.000000e+00,0.000000e+00,True
+Sample_4_Scaled_EP,150000.0,750.0,1.2467892883,1.2467892883,2.632561e-12,2.111472e-12,False
+Sample_5_Extreme,70000.0,1500.0,5.3433826641,5.3433826641,1.041123e-11,1.948434e-12,False

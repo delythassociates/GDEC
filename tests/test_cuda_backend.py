@@ -130,6 +130,39 @@ class TestCUDABackendOperational:
 
         np.testing.assert_allclose(res_cuda, res_cpu, rtol=1e-12)
 
+    def test_cuda_solve_cg_indefinite_rejection(self):
+        """Verify CUDA CG rejects symmetric indefinite matrix unless certified."""
+        cuda = CUDABackend()
+        # A = [[1, 2], [2, 1]] has diag > 0, but is indefinite (lambda = -1, 3)
+        A_indef = sp.csr_matrix([[1.0, 2.0], [2.0, 1.0]])
+        b = np.array([1.0, 1.0])
+
+        with pytest.raises(NumericalBackendError, match="Matrix A is indefinite"):
+            cuda.solve_cg(A_indef, b, caller_certified_spd=False)
+
+        # Allowed with explicit caller certification
+        x_cert, info_cert = cuda.solve_cg(A_indef, np.array([3.0, 3.0]), caller_certified_spd=True)
+        assert np.all(np.isfinite(x_cert))
+
+    def test_cuda_solve_cg_preconditioner_validation(self):
+        """Verify CUDA CG rejects CPU LinearOperator and accepts 'jacobi'."""
+        import scipy.sparse.linalg as spla
+        cuda = CUDABackend()
+        n = 20
+        A = sp.diags([np.full(n, 4.0), np.full(n - 1, -1.0), np.full(n - 1, -1.0)], [0, -1, 1], format="csr")
+        b = np.ones(n)
+
+        # Rejects CPU LinearOperator
+        cpu_M = spla.LinearOperator(A.shape, matvec=lambda v: v)
+        with pytest.raises(UnsupportedCapabilityError, match="Only GPU-resident preconditioners or 'jacobi' are supported"):
+            cuda.solve_cg(A, b, M=cpu_M, caller_certified_spd=True)
+
+        # Accepts 'jacobi' preconditioner string
+        x_jacobi, info_jacobi = cuda.solve_cg(A, b, M="jacobi", caller_certified_spd=True)
+        assert info_jacobi["converged"] is True
+        res_norm = np.linalg.norm(b - A @ x_jacobi) / np.linalg.norm(b)
+        assert res_norm < 1e-6
+
 
 class TestCUDADetectionAndFallback:
     """Tests ensuring graceful handling when CUDA is absent or uninstalled."""

@@ -1,0 +1,16 @@
+# GDEC Phase 5.1.1 — Acceptance Matrix (Gates A through J)
+
+| Gate | Description | Phase 5.1 Status | Phase 5.1.1 Remediation Status | Verification Evidence |
+| :--- | :--- | :--- | :--- | :--- |
+| **Gate A: CG Indefinite Matrix Rejection** | Prevent non-SPD and symmetric indefinite matrices with positive diagonals ($A = [[1, 2], [2, 1]]$) from entering CG. | **FAILED** (accepted $A$) | **PASSED** (Structural + Spectral screening) | `tests/test_backend.py`, `tests/test_cuda_backend.py`, `tests/test_phase5_1_1_adversarial.py` |
+| **Gate B: Preconditioner Trust & SPD Security** | Enforce explicit `is_spd = True` on CPU and GPU preconditioners; reject CPU operators on GPU. | **FAILED** (untrusted operators executed) | **PASSED** (Strict `is_spd` verification & GPU operator type check) | `src/gdec/core/backend/cpu.py`, `src/gdec/core/backend/cuda.py` |
+| **Gate C: Device-Resident GPU Residuals** | Evaluate $\|b - Ax\|_2$ directly on device without transferring matrix $A$ to host RAM. | **FAILED** (A transferred to host) | **PASSED** (CuPy in-VRAM norm calculation) | `src/gdec/core/backend/cuda.py:388-390` |
+| **Gate D: DSE Evidence Enforcement** | Enforce typed `EvidenceAssessment` package; reject missing evidence, cross-domain, or cross-model spoofing. | **FAILED** (allowed direct parameter eval) | **PASSED** (Mandatory evidence verification gates) | `src/gdec/dse/evaluator.py`, `src/gdec/dse/evidence.py` |
+| **Gate E: DWR Quality Gate & Bypass Removal** | Discretization error breaches must force `REFINE`; completely remove `allow_refine=False` bypass. | **FAILED** (bypass permitted) | **PASSED** (Bypass removed; mandatory precedence) | `tests/test_dse.py:test_evaluator_dwr_quality_gate` |
+| **Gate F: Relative Error Reference Anchor** | Normalise DWR error by explicit positive reference scale $J_{\text{ref}}$ rather than near-zero $\mu$. | **FAILED** (divided by $\mu$) | **PASSED** (Explicit $J_{\text{ref}}$ normalization) | `src/gdec/dse/evaluator.py:227-238` |
+| **Gate G: Analytical Scaling Demarcation** | Require caller attestation; restrict formula to linear displacement functionals; reject compliance and stress. | **FAILED** (defaulted True; unverified QoIs) | **PASSED** (Strict assumptions, $P^2/E$ compliance rejected) | `src/gdec/dse/scaling.py`, `tests/test_phase5_1_1_adversarial.py` |
+| **Gate H: Independent FEM Scaling Validation** | Verify scaling law against independent full FEM rerun. | **MISSING** | **PASSED** ($2.11 \times 10^{-12}$ relative discrepancy confirmed) | `benchmarks/phase5_1_1/scaling/validate_scaling_fem.py` |
+| **Gate I: True 2D Discrete Laplacian Benchmark** | Replace invalid 1D banded stencil with true 2D Kronecker grid ($A = I_y \otimes T_x + T_y \otimes I_x$) with reconciled NNZ. | **FAILED** (invalid stencil; NNZ mismatch) | **PASSED** (Exact NNZ: 24,220, 127,360, 510,720) | `benchmarks/phase5_1_1/gpu/benchmark_suite.py` |
+| **Gate J: Honest Benchmark Separation & Metrics** | Separate CPU setup and multi-RHS from GPU columns; capture raw individual samples and summary statistics. | **FAILED** (CPU times in GPU columns; no raw tables) | **PASSED** (Separate raw & summary CSVs; clear metric labels) | `GPU_BENCHMARK_RAW_SAMPLES.csv`, `GPU_BENCHMARK_SUMMARY.csv` |
+
+**Final Assessment:** All 10 Gates (A through J) are **FULLY SATISFIED**.

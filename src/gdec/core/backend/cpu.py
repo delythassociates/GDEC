@@ -13,6 +13,7 @@ import scipy.sparse.linalg as spla
 from typing import Dict, Any, Tuple, Optional
 
 from gdec.core.backend.capabilities import BackendCapabilities, CapabilityStatus
+from gdec.core.backend.spd_check import verify_cg_eligibility
 from gdec.core.backend.exceptions import (
     InputValidationError,
     NumericalBackendError,
@@ -164,29 +165,30 @@ class CPUBackend:
         caller_certified_spd: bool = False,
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
         """
-        Solve linear system A x = b using Conjugate Gradient with SPD validation.
+        Solve linear system A x = b using Conjugate Gradient with strict SPD validation.
         """
         if not sp.issparse(A):
             raise InputValidationError("Matrix A must be a scipy.sparse matrix.")
         b_arr = np.asarray(b)
-        n = A.shape[0]
-        if A.shape[0] != A.shape[1]:
-            raise InputValidationError(f"Matrix A must be square, got {A.shape}")
-        if n != b_arr.shape[0]:
-            raise InputValidationError(f"Dimension mismatch: A is {A.shape}, but b has length {b_arr.shape[0]}")
-        if not np.all(np.isfinite(b_arr)):
-            raise NumericalBackendError("RHS vector b contains non-finite values.")
 
-        # Matrix symmetry check
-        A_csr = A.tocsr()
-        diff = A_csr - A_csr.T
-        if diff.nnz > 0 and spla.norm(diff) / max(1.0, spla.norm(A_csr)) > 1e-10:
-            raise NumericalBackendError("Matrix A is not symmetric; CG cannot be applied.")
+        # Enforce unified structural and SPD eligibility checks
+        n, _, _ = verify_cg_eligibility(
+            A=A,
+            b=b_arr,
+            rtol=rtol,
+            atol=atol,
+            max_iter=max_iter,
+            caller_certified_spd=caller_certified_spd,
+        )
 
-        # Positive diagonal check
-        diag = A_csr.diagonal()
-        if np.any(diag <= 0):
-            raise NumericalBackendError("Matrix A has non-positive diagonal entries; not SPD.")
+        # Preconditioner SPD check
+        if M is not None:
+            if not getattr(M, "is_spd", False):
+                p_name = getattr(M, "name", type(M).__name__)
+                raise NumericalBackendError(
+                    f"Preconditioner '{p_name}' does not declare is_spd=True. "
+                    "Conjugate Gradient strictly requires an SPD preconditioner."
+                )
 
         if max_iter is None:
             max_iter = n * 2
@@ -196,6 +198,7 @@ class CPUBackend:
             nonlocal it_count
             it_count += 1
 
+        A_csr = A.tocsr()
         x, info = spla.cg(A_csr, b_arr, rtol=rtol, atol=atol, maxiter=max_iter, M=M, callback=callback)
         res_norm = float(np.linalg.norm(b_arr - A_csr @ x))
         converged = (info == 0)
@@ -208,6 +211,7 @@ class CPUBackend:
             "iterations": it_count,
             "residual_norm": res_norm,
             "exit_code": info,
+            "breakdown_reason": None if converged else f"SciPy CG exit code {info}",
         }
 
     def synchronize(self) -> None:

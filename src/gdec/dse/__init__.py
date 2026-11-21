@@ -29,6 +29,11 @@ from gdec.dse.evaluator import (
     DecisionRecommendation,
     DecisionEvaluationResult,
 )
+from gdec.dse.evidence import (
+    ValidationStatus,
+    EvidenceRecord,
+    EvidenceAssessment,
+)
 from gdec.dse.scaling import (
     RestrictedLinearElasticScaling,
     ScalingAssumptions,
@@ -53,6 +58,9 @@ __all__ = [
     "SingleQoIEvaluator",
     "DecisionRecommendation",
     "DecisionEvaluationResult",
+    "ValidationStatus",
+    "EvidenceRecord",
+    "EvidenceAssessment",
     "RestrictedLinearElasticScaling",
     "ScalingAssumptions",
     "ReferenceBaseline",
