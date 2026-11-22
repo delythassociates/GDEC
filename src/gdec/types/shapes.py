@@ -13,8 +13,12 @@ class TensorShape:
     extents: tuple[int, ...]
 
     def __post_init__(self) -> None:
-        if any(isinstance(n, bool) or not isinstance(n, int) or n <= 0 for n in self.extents):
+        if not isinstance(self.extents, (tuple, list)):
+            raise ShapeError("Tensor extents must be a tuple or list of positive integers.")
+        extents = tuple(self.extents)
+        if any(isinstance(n, bool) or not isinstance(n, int) or n <= 0 for n in extents):
             raise ShapeError("Tensor extents must be positive integers.")
+        object.__setattr__(self, "extents", extents)
 
     @property
     def rank(self) -> int:
@@ -37,8 +41,12 @@ class CoordinateFrame:
     def __post_init__(self) -> None:
         if not isinstance(self.frame_id, str) or not self.frame_id.strip():
             raise ShapeError("Coordinate frame ID cannot be empty.")
-        if isinstance(self.dimension, bool) or self.dimension not in (1, 2, 3):
-            raise ShapeError("Coordinate frame dimension must be 1, 2, or 3.")
+        if (
+            isinstance(self.dimension, bool)
+            or not isinstance(self.dimension, int)
+            or self.dimension not in (1, 2, 3)
+        ):
+            raise ShapeError("Coordinate frame dimension must be integer 1, 2, or 3.")
         if self.parent_id is not None:
             if not isinstance(self.parent_id, str) or not self.parent_id.strip():
                 raise ShapeError("Parent frame ID must be a non-empty string when supplied.")
@@ -51,7 +59,15 @@ class ValueShape:
     shape: TensorShape
     frame: CoordinateFrame | None = None
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.shape, TensorShape):
+            raise ShapeError("ValueShape.shape must be a TensorShape.")
+        if self.frame is not None and not isinstance(self.frame, CoordinateFrame):
+            raise ShapeError("ValueShape.frame must be a CoordinateFrame or None.")
+
     def require_compatible(self, other: "ValueShape") -> None:
+        if not isinstance(other, ValueShape):
+            raise ShapeError("Value-shape compatibility requires another ValueShape.")
         if self.shape != other.shape:
             raise ShapeError(
                 f"Shape mismatch: {self.shape.extents} != {other.shape.extents}."
@@ -67,6 +83,8 @@ class FieldType:
     function_space: str
 
     def __post_init__(self) -> None:
+        if not isinstance(self.value_shape, ValueShape):
+            raise ShapeError("FieldType.value_shape must be a ValueShape.")
         if not isinstance(self.domain_id, str) or not self.domain_id.strip():
             raise ShapeError("Field types require a non-empty domain identifier.")
         if not isinstance(self.function_space, str) or not self.function_space.strip():
