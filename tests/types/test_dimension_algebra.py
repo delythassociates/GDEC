@@ -1,0 +1,40 @@
+from fractions import Fraction
+import pytest
+from gdec.types import DIMENSIONLESS, LENGTH, TIME, MASS, VELOCITY, FORCE, PRESSURE, Dimension
+
+def test_base_and_derived_dimensions():
+    assert VELOCITY == LENGTH / TIME
+    assert FORCE == MASS * LENGTH / (TIME ** 2)
+    assert PRESSURE == FORCE / (LENGTH ** 2)
+
+def test_rational_exponents_are_exact():
+    root_length = LENGTH ** Fraction(1, 2)
+    assert root_length.exponents[1] == Fraction(1, 2)
+    assert root_length ** 2 == LENGTH
+
+def test_dimensionless_and_string_representation():
+    assert DIMENSIONLESS.is_dimensionless
+    assert not LENGTH.is_dimensionless
+    assert str(DIMENSIONLESS) == "1"
+
+def test_wrong_number_of_base_exponents_rejected():
+    with pytest.raises(ValueError):
+        Dimension.from_exponents((1, 2))
+
+def test_float_exponents_are_normalised_to_bounded_rationals():
+    dim = Dimension.from_exponents((0.5, 0.3333333333, 0, 0, 0, 0, 0))
+    assert dim.exponents[0] == Fraction(1, 2)
+    assert dim.exponents[1] == Fraction(1, 3)
+
+def test_nonfinite_and_boolean_dimension_exponents_are_rejected():
+    with pytest.raises(ValueError):
+        Dimension.from_exponents((float("inf"), 0, 0, 0, 0, 0, 0))
+    with pytest.raises(TypeError):
+        Dimension.from_exponents((True, 0, 0, 0, 0, 0, 0))
+
+def test_dimension_algebra_commutativity_and_associativity():
+    a = LENGTH * TIME
+    b = MASS / TIME
+    c = PRESSURE
+    assert a * b == b * a
+    assert (a * b) * c == a * (b * c)
