@@ -141,6 +141,20 @@ streamlit run src/gdec/app.py
 
 ---
 
+## Language and Architecture Specifications
+
+The language and IR architecture are being formalized separately from the current implementation:
+
+- [Implemented .gdc Language Profile 0.1](docs/specifications/GDEC_LANGUAGE_SPECIFICATION_0.1.md) — describes the parser and semantic behaviour currently implemented.
+- [Canonical Engineering IR Draft 0.1](docs/specifications/CANONICAL_ENGINEERING_IR_DRAFT_0.1.md) — proposed semantic architecture; **not yet implemented**.
+- [Language and IR Conformance Matrix](docs/specifications/GDEC_LANGUAGE_IR_CONFORMANCE.md) — distinguishes implemented, proposed and missing capabilities.
+- [ADR Register](docs/adr/ADR_REGISTER.md) — proposed architecture decisions requiring maintainer ratification.
+- [Legacy IR Migration Plan](docs/migration/LEGACY_IR_TO_CANONICAL_IR_MIGRATION.md) — compatibility-first migration that preserves the existing elasticity path.
+
+The current implementation still uses the elasticity-specific `ProblemIR` with schema identifier `gdec_ir_v0.1`. The proposed canonical Engineering IR has a separate draft schema identifier and must not be treated as an implemented runtime interface.
+
+---
+
 ## 6. Documentation Directory
 - [architecture.md](file:///f:/fem-edit-benchmark/docs/architecture.md): System architecture and data flow.
 - [language_specification.md](file:///f:/fem-edit-benchmark/docs/language_specification.md): `.gdc` grammar and keyword reference.
