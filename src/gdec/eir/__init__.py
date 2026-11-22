@@ -1,6 +1,8 @@
-"""Canonical engineering IR APIs.
+"""Canonical engineering IR and static semantic-analysis APIs.
 
-The 0.1.0 module intentionally implements a small semantic core only.
+The 0.1.0 document schema is a deliberately restricted semantic core.
+Expression typing is an additive analysis layer and does not change that
+versioned document wire format.
 """
 from .models import (
     EIR_KIND,
@@ -16,6 +18,21 @@ from .models import (
     QuantityOfInterestIR,
     QuantityParameterIR,
 )
+from .expressions import (
+    Binary,
+    Expr,
+    ExpressionEnvironment,
+    ExpressionRef,
+    ExpressionTypeError,
+    FieldRef,
+    Literal,
+    Negate,
+    ParameterRef,
+    Power,
+    ValueType,
+    environment_from_eir,
+    infer_expression_type,
+)
 
 __all__ = [
     "EIR_KIND",
@@ -30,4 +47,17 @@ __all__ = [
     "ProblemIdentity",
     "QuantityOfInterestIR",
     "QuantityParameterIR",
+    "Binary",
+    "Expr",
+    "ExpressionEnvironment",
+    "ExpressionRef",
+    "ExpressionTypeError",
+    "FieldRef",
+    "Literal",
+    "Negate",
+    "ParameterRef",
+    "Power",
+    "ValueType",
+    "environment_from_eir",
+    "infer_expression_type",
 ]
