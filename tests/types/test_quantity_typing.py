@@ -1,5 +1,5 @@
 import pytest
-from gdec.types import Quantity, LENGTH, VELOCITY, DimensionError, QuantityKindError
+from gdec.types import Quantity, LENGTH, VELOCITY, TEMPERATURE, DimensionError, QuantityKindError, UnitError
 
 def test_quantity_unit_round_trip():
     q = Quantity.from_unit(250, "cm")
@@ -49,8 +49,10 @@ def test_temperature_interval_can_participate_in_dimensional_products():
 def test_nonfinite_and_below_absolute_zero_rejected():
     with pytest.raises(ValueError):
         Quantity(float("nan"), LENGTH)
-    with pytest.raises(QuantityKindError):
+    with pytest.raises(UnitError):
         Quantity.from_unit(-300, "degC")
+    with pytest.raises(QuantityKindError):
+        Quantity(-1, TEMPERATURE, "absolute_temperature")
 
 def test_temperature_interval_product_loses_affine_kind_when_dimension_changes():
     interval = Quantity.from_unit(5, "delta_degC")
