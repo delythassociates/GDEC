@@ -9,9 +9,9 @@
 
 A useful GDEC research direction is not a new mesh estimator, DWR variant, reduced-order model, floating-point error tracker, or generic value-of-information planner in isolation. Those areas already have substantial prior art—including work directly on deciding how much to refine a simulation model and optimally allocating computation among discretisation, uncertainty quantification and model reduction.
 
-The **Decision-Sufficiency Engine (DSE)** remains a working research hypothesis, but its broad form is not novel. The possible gap is narrower: a planner that treats engineering assurance obligations and heterogeneous evidence types as hard constraints on computation selection, tracks dependence between evidence sources, distinguishes certified bounds from empirical/probabilistic estimates, and refuses a decision when no admissible computation can close the assurance gap. This is a research question, not a demonstrated contribution.
+The **Decision-Sufficiency Engine (DSE)** remains a working research hypothesis, but its broad form is not novel. The possible gap is narrower: a planner that treats engineering assurance obligations and heterogeneous evidence types as hard constraints on computation selection, tracks dependence between evidence sources, distinguishes certified bounds from empirical/probabilistic estimates, and refuses a decision when those obligations remain unmet. This is a research question, not a demonstrated contribution.
 
-The novelty burden is therefore high. A combination of existing VOI, goal-oriented adaptivity, resource allocation and evidence tracking is not automatically publishable novelty. A defensible contribution would need a precise algorithm, a nontrivial property or guarantee, and benchmark evidence showing an advantage over the closest existing engineering model-refinement and resource-allocation methods.
+The novelty burden is high. A combination of existing VOI, goal-oriented adaptivity, resource allocation and evidence tracking is not automatically publishable novelty. A defensible contribution would need a precise algorithm, a nontrivial property or guarantee, and benchmark evidence showing an advantage over the closest existing engineering model-refinement and resource-allocation methods.
 
 ## 1. Prior-art reading notes
 
@@ -21,7 +21,7 @@ Habera, Kühner, Croci and Zilian, *Running error bounds in finite element kerne
 
 **Read:** abstract, introduction, running-error analysis, implementation, examples and limitations.
 
-The paper propagates local floating-point rounding error alongside computed values in generated FEniCSx finite-element assembly kernels. It distinguishes approximate worst-case bounds from signed error estimates, demonstrates catastrophic cancellation in a Neo-Hooke strain-energy expression and sensitivity on near-degenerate meshes, and reports roughly 2–3.5× overhead in tested cases. It explicitly notes limitations in subnormal/underflow handling, math-library error assumptions, and the inability of the current FFCx path to assign precision independently to sub-operations. Dynamic per-operation precision selection is identified as future work.
+The paper propagates local floating-point rounding error alongside computed values in generated FEniCSx finite-element assembly kernels. It distinguishes approximate worst-case bounds from signed error estimates, demonstrates catastrophic cancellation in a Neo-Hooke strain-energy expression and sensitivity on near-degenerate meshes, and reports roughly 2–3.5× overhead in tested cases. It notes limitations in subnormal/underflow handling, math-library error assumptions, and the inability of the current FFCx path to assign precision independently to sub-operations. Dynamic per-operation precision selection is identified as future work.
 
 **Implication for GDEC:** kernel-level arithmetic error tracking is not a new contribution for GDEC. It is a possible evidence provider/action model inside a larger planner. A planner must not mistake a first-order approximate REA bound for a rigorous global QoI bound.
 
@@ -43,7 +43,7 @@ Creusé, Nicaise and Tang, *Goal-oriented error estimation based on equilibrated
 
 The paper combines DWR with equilibrated flux and potential reconstruction for elliptic and parabolic problems and multiple discretisation families. It decomposes QoI error into a computable estimator and a remainder bounded using primal and dual energy-error estimators. It discusses multi-goal control and balancing discretisation and nonlinear-iteration errors.
 
-**Implication:** multi-goal DWR, certified/guaranteed QoI estimates under stated assumptions, and balancing some numerical error sources are prior art. GDEC's potential differentiation must be broader and decision-level, while respecting each estimator's assumptions.
+**Implication:** multi-goal DWR, guaranteed QoI estimates under stated assumptions, and balancing some numerical error sources are prior art. GDEC's potential differentiation must be broader and decision-level, while respecting each estimator's assumptions.
 
 ### 1.4 Online goal-oriented reduced-order model adaptation (2024)
 
@@ -231,7 +231,6 @@ The current evidence does **not** justify a claim that DSE is the first, optimal
 5. Herklotz, Y., Pollard, J. D., Ramanathan, N., & Wickerson, J. (2021). *Formal Verification of High-Level Synthesis*. Proceedings of the ACM on Programming Languages, 5(OOPSLA), Article 117. https://doi.org/10.1145/3485494
 6. Lehrer, E., & Wang, T. (2024). *The value of information in stopping problems*. Economic Theory, 78(2), 619–648. https://doi.org/10.1007/s00199-023-01543-8
 
-
 ## 6. Novelty-threat addendum — direct engineering decision/resource-allocation prior art
 
 A second literature search found three works that materially narrow the DSE novelty hypothesis. These are not peripheral analogies; they address the same high-level question of deciding whether/how to refine a simulation model or allocate limited computation to improve an engineering decision.
@@ -280,3 +279,81 @@ The only plausible gap worth investigating is the **assurance-constrained orches
 This proposed gap may itself have prior art in assurance cases, safety verification, uncertainty management and value-of-information research. It is **not yet established as novel**. The next research gate is a targeted review of evidence theory/dependence, assurance-case reasoning, certified numerical computation and decision-theoretic metareasoning applied to engineering simulations.
 
 **Revised recommendation:** do not proceed to implementation. First define the evidence/action ontology and identify a formal property that existing model-refinement and resource-allocation frameworks do not provide. If no such property survives prior-art review, retain DSE as a useful product architecture but do not claim it as a novel algorithm.
+
+## 7. Second novelty-threat addendum — metareasoning and assurance-case prior art
+
+This targeted search found direct prior art for two additional building blocks in the proposed gap: (i) selecting computations by expected utility, and (ii) representing claims, arguments, assumptions and evidence with explicit dependencies. These findings further reduce the novelty space.
+
+### 7.1 Russell and Wefald (1991): rational metareasoning
+
+Russell and Wefald, *Principles of metareasoning*, Artificial Intelligence 49(1–3) (1991), 361–395, https://doi.org/10.1016/0004-3702(91)90015-C.
+
+**Read:** publisher abstract and author research summary.
+
+The paper develops a general framework for selecting and justifying computational actions under resource limits. It treats computation as an action whose utility derives from its expected effect on the agent's subsequent external decision, using probability and decision theory to evaluate computational strategies.
+
+**Consequence:** selecting the next computation according to expected decision improvement minus computational cost is not a new principle. GDEC's proposed VOI action-selection equation is an engineering-domain adaptation of established rational metareasoning, not a novelty claim by itself.
+
+### 7.2 Assurance cases already model claims, arguments, assumptions and evidence
+
+Relevant sources:
+- UK Information Commissioner's Office, *Annexe 5: Argument-based assurance cases*, https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/artificial-intelligence/explaining-decisions-made-with-artificial-intelligence/annexe-5-argument-based-assurance-cases.
+- NIST SP 800-160 Vol. 1 Rev. 1 (2022), *Engineering Trustworthy Secure Systems*, https://doi.org/10.6028/NIST.SP.800-160v1r1.
+- Rushby, *The Interpretation and Evaluation of Assurance Cases*, SRI-CSL-15-01 (2015), https://www.csl.sri.com/~rushby/papers/sri-csl-15-1-assurance-cases.pdf.
+- Nešić, Nyberg and Gallina, *A probabilistic model of belief in safety cases*, Safety Science 138 (2021), 105187, https://doi.org/10.1016/j.ssci.2021.105187.
+
+**Read:** ICO guidance sections on GSN context, arguments, assumptions and evidence; NIST assurance-case description and evidence-quality criteria; Rushby's discussion of evidence dependence; and the abstract/highlights of the probabilistic safety-case model.
+
+These sources establish that assurance cases already structure claims supported by arguments, assumptions, context and evidence. GSN/SACM and related notations provide established representations. Probabilistic safety-case research already models confidence in structured claims. Rushby explicitly discusses the problem that multiple evidence items may not be independent and describes representing dependencies with Bayesian belief networks. Thus, neither an evidence graph nor dependence-aware confidence reasoning is novel in the abstract.
+
+**Consequence:** GDEC cannot claim to invent an assurance ledger, structured claim/evidence graph, or dependency-aware confidence calculation. A possible differentiator would have to be a machine-executable connection between *numerical computation actions* and *typed engineering assurance obligations*, with sound rules governing what a result is allowed to establish. Even this needs a broader standards and literature review.
+
+### 7.3 Multi-fidelity optimization is a mature adjacent field (2026 survey)
+
+Li and Li, *Multi-Fidelity Methods for Optimization: A Survey*, ACM Computing Surveys 58(12), Article 298 (published 15 May 2026), https://doi.org/10.1145/3801959.
+
+**Read:** abstract and available sections on surrogate modelling, fidelity management and open challenges.
+
+The survey synthesises more than 1,000 papers and reviews multi-fidelity surrogate construction, optimization methods and fidelity-management strategies. It describes adaptive selection of low- and high-fidelity evaluations, often using information gain and evaluation cost, and discusses unresolved issues in fidelity relationships, resource trade-offs and benchmark design.
+
+**Consequence:** selecting fidelity levels based on information gain and cost is a mature, actively surveyed area. GDEC's differentiation cannot be “choose the right fidelity”; it would need to demonstrate how assurance obligations and numerical verification constraints change the action space and admissibility rules.
+
+### 7.4 Evidence-grounding and computational verification are also established
+
+Additional relevant sources:
+- Oberkampf and Roy, *Verification and Validation in Scientific Computing*, chapter “Code verification” (2010), https://doi.org/10.1017/CBO9780511760396.008.
+- *Trusting computations: A mechanized proof from partial differential equations to actual program*, Computers & Mathematics with Applications 68(3) (2014), 325–352, https://doi.org/10.1016/j.camwa.2014.06.004.
+- CODECHECK, *An Open Science initiative for the independent execution of computations underlying research articles during peer review*, https://pmc.ncbi.nlm.nih.gov/articles/PMC8311796/.
+
+These works reinforce that code verification, mechanized proofs spanning mathematical schemes and programs, and independent reproducibility checking already exist. Their scopes differ: for example, CODECHECK verifies that a workflow reproduces outputs, not that the implemented method is scientifically valid. GDEC must preserve these distinctions rather than collapsing “independent execution,” “code verification,” “numerical verification,” and “physical validation” into one assurance score.
+
+### 7.5 Updated gap statement and kill criterion
+
+The previous gap statement is now too broad if phrased as “typed evidence with dependencies and assurance levels.” Assurance-case standards and probabilistic safety-case research already cover much of that representation and reasoning space.
+
+The remaining candidate is therefore narrower and more testable:
+
+> **Can an engineering computation planner construct and execute a typed assurance-obligation graph in which each available numerical or physical investigation action has explicit, machine-checkable claim-production rules, and where action selection is constrained by unresolved obligations rather than only by expected information value?**
+
+A credible contribution would need to establish all of the following:
+1. A formal mapping from engineering decision claims and assumptions to specific verification/validation obligations.
+2. Machine-checkable action contracts specifying which evidence claims an action can establish, under what assumptions, and with what assurance class.
+3. A dependency-aware rule preventing evidence derived from shared solver state, mesh, model, data or oracle from being counted as independent.
+4. A sound refusal rule: no top-level claim can be emitted unless every mandatory obligation is discharged by admissible evidence or explicitly accepted as an assumption by an authorised decision-maker.
+5. A scheduling algorithm that chooses among admissible actions under a resource budget without weakening the soundness of the obligation rules.
+
+**Kill criterion:** if existing assurance-case tooling plus standard numerical verification tools can express and execute these obligations without a new formal mechanism, then GDEC's contribution is integration/product engineering rather than a novel algorithm. That may still be useful, but it must be described accurately.
+
+**Current verdict:** no novelty claim. Continue only with a formal requirements/specification exercise and a comparative prototype design; do not implement the DSE in the compiler/runtime yet. The next review should inspect SACM/GSN semantics, ISO/IEC/IEEE 15026, Bayesian-network assurance-case dependency models, and proof-carrying/verified numerical computation in greater depth before any paper claim.
+
+## 8. Additional references
+
+7. Russell, S., & Wefald, E. (1991). *Principles of metareasoning*. Artificial Intelligence, 49(1–3), 361–395. https://doi.org/10.1016/0004-3702(91)90015-C
+8. Rushby, J. (2015). *The Interpretation and Evaluation of Assurance Cases*. SRI-CSL-15-01. https://www.csl.sri.com/~rushby/papers/sri-csl-15-1-assurance-cases.pdf
+9. Nešić, D., Nyberg, M., & Gallina, B. (2021). *A probabilistic model of belief in safety cases*. Safety Science, 138, 105187. https://doi.org/10.1016/j.ssci.2021.105187
+10. Li, K., & Li, F. (2026). *Multi-Fidelity Methods for Optimization: A Survey*. ACM Computing Surveys, 58(12), Article 298. https://doi.org/10.1145/3801959
+11. Oberkampf, W. L., & Roy, C. J. (2010). *Verification and Validation in Scientific Computing*, Chapter 5: Code verification. https://doi.org/10.1017/CBO9780511760396.008
+12. *Trusting computations: A mechanized proof from partial differential equations to actual program*. (2014). Computers & Mathematics with Applications, 68(3), 325–352. https://doi.org/10.1016/j.camwa.2014.06.004
+13. *CODECHECK: an Open Science initiative for the independent execution of computations underlying research articles during peer review to improve reproducibility*. (2021). https://pmc.ncbi.nlm.nih.gov/articles/PMC8311796/
+14. UK Information Commissioner's Office. *Annexe 5: Argument-based assurance cases*. https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/artificial-intelligence/explaining-decisions-made-with-artificial-intelligence/annexe-5-argument-based-assurance-cases
+15. NIST. (2022). *Engineering Trustworthy Secure Systems* (SP 800-160 Vol. 1 Rev. 1). https://doi.org/10.6028/NIST.SP.800-160v1r1
