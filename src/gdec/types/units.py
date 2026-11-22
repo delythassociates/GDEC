@@ -59,7 +59,10 @@ class Unit:
     def to_base(self, value: float) -> float:
         if isinstance(value, bool):
             raise UnitError("Unit conversion value cannot be boolean.")
-        numeric = float(value)
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise UnitError("Unit conversion value must be a finite real number.") from exc
         if not math.isfinite(numeric):
             raise UnitError("Unit conversion value must be finite.")
         result = numeric * float(self.scale) + float(self.offset)
@@ -72,7 +75,10 @@ class Unit:
     def from_base(self, value: float) -> float:
         if isinstance(value, bool):
             raise UnitError("Base value cannot be boolean.")
-        numeric = float(value)
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise UnitError("Base value must be a finite real number.") from exc
         if not math.isfinite(numeric):
             raise UnitError("Base value must be finite.")
         if self.kind == "absolute_temperature" and numeric < 0.0:
