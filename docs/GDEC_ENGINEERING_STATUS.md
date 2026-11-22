@@ -1,10 +1,10 @@
 # GDEC — Engineering Status & Capability Register
 
 **Document Reference:** `docs/GDEC_ENGINEERING_STATUS.md`  
-**Last Updated:** 2026-11-21  
+**Last Updated:** 2026-11-22  
 **Repository:** `delythassociates/GDEC`  
-**Current Development Branch:** `audit/v0.2.2-deep-review`  
-**Pull Request:** PR #1 (https://github.com/delythassociates/GDEC/pull/1)  
+**Reference Baseline:** `research/phase-5.2.1b-expression-input-integrity` (`7cd9738`)\n**WP0 Repository-Integrity Overlay:** `research/wp0-repo-integrity`  
+**Historical Pull Request:** PR #1 (v0.2.2 audit/remediation); this status register is a capability snapshot, not a live branch pointer.  
 **Living Document:** Maintained continuously across engineering cycles.
 
 ---
