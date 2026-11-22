@@ -38,8 +38,9 @@ htmlcov/
 
 # Temporary generated scratch and reproduced results
 results/reproduced/
-scratch/__pycache__/
+scratch/
 *.tmp
+*.zip
 
 # Preserve scientific benchmark datasets and historical reports
 !results/**/*.csv

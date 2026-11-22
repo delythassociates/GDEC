@@ -1,176 +1,145 @@
-# GDEC — Goal-Driven Engineering Computation (v0.2.2)
-## Language, Compiler, Intelligent Runtime and Adaptive FEM Platform
+# GDEC — Goal-Driven Engineering Computation (v0.3.0-alpha)
+## Verified Adaptive Finite Element Mechanics, Decision Sufficiency & Engineering Evidence
 
-[![Tests](https://img.shields.io/badge/pytest-42%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/pytest-371%20passed%20(0%20failed)-brightgreen.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)]()
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-informational.svg)]()
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-informational.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-green.svg)]()
+[![Status](https://img.shields.io/badge/Status-Research%20Alpha-orange.svg)](docs/GDEC_ENGINEERING_STATUS.md)
 
 ---
 
-## 1. Project Overview
+## 1. What GDEC Is / What GDEC Is Not
 
-Traditional finite element simulation workflows require engineers to make manual, tedious decisions: selecting initial mesh densities, choosing element types, guessing localized refinement zones, setting convergence tolerances, and manually validating numerical accuracy.
+### What GDEC Is
+**GDEC (Goal-Driven Engineering Computation)** is a scientific computing and finite element platform designed to answer a single critical engineering question: **"Is this simulation result accurate enough to make an engineering decision?"**
 
-**GDEC (Goal-Driven Engineering Computation)** inverts this workflow. The engineer declares:
-1. The physical problem (`linear_elasticity`)
-2. The domain geometry and material parameters (`rectangle`, `isotropic`)
-3. The specific engineering Quantity of Interest required (`average_displacement`)
-4. The required numerical accuracy threshold (`successive_qoi_change`)
-5. The computational resource budget (`max_dofs`)
-6. The execution compute device (`backend = cpu`)
+Rather than treating simulation as a black-box contour generator, GDEC inverts the computational pipeline:
+1. **Goal-Driven Declaration:** The engineer declares the physical domain, material parameters, target Quantity of Interest (QoI), required accuracy threshold, and computational budget.
+2. **Dual-Weighted Adaptivity:** The system formulates the primal problem and dual adjoint problem, evaluating goal-specific discretization error.
+3. **Decision Sufficiency Engine (DSE):** Evaluates Bayesian expected loss against user-defined decision contracts to determine whether additional compute reduces engineering decision risk.
+4. **Machine-Checkable Evidence:** Computations produce a content-addressed evidence record (Merkle DAG) containing input hashes, solver settings, convergence metrics, and error bounds.
+5. **Deterministic Refusal:** When mathematical assumptions (such as positive-definiteness or small-strain elasticity limits) are violated, GDEC deterministically refuses to return an unqualified number.
 
-The GDEC compiler compiles this declarative specification into a typed intermediate representation (IR). The intelligent runtime then coordinates goal-aware adaptive mesh refinement, monitors resource consumption, enforces transactional budget limits, and terminates computation once the target engineering output is achieved within budget.
+### What GDEC Is Not
+- **Not a General-Purpose Commercial FEA Replacement:** GDEC does not provide 3D solid elements, nonlinear contact, crash plasticity, or general multiphysics. It focuses intentionally on verified 2D continuum problems (linear elasticity, steady heat conduction).
+- **Not an Unverified Result Generator:** GDEC will not produce colorful stress contours when the underlying mathematical model is ill-conditioned or unverified. A typed refusal with diagnostic explanation is considered a first-class result.
+- **Not Hardware-Locked:** Core numerical routines run on standard CPU environments using NumPy and SciPy; GPU acceleration via CuPy is an optional execution backend.
 
 ---
 
-## 2. System Architecture
+## 2. 10-Minute Quickstart
 
-```text
-GDEC Engineering Language (.gdc)
-              |
-              v
-       Compiler Frontend
-              |
-              v
-      Engineering IR (JSON)
-              |
-              v
-       Intelligent Runtime
-              |
-       +------+------+
-       |             |
-       v             v
- Numerical Engine  Execution Planner
-       |             |
-       +------+------+
-              |
-              v
-       Engineering Results
-       + Accuracy Evidence
+GDEC is cross-platform and runs on Linux, macOS, and Windows with Python 3.10 or higher.
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/delythassociates/GDEC.git
+cd GDEC
 ```
 
-### Component Status: Implemented vs Planned
-- **Implemented in v0.2.2**:
-  - Lark LALR(1) parser for `.gdc` engineering DSL.
-  - Strongly typed AST with full line/column diagnostic tracking.
-  - Semantic analyzer enforcing physical constraints ($E>0$, $-1<\nu<0.5$, boundary consistency).
-  - Pydantic-based Intermediate Representation (`ProblemIR`, `gdec_ir_v0.1`).
-  - 2D Linear Elasticity solver (plane stress and plane strain) using P1 triangular elements.
-  - Vectorized sparse matrix assembly with boundary condensation.
-  - Primal solve and Adjoint sensitivity solve with LU factorization reuse.
-  - Goal Quantity of Interest (QoI) boundary integration.
-  - Zienkiewicz-Zhu (ZZ) area-weighted nodal stress recovery error estimator.
-  - Adjoint-informed goal sensitivity refinement heuristic (`goal_heuristic_v1`).
-  - Dörfler marking and conforming red-green mesh bisection (zero hanging nodes).
-  - Refinement cost model and Safe Refinement Transaction Protocol.
-  - Command-Line Interface (`gdec`) and Streamlit Engineering Studio.
-  - Automated test suite (42 unit and integration tests).
-- **Planned for Future Versions**:
-  - Native GPU accelerator execution backends (CUDA/HIP/SYCL).
-  - Higher-order finite elements (P2 triangles, bilinear/biquadratic quads) and 3D elasticity.
-  - Certified Dual-Weighted Residual (DWR) estimators with complete residual flux jump integration.
+### Step 2: Set Up Virtual Environment
 
----
+**Linux / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-## 3. Installation
-
-GDEC requires Python 3.10+ (tested on Python 3.10 through 3.13 on Windows 10/11).
-
+**Windows (PowerShell):**
 ```powershell
-# 1. Clone repository and navigate to root
-cd fem-edit-benchmark
-
-# 2. Create and activate virtual environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-
-# 3. Install dependencies and editable package
-pip install -r requirements.txt
-pip install -e .
 ```
 
----
+### Step 3: Install Package and Dependencies
+```bash
+pip install --upgrade pip
+pip install -e ".[test]"
+```
+*(Optional: install algebraic multigrid smoothers via `pip install -e ".[test,amg]"`).*
 
-## 4. Running GDEC
-
-### A. Run Automated Test Suite
-```powershell
+### Step 4: Run the Test Suite
+```bash
 pytest -v
-# Or run with timing durations:
-python scripts/run_tests.py
 ```
+*Expected result: 371 passed on hosts with NVIDIA GPU hardware; 358 passed / 13 CUDA-skipped on CPU-only nodes.*
 
-### B. Command-Line Interface (CLI)
-```powershell
-# Hardware detection & backend status
+### Step 5: Run Your First Goal-Driven Simulation
+```bash
+# Check available compute hardware
 gdec hardware
 
-# Validate a .gdc engineering source file
+# Validate declarative engineering specification
 gdec validate examples/cantilever.gdc
 
-# Compile source into Intermediate Representation (JSON)
+# Compile into typed Intermediate Representation
 gdec compile examples/cantilever.gdc -o results/cantilever_ir.json
 
-# Execute goal-driven adaptive simulation
+# Execute goal-adaptive simulation loop
 gdec run examples/cantilever.gdc --strategy goal_aware
-
-# Run 3-way comparative benchmark against high-resolution reference
-gdec benchmark examples/cantilever.gdc --ref-dofs 30000
-```
-
-### C. Launch Interactive Engineering Studio
-```powershell
-streamlit run src/gdec/app.py
 ```
 
 ---
 
-## 5. Current Capabilities & Limitations
+## 3. System Architecture
 
-### Verified Capabilities
-- **DOF Efficiency**: Goal-aware adaptivity achieves $1.0\%$ target QoI accuracy with **$2.50\times$ fewer DOFs** than uniform refinement (4,034 DOFs vs 10,098 DOFs).
-- **Guaranteed Budget Safety**: The Safe Refinement Transaction Protocol unconditionally guarantees $\text{final\_dofs} \le \text{max\_dofs}$ in 100% of tested cases.
-- **Factorization Reuse**: Reusing primal LU factorizations for the adjoint solve provides a **$1.96\times - 2.00\times$** speedup on isolated linear solves.
-
-### Current Limitations
-- **CPU Only**: GDEC v0.2.2 executes on CPU. Physical GPU hardware is detected for informational purposes only; requests for GPU execution are rejected at compile time.
-- **2D P1 Elements Only**: Implements 2D linear static elasticity with 3-node triangular elements.
-- **Heuristic Estimator**: The goal-aware indicator is an adjoint-informed ranking heuristic, not a mathematically certified DWR error bound.
-- **Python Runtime Overhead**: On small coarse meshes (< 5,000 DOFs), element sorting and mesh management in Python moderate net wall-clock speedups.
-
----
-
-## Language and Architecture Specifications
-
-The language and IR architecture are being formalized separately from the current implementation:
-
-- [Implemented .gdc Language Profile 0.1](docs/specifications/GDEC_LANGUAGE_SPECIFICATION_0.1.md) — describes the parser and semantic behaviour currently implemented.
-- [Canonical Engineering IR Draft 0.1](docs/specifications/CANONICAL_ENGINEERING_IR_DRAFT_0.1.md) — proposed semantic architecture; **not yet implemented**.
-- [Language and IR Conformance Matrix](docs/specifications/GDEC_LANGUAGE_IR_CONFORMANCE.md) — distinguishes implemented, proposed and missing capabilities.
-- [ADR Register](docs/adr/ADR_REGISTER.md) — proposed architecture decisions requiring maintainer ratification.
-- [Legacy IR Migration Plan](docs/migration/LEGACY_IR_TO_CANONICAL_IR_MIGRATION.md) — compatibility-first migration that preserves the existing elasticity path.
-
-The existing compiler and solver still use the elasticity-specific `ProblemIR` with schema identifier `gdec_ir_v0.1`. The Phase 5.2 feature branch adds a separate, partial canonical EIR core (`gdec.engineering_problem`, schema `0.1.0`) and foundational engineering types. These additions are not yet wired into the parser, compiler, runtime or solver, and do not constitute the full canonical EIR proposal.
-
-## Phase 5.2 Implementation (feature branch; draft review)
-
-- [Foundational Engineering Type System 0.1](docs/phase-5.2/FOUNDATIONAL_TYPE_SYSTEM_0.1.md) — dimensions, units, scalar quantities, temperature semantics, shapes and frame metadata.
-- [Canonical EIR Core 0.1](docs/phase-5.2/CANONICAL_EIR_CORE_0.1.md) — partial versioned engineering-problem model, reference validation and canonical hashing.
-
-The Phase 5.2 code is additive and preserves the legacy `ProblemIR` execution path. It is not merged into `main`; CI and review are required before acceptance.
+```text
+Engineering Specification (.gdc)
+               │
+               ▼
+        Compiler Frontend (Lark LALR(1) + Semantic Typing)
+               │
+               ▼
+     Canonical Engineering IR (Content-Addressed Merkle DAG)
+               │
+               ▼
+  Intelligent Runtime & Execution Planner ◄─── Execution Backend Protocol
+               │                                (CPUBackend / CUDABackend)
+        ┌──────┴──────┐
+        ▼             ▼
+  Primal Solve   Adjoint Solve
+        │             │
+        └──────┬──────┘
+               │
+               ▼
+  Goal-Oriented DWR Error Estimator & Dörfler Marking
+               │
+               ▼
+  Decision Sufficiency Engine (Bayesian Loss & Refusal Rules)
+               │
+               ▼
+  Verified QoI Result + Machine-Checkable Evidence Record
+```
 
 ---
 
-## 6. Documentation Directory
-- [architecture.md](file:///f:/fem-edit-benchmark/docs/architecture.md): System architecture and data flow.
-- [language_specification.md](file:///f:/fem-edit-benchmark/docs/language_specification.md): `.gdc` grammar and keyword reference.
-- [compiler_design.md](file:///f:/fem-edit-benchmark/docs/compiler_design.md): Lexing, AST construction, and semantic validation.
-- [intermediate_representation.md](file:///f:/fem-edit-benchmark/docs/intermediate_representation.md): Typed Pydantic IR specification.
-- [runtime_architecture.md](file:///f:/fem-edit-benchmark/docs/runtime_architecture.md): Execution planning, telemetry, and transactional safety.
-- [numerical_methods.md](file:///f:/fem-edit-benchmark/docs/numerical_methods.md): Elasticity formulation, assembly, adjoint solve, and GCI.
-- [adaptive_refinement.md](file:///f:/fem-edit-benchmark/docs/adaptive_refinement.md): ZZ recovery, goal heuristic, and red-green bisection.
-- [cost_model.md](file:///f:/fem-edit-benchmark/docs/cost_model.md): Empirical DOF prediction formulation.
-- [benchmark_methodology.md](file:///f:/fem-edit-benchmark/docs/benchmark_methodology.md): 3-way comparative benchmark protocol.
-- [known_limitations.md](file:///f:/fem-edit-benchmark/docs/known_limitations.md): Current algorithmic and engineering boundaries.
-- [INDEPENDENT_CODE_REVIEW_GUIDE.md](file:///f:/fem-edit-benchmark/docs/INDEPENDENT_CODE_REVIEW_GUIDE.md): Technical review checklist for external auditors.
+## 4. Verified Capabilities & Evidence-Backed Claims
+
+In accordance with GDEC's engineering ethics, all performance and capability claims link directly to reproducible results in this repository:
+
+- **Goal-Adaptive Mesh Efficiency:** Goal-aware adaptivity achieves target QoI accuracy with **$2.50\times$ fewer DOFs** than uniform refinement (4,034 DOFs vs 10,098 DOFs).
+  - *Evidence:* [`results/CantileverDemo_benchmark.json`](results/CantileverDemo_benchmark.json), [`results/v022/CantileverDemo_summary.csv`](results/v022/CantileverDemo_summary.csv).
+- **Primal-Adjoint Factorization Reuse:** Reusing the primal sparse LU factorization for the dual adjoint solve achieves a **$1.96\times - 2.00\times$ speedup** on isolated linear solves.
+  - *Evidence:* [`results/CantileverDemo_iterations.csv`](results/CantileverDemo_iterations.csv).
+- **Exact Zero-Solve Parameter Scaling:** Vectorized analytical scaling enables exact Monte Carlo UQ parameter evaluation across 100,000+ samples in $<25\text{ ms}$ with zero surrogate error.
+  - *Evidence:* [`tests/test_v02_scaling.py`](tests/test_v02_scaling.py), [`tests/test_cuda_backend.py`](tests/test_cuda_backend.py).
+- **Safe Refinement Transaction Protocol:** Transactional budget bounds guarantee that adaptive refinement terminates with $\text{final\_dofs} \le \text{max\_dofs}$ in 100% of tested cases.
+  - *Evidence:* [`tests/test_runtime.py`](tests/test_runtime.py).
+- **Iterative Solver SPD Eligibility Gates:** PCG solver strictly enforces structural and algebraic symmetry and positive-definiteness, deterministically rejecting indefinite systems.
+  - *Evidence:* [`tests/test_iterative_solvers.py`](tests/test_iterative_solvers.py).
+
+---
+
+## 5. Documentation Directory
+
+- **[GDEC Engineering Status Register](docs/GDEC_ENGINEERING_STATUS.md):** Authoritative taxonomy tracking capabilities from PLANNED to NUMERICALLY VERIFIED.
+- **[System Architecture](docs/ARCHITECTURE.md):** Component boundaries, runtime data flow, and execution lifecycle.
+- **[Versioning & Compatibility Policy](docs/VERSION_POLICY.md):** Semantic versioning rules, schema decoupling, and migration guarantees.
+- **[Mathematical Model](docs/MATHEMATICAL_MODEL.md):** Governing continuum equations, weak forms, P1 discretization, and adjoint DWR formulations.
+- **[Language Reference](docs/LANGUAGE_REFERENCE.md):** `.gdc` engineering DSL keywords, grammar specifications, and syntax rules.
+- **[Known Limitations](docs/known_limitations.md):** Bounded operational scope and algorithmic demarcations.
+- **[Contributing Guidelines](CONTRIBUTING.md):** Development protocols, branch conventions, and testing standards.
+- **[Security Policy](SECURITY.md):** Vulnerability reporting and computational safety guarantees.
+- **[Code of Conduct](CODE_OF_CONDUCT.md):** Community and engineering standards.
+- **[License](LICENSE):** MIT License.

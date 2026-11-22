@@ -1,6 +1,6 @@
 """
 GDEC - Goal-Driven Engineering Computation
-Language, Compiler, Intelligent Runtime and Adaptive FEM Platform (v0.2.2)
+Language, Compiler, Intelligent Runtime and Adaptive FEM Platform (v0.3.0-alpha)
 """
 
-__version__ = "0.2.2"
+__version__ = "0.3.0a0"
