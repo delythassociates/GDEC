@@ -25,3 +25,16 @@ def test_float_exponents_are_normalised_to_bounded_rationals():
     dim = Dimension.from_exponents((0.5, 0.3333333333, 0, 0, 0, 0, 0))
     assert dim.exponents[0] == Fraction(1, 2)
     assert dim.exponents[1] == Fraction(1, 3)
+
+def test_nonfinite_and_boolean_dimension_exponents_are_rejected():
+    with pytest.raises(ValueError):
+        Dimension.from_exponents((float("inf"), 0, 0, 0, 0, 0, 0))
+    with pytest.raises(TypeError):
+        Dimension.from_exponents((True, 0, 0, 0, 0, 0, 0))
+
+def test_dimension_algebra_commutativity_and_associativity():
+    a = LENGTH * TIME
+    b = MASS / TIME
+    c = PRESSURE
+    assert a * b == b * a
+    assert (a * b) * c == a * (b * c)
