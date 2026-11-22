@@ -20,3 +20,8 @@ def test_dimensionless_and_string_representation():
 def test_wrong_number_of_base_exponents_rejected():
     with pytest.raises(ValueError):
         Dimension.from_exponents((1, 2))
+
+def test_float_exponents_are_normalised_to_bounded_rationals():
+    dim = Dimension.from_exponents((0.5, 0.3333333333, 0, 0, 0, 0, 0))
+    assert dim.exponents[0] == Fraction(1, 2)
+    assert dim.exponents[1] == Fraction(1, 3)
