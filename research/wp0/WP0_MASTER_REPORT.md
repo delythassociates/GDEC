@@ -5,7 +5,7 @@
 **Branch:** `research/wp0-repo-integrity`  
 **Parent / Starting Tip:** `research/phase-5.2.1b-expression-input-integrity` (`7cd9738`)  
 **Date:** 2026-11-22  
-**Status:** Completed & Verified  
+**Status:** Completed; independent evidence review identified documentation qualifications  
 **Author:** Lead Engineering Research Orchestrator
 
 ---
@@ -19,7 +19,7 @@ Work Package 0 (WP0) remediates the repository front door and integrity issues t
 4. Standard community governance files (`CHANGELOG.md`, `CITATION.cff`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue/PR templates) were absent.
 5. The package version in `pyproject.toml` remained statically fixed at `0.2.2`.
 
-All tasks of WP0 have been completed without modifying any numerical or finite-element solver code. The reported local-host run completed with 371 passed and 1 warning. The CPU-only pass/skip split is not independently reconciled in this package: the current CUDA test module has 11 hardware-gated tests and 2 non-hardware detection tests, so the stated 358 passed / 13 skipped split needs a full CPU-only rerun.
+All repository-hygiene tasks were completed without modifying numerical or finite-element solver code. Two acceptance claims require qualification: external README URLs were not HTTP-checked, and the CPU-only test split is not reconciled. The reported local-host run completed with 371 passed and 1 warning. The CPU-only pass/skip split is not independently reconciled in this package: the current CUDA test module has 11 hardware-gated tests and 2 non-hardware detection tests, so the stated 358 passed / 13 skipped split needs a full CPU-only rerun.
 
 ---
 
