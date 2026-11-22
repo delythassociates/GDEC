@@ -151,7 +151,14 @@ The language and IR architecture are being formalized separately from the curren
 - [ADR Register](docs/adr/ADR_REGISTER.md) — proposed architecture decisions requiring maintainer ratification.
 - [Legacy IR Migration Plan](docs/migration/LEGACY_IR_TO_CANONICAL_IR_MIGRATION.md) — compatibility-first migration that preserves the existing elasticity path.
 
-The current implementation still uses the elasticity-specific `ProblemIR` with schema identifier `gdec_ir_v0.1`. The proposed canonical Engineering IR has a separate draft schema identifier and must not be treated as an implemented runtime interface.
+The existing compiler and solver still use the elasticity-specific `ProblemIR` with schema identifier `gdec_ir_v0.1`. The Phase 5.2 feature branch adds a separate, partial canonical EIR core (`gdec.engineering_problem`, schema `0.1.0`) and foundational engineering types. These additions are not yet wired into the parser, compiler, runtime or solver, and do not constitute the full canonical EIR proposal.
+
+## Phase 5.2 Implementation (feature branch; draft review)
+
+- [Foundational Engineering Type System 0.1](docs/phase-5.2/FOUNDATIONAL_TYPE_SYSTEM_0.1.md) — dimensions, units, scalar quantities, temperature semantics, shapes and frame metadata.
+- [Canonical EIR Core 0.1](docs/phase-5.2/CANONICAL_EIR_CORE_0.1.md) — partial versioned engineering-problem model, reference validation and canonical hashing.
+
+The Phase 5.2 code is additive and preserves the legacy `ProblemIR` execution path. It is not merged into `main`; CI and review are required before acceptance.
 
 ---
 
