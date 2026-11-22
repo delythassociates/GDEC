@@ -164,3 +164,21 @@ def test_unsupported_schema_version_is_rejected():
     data["schema_version"] = "2.0.0"
     with pytest.raises(ValidationError):
         EngineeringProblemIR.model_validate(data)
+
+def test_canonical_hash_normalizes_equivalent_engineering_units():
+    data_a = make_problem()
+    data_b = make_problem()
+    data_a["physical_model"]["parameters"][0].update(value=210, unit="GPa")
+    data_b["physical_model"]["parameters"][0].update(value=210000, unit="MPa")
+    data_b["physical_model"]["fields"][0]["unit"] = "mm"
+    data_b["quantities_of_interest"][0]["unit"] = "cm"
+    model_a = EngineeringProblemIR.model_validate(data_a)
+    model_b = EngineeringProblemIR.model_validate(data_b)
+    assert model_a.canonical_json() == model_b.canonical_json()
+    assert model_a.canonical_sha256() == model_b.canonical_sha256()
+
+
+def test_json_schema_export_is_available_and_versioned():
+    schema = EngineeringProblemIR.model_json_schema()
+    assert schema["title"] == "EngineeringProblemIR"
+    assert "schema_version" in schema["properties"]
