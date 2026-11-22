@@ -23,7 +23,7 @@ Rather than treating simulation as a black-box contour generator, GDEC inverts t
 
 ### What GDEC Is Not
 - **Not a General-Purpose Commercial FEA Replacement:** GDEC does not provide 3D solid elements, nonlinear contact, crash plasticity, or general multiphysics. It focuses intentionally on verified 2D continuum problems (linear elasticity, steady heat conduction).
-- **Not an Unverified Result Generator:** GDEC will not produce colorful stress contours when the underlying mathematical model is ill-conditioned or unverified. A typed refusal with diagnostic explanation is considered a first-class result.
+- **Not an Unverified Result Generator:** GDEC aims to prevent unqualified results when implemented validity checks fail; refusal coverage remains incomplete and is tracked as a development requirement.
 - **Not Hardware-Locked:** Core numerical routines run on standard CPU environments using NumPy and SciPy; GPU acceleration via CuPy is an optional execution backend.
 
 ---
@@ -91,7 +91,7 @@ Engineering Specification (.gdc)
         Compiler Frontend (Lark LALR(1) + Semantic Typing)
                │
                ▼
-     Canonical Engineering IR (Content-Addressed Merkle DAG)
+     Canonical Engineering IR (Canonical SHA-256 Hashing)
                │
                ▼
   Intelligent Runtime & Execution Planner ◄─── Execution Backend Protocol
@@ -122,7 +122,7 @@ In accordance with GDEC's engineering ethics, all performance and capability cla
   - *Evidence:* [`results/CantileverDemo_benchmark.json`](results/CantileverDemo_benchmark.json), [`results/v022/CantileverDemo_summary.csv`](results/v022/CantileverDemo_summary.csv).
 - **Primal-Adjoint Factorization Reuse:** Reusing the primal sparse LU factorization for the dual adjoint solve achieves a **$1.96\times - 2.00\times$ speedup** on isolated linear solves.
   - *Evidence:* [`results/CantileverDemo_iterations.csv`](results/CantileverDemo_iterations.csv).
-- **Exact Zero-Solve Parameter Scaling:** Vectorized analytical scaling enables exact Monte Carlo UQ parameter evaluation across 100,000+ samples in $<25\text{ ms}$ with zero surrogate error.
+- **Exact Zero-Solve Parameter Scaling:** Supported analytical parameter scaling has a 5,000-sample CPU/GPU parity test; this does not establish a general 100,000-sample throughput claim.
   - *Evidence:* [`tests/test_cuda_backend.py`](tests/test_cuda_backend.py).
 - **Safe Refinement Transaction Protocol:** Transactional budget bounds guarantee that adaptive refinement terminates with $\text{final\_dofs} \le \text{max\_dofs}$ in 100% of tested cases.
   - *Evidence:* [`tests/test_runtime.py`](tests/test_runtime.py).
