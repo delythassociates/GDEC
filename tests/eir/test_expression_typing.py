@@ -1,3 +1,5 @@
+from fractions import Fraction
+
 import pytest
 
 from gdec.eir.expressions import (
@@ -122,7 +124,7 @@ def test_temperature_interval_times_dimensionless_preserves_interval():
 
 
 def test_fractional_power_uses_exact_dimension_exponents():
-    expr = Power(Literal(9, scalar(LENGTH ** 2)), exponent=1 / 2)
+    expr = Power(Literal(9, scalar(LENGTH ** 2)), exponent=Fraction(1, 2))
     assert infer_expression_type(expr, ExpressionEnvironment()) == scalar(LENGTH)
 
 
@@ -214,3 +216,16 @@ def test_environment_is_derived_from_validated_eir():
     env = environment_from_eir(document)
     assert env.parameters["youngs_modulus"].dimension == FORCE / (LENGTH ** 2)
     assert env.fields["displacement"] == ValueType(LENGTH, shape=(2,), frame_id="world")
+
+
+
+@pytest.mark.parametrize("exponent", [0.5, 0.333333333333, True, "1/2"])
+def test_power_rejects_non_exact_or_ambiguous_exponents(exponent):
+    with pytest.raises(ExpressionTypeError, match="integers or fractions.Fraction"):
+        Power(Literal(4, scalar(LENGTH ** 2)), exponent)
+
+
+def test_power_normalizes_integer_exponent_to_fraction():
+    expr = Power(Literal(4, scalar(LENGTH)), 2)
+    assert expr.exponent == Fraction(2, 1)
+    assert infer_expression_type(expr, ExpressionEnvironment()) == scalar(LENGTH ** 2)
