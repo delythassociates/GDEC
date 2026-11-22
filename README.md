@@ -22,7 +22,7 @@ Rather than treating simulation as a black-box contour generator, GDEC inverts t
 5. **Deterministic Refusal:** Implemented subsystems reject selected invalid inputs and unsupported numerical operations with typed diagnostics. Refusal coverage is not yet comprehensive across every physical-model assumption.
 
 ### What GDEC Is Not
-- **Not a General-Purpose Commercial FEA Replacement:** GDEC does not provide 3D solid elements, nonlinear contact, crash plasticity, or general multiphysics. It focuses intentionally on verified 2D continuum problems (linear elasticity, steady heat conduction).
+- **Not a General-Purpose Commercial FEA Replacement:** GDEC does not provide 3D solid elements, nonlinear contact, crash plasticity, or general multiphysics. It focuses intentionally on verified 2D continuum problems (linear elasticity).
 - **Not an Unverified Result Generator:** GDEC aims to prevent unqualified results when implemented validity checks fail; refusal coverage remains incomplete and is tracked as a development requirement.
 - **Not Hardware-Locked:** Core numerical routines run on standard CPU environments using NumPy and SciPy; GPU acceleration via CuPy is an optional execution backend.
 
@@ -120,8 +120,8 @@ In accordance with GDEC's engineering ethics, all performance and capability cla
 
 - **Goal-Adaptive Mesh Efficiency:** Goal-aware adaptivity achieves target QoI accuracy with **$2.50\times$ fewer DOFs** than uniform refinement (4,034 DOFs vs 10,098 DOFs).
   - *Evidence:* [`results/CantileverDemo_benchmark.json`](results/CantileverDemo_benchmark.json), [`results/v022/CantileverDemo_summary.csv`](results/v022/CantileverDemo_summary.csv).
-- **Primal-Adjoint Factorization Reuse:** Reusing the primal sparse LU factorization for the dual adjoint solve achieves a **$1.96\times - 2.00\times$ speedup** on isolated linear solves.
-  - *Evidence:* [`results/CantileverDemo_iterations.csv`](results/CantileverDemo_iterations.csv).
+- **Primal-Adjoint Factorization Reuse:** Primal/adjoint factorization reuse is implemented and covered by dedicated tests; a reproducible speedup figure is not asserted here.
+  - *Evidence:* [`tests/test_v02_profiling_and_reuse.py`](tests/test_v02_profiling_and_reuse.py).
 - **Exact Zero-Solve Parameter Scaling:** Supported analytical parameter scaling has a 5,000-sample CPU/GPU parity test; this does not establish a general 100,000-sample throughput claim.
   - *Evidence:* [`tests/test_cuda_backend.py`](tests/test_cuda_backend.py).
 - **Safe Refinement Transaction Protocol:** Transactional budget bounds guarantee that adaptive refinement terminates with $\text{final\_dofs} \le \text{max\_dofs}$ in 100% of tested cases.
