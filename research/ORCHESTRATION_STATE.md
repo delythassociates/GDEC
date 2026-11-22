@@ -1,5 +1,5 @@
 # GDEC Orchestration State
-Last updated: 2026-11-23T01:50:00+05:30  | Session #: 3
+Last updated: 2026-11-23T02:00:00+05:30  | Session #: 3
 Branch tip: research/wp2-vv-remediation-followup  | Baseline: 434 passed / 0 skips / 0 failures on host with operational NVIDIA GPU
 
 ## Work package board
@@ -7,7 +7,7 @@ Branch tip: research/wp2-vv-remediation-followup  | Baseline: 434 passed / 0 ski
 |---|---|---|---|---|
 | WP0 | done | research/wp0-repo-integrity | 4 / 4 | research/wp0/ |
 | WP1 | done | research/wp1-eir-adversarial-hardening | 4 / 4 | research/wp1/ |
-| WP2 | active (followup remediation) | research/wp2-vv-remediation-followup | 12 / 12 gates passed | research/wp2-vv-remediation-followup/ |
+| WP2 | active (followup remediation complete — ready for review) | research/wp2-vv-remediation-followup | 13 / 13 gates passed | research/wp2-vv-remediation-followup/ |
 | WP3 | todo | pending | 0 / 4 | pending |
 | WP4 | todo | pending | 0 / 2 | pending |
 | WP5 | todo | pending | 0 / 3 | pending |
