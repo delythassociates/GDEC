@@ -7,6 +7,13 @@ from typing import Iterable
 _EXPONENTS = 7
 _BASE_NAMES = ("mass", "length", "time", "current", "temperature", "amount", "luminous_intensity")
 
+
+def _rational(value: int | float | Fraction) -> Fraction:
+    """Convert exponents to bounded rationals; preserve explicit Fractions exactly."""
+    if isinstance(value, float):
+        return Fraction(value).limit_denominator(10_000)
+    return Fraction(value)
+
 @dataclass(frozen=True, slots=True)
 class Dimension:
     """Physical dimension; exponent order is M, L, T, I, Theta, N, J."""
@@ -15,11 +22,11 @@ class Dimension:
     def __post_init__(self) -> None:
         if len(self.exponents) != _EXPONENTS:
             raise ValueError(f"A dimension requires {_EXPONENTS} SI exponents.")
-        object.__setattr__(self, "exponents", tuple(Fraction(x) for x in self.exponents))
+        object.__setattr__(self, "exponents", tuple(_rational(x) for x in self.exponents))
 
     @classmethod
     def from_exponents(cls, values: Iterable[int | float | Fraction]) -> "Dimension":
-        vals = tuple(Fraction(v) for v in values)
+        vals = tuple(_rational(v) for v in values)
         return cls(vals)
 
     def __mul__(self, other: "Dimension") -> "Dimension":
@@ -29,7 +36,7 @@ class Dimension:
         return Dimension(tuple(a - b for a, b in zip(self.exponents, other.exponents)))
 
     def __pow__(self, power: int | Fraction) -> "Dimension":
-        p = Fraction(power)
+        p = _rational(power)
         return Dimension(tuple(a * p for a in self.exponents))
 
     @property
