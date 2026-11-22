@@ -86,7 +86,17 @@ class Binary(Expr):
 @dataclass(frozen=True, slots=True)
 class Power(Expr):
     operand: Expr
-    exponent: Fraction
+    exponent: Fraction | int
+
+    def __post_init__(self) -> None:
+        # A float such as 0.333333333333 is not an exact engineering exponent.
+        # Require an explicit integer or Fraction rather than silently guessing
+        # a rational approximation from binary floating-point input.
+        if isinstance(self.exponent, bool) or not isinstance(self.exponent, (int, Fraction)):
+            raise ExpressionTypeError(
+                "Power exponents must be integers or fractions.Fraction values."
+            )
+        object.__setattr__(self, "exponent", Fraction(self.exponent))
 
 
 @dataclass(frozen=True, slots=True)

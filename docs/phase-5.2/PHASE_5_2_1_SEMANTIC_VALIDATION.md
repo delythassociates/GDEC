@@ -27,7 +27,7 @@ The initial expression vocabulary is intentionally small:
 - `ExpressionRef`: reference to a named expression in the supplied environment.
 - `Negate`: unary negation.
 - `Binary`: add, subtract, multiply, or divide.
-- `Power`: rational exponent.
+- `Power`: exact integer or `fractions.Fraction` exponent. Floating-point exponents are rejected because silently rationalizing a binary float can change the intended physical dimension.
 
 Unknown references, unknown operators, unsupported nodes, and cyclic named-expression references are rejected.
 
