@@ -1,65 +1,41 @@
-import json
-
 import pytest
 from pydantic import ValidationError
 
-from gdec.eir import (
-    CoordinateFrameIR,
-    DimensionVector,
-    DomainIR,
-    EngineeringProblemIR,
-    FieldIR,
-    PhysicalModelIR,
-    ProblemIdentity,
-    QuantityOfInterestIR,
-    QuantityParameterIR,
-)
-from gdec.types.dimensions import LENGTH, PRESSURE
+from gdec.eir import DimensionVector, EngineeringProblemIR
+from gdec.types.dimensions import LENGTH
 
 
-def make_problem(**overrides):
-    payload = {
+def make_problem():
+    return {
         "problem": {"id": "problem.cantilever", "name": "Cantilever plate"},
         "physical_model": {
-            "coordinate_frames": [
-                {"id": "frame.world", "dimension": 2}
-            ],
-            "domains": [
-                {
-                    "id": "domain.plate",
-                    "spatial_dimension": 2,
-                    "coordinate_frame_id": "frame.world",
-                }
-            ],
-            "parameters": [
-                {
-                    "id": "parameter.youngs_modulus",
-                    "value": 210,
-                    "unit": "GPa",
-                }
-            ],
-            "fields": [
-                {
-                    "id": "field.displacement",
-                    "domain_id": "domain.plate",
-                    "dimension": DimensionVector.from_dimension(LENGTH).model_dump(),
-                    "unit": "m",
-                    "shape": [2],
-                    "coordinate_frame_id": "frame.world",
-                    "function_space": "H1",
-                }
-            ],
+            "coordinate_frames": [{"id": "frame.world", "dimension": 2}],
+            "domains": [{
+                "id": "domain.plate",
+                "spatial_dimension": 2,
+                "coordinate_frame_id": "frame.world",
+            }],
+            "parameters": [{
+                "id": "parameter.youngs_modulus",
+                "value": 210,
+                "unit": "GPa",
+            }],
+            "fields": [{
+                "id": "field.displacement",
+                "domain_id": "domain.plate",
+                "dimension": DimensionVector.from_dimension(LENGTH).model_dump(),
+                "unit": "m",
+                "shape": [2],
+                "coordinate_frame_id": "frame.world",
+                "function_space": "H1",
+            }],
         },
-        "quantities_of_interest": [
-            {
-                "id": "qoi.tip_displacement",
-                "field_id": "field.displacement",
-                "unit": "mm",
-            }
-        ],
+        "quantities_of_interest": [{
+            "id": "qoi.tip_displacement",
+            "field_id": "field.displacement",
+            "unit": "mm",
+        }],
     }
-    payload.update(overrides)
-    return payload
 
 
 def test_eir_round_trip_and_pinned_schema_identity():
@@ -86,15 +62,15 @@ def test_dimension_vector_rejects_wrong_length_and_zero_denominator():
 
 def test_parameter_units_are_checked_against_quantity_kind_and_absolute_zero():
     data = make_problem()
-    data["physical_model"]["parameters"] = [
-        {"id": "temperature", "value": -300, "unit": "degC",
-         "quantity_kind": "absolute_temperature"}
-    ]
+    data["physical_model"]["parameters"] = [{
+        "id": "temperature", "value": -300, "unit": "degC",
+        "quantity_kind": "absolute_temperature",
+    }]
     with pytest.raises(ValidationError):
         EngineeringProblemIR.model_validate(data)
 
 
-def test_unknown_units_are_rejected_even_if_general_registry_might_be_extended():
+def test_unknown_units_are_rejected():
     data = make_problem()
     data["physical_model"]["parameters"] = [
         {"id": "custom", "value": 1, "unit": "invented_unit"}
@@ -166,7 +142,9 @@ def test_canonical_json_and_hash_ignore_entity_list_order():
     data_a["physical_model"]["parameters"].append(
         {"id": "parameter.poisson", "value": 0.3, "unit": "1"}
     )
-    data_b["physical_model"]["parameters"] = list(reversed(data_a["physical_model"]["parameters"]))
+    data_b["physical_model"]["parameters"] = list(
+        reversed(data_a["physical_model"]["parameters"])
+    )
     model_a = EngineeringProblemIR.model_validate(data_a)
     model_b = EngineeringProblemIR.model_validate(data_b)
     assert model_a.canonical_json() == model_b.canonical_json()
