@@ -122,7 +122,7 @@ In accordance with GDEC's engineering ethics, all performance and capability cla
   - *Evidence:* [`results/CantileverDemo_benchmark.json`](results/CantileverDemo_benchmark.json), [`results/v022/CantileverDemo_summary.csv`](results/v022/CantileverDemo_summary.csv).
 - **Primal-Adjoint Factorization Reuse:** Primal/adjoint factorization reuse is implemented and covered by dedicated tests; a reproducible speedup figure is not asserted here.
   - *Evidence:* [`tests/test_v02_profiling_and_reuse.py`](tests/test_v02_profiling_and_reuse.py).
-- **Exact Zero-Solve Parameter Scaling:** Supported analytical parameter scaling has a 5,000-sample CPU/GPU parity test; this does not establish a general 100,000-sample throughput claim.
+- **Analytical Parameter Scaling:** Supported analytical parameter scaling has a 5,000-sample CPU/GPU parity test; this does not establish a general 100,000-sample throughput claim.
   - *Evidence:* [`tests/test_cuda_backend.py`](tests/test_cuda_backend.py).
 - **Safe Refinement Transaction Protocol:** Transactional budget bounds guarantee that adaptive refinement terminates with $\text{final\_dofs} \le \text{max\_dofs}$ in 100% of tested cases.
   - *Evidence:* [`tests/test_runtime.py`](tests/test_runtime.py).
