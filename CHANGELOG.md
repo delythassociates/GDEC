@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Reconciled package version to `0.3.0a0` across `pyproject.toml` and `src/gdec/__init__.py`.
-- Modernized `README.md` with truthful status metrics (371 tests, cross-platform Linux/macOS/Windows, CI matrix), quickstart instructions, and relative documentation links.
+- Modernized `README.md` with the reported 371-test suite size, platform setup guidance, current CI scope, quickstart instructions, and relative documentation links.
 - Archived legacy audit reports and temporary scratch scripts to `docs/archive/`.
 - Removed tracked binary zip files (`GDEC_v0.2.2_PRIVATE_REVIEW.zip`, `materials-simulation-skills-main.zip`) from working tree while preserving commit history.
 
