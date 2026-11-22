@@ -5,7 +5,7 @@ Provide an overview of the changes in this pull request.
 - Work Package / Issue ID:
 
 ## Verification & Test Evidence
-- [ ] Baseline test suite passes (371 tests on local host w/ GPU; 358 passed / 13 CUDA-skipped on CPU-only).
+- [ ] Baseline test suite passes; report the actual collected, passed, failed, and skipped counts for this environment, including skip reasons.
 - [ ] No existing tests weakened or deleted.
 - [ ] Added tests for all new capabilities and bug fixes.
 - [ ] Command output attached below:
