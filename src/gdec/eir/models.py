@@ -67,7 +67,10 @@ def _identifier(value: Any) -> str:
 def _finite_number(value: Any) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError("Numeric values must be finite real numbers; booleans are not accepted.")
-    result = float(value)
+    try:
+        result = float(value)
+    except OverflowError as exc:
+        raise ValueError("Numeric values must be finite.") from exc
     if not math.isfinite(result):
         raise ValueError("Numeric values must be finite.")
     return 0.0 if result == 0.0 else result
