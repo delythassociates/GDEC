@@ -467,13 +467,19 @@ def verify_traceability(
     """
     live_git = get_git_info()
 
-    # 1. Independent working tree cleanliness check
-    if not allow_dirty and live_git["dirty"]:
-        entries_str = "\n".join(f"  {e}" for e in live_git["dirty_entries"])
-        raise TraceabilityVerificationError(
-            f"Working tree is currently dirty ({len(live_git['dirty_entries'])} modified/untracked files):\n"
-            f"{entries_str}\nStatus register and verification require a clean repository state."
-        )
+    # 1. Working tree cleanliness checks (both recorded and live)
+    if not allow_dirty:
+        if register_data.get("git", {}).get("dirty", False):
+            raise TraceabilityVerificationError(
+                "Status register indicates dirty working tree state ('dirty': true). "
+                "Evidence must be recorded from a clean repository state."
+            )
+        if live_git["dirty"]:
+            entries_str = "\n".join(f"  {e}" for e in live_git["dirty_entries"])
+            raise TraceabilityVerificationError(
+                f"Working tree is currently dirty ({len(live_git['dirty_entries'])} modified/untracked files):\n"
+                f"{entries_str}\nStatus register and verification require a clean repository state."
+            )
 
     # 2. Freshness check
     current_sha = live_git.get("commit_sha", "unknown")
