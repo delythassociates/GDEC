@@ -1,6 +1,6 @@
 # GDEC Orchestration State
 Last updated: 2026-11-22T23:12:00+05:30  | Session #: 2
-Branch tip: research/wp0-repo-integrity  | Baseline: 358 passed / 13 CUDA skips (371 passed / 0 skips on host with operational NVIDIA GPU)
+Branch tip: research/wp0-repo-integrity@d7206dd  | Baseline: 358 passed / 13 CUDA skips (371 passed / 0 skips on host with operational NVIDIA GPU)
 
 ## Work package board
 | WP | Status (todo/active/blocked/done) | Branch | Gates passed / total | Evidence path |
