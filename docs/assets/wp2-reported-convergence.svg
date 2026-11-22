@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="590" viewBox="0 0 1100 590" role="img" aria-labelledby="title desc">
+<title id="title">WP2 reported convergence orders</title>
+<desc id="desc">Bar chart comparing reported observed orders for smooth manufactured solution L2, H1 seminorm, and L-shaped domain L2 against theoretical reference orders. Values are from the WP2 branch report and remain provisional pending remediation.</desc>
+<defs>
+ <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#111c2e"/><stop offset="1" stop-color="#1c3048"/></linearGradient>
+ <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#36c9bb"/><stop offset="1" stop-color="#5b9df5"/></linearGradient>
+ <style>
+ .title{font:700 25px Arial,sans-serif;fill:#f5f8fc}.muted{font:14px Arial,sans-serif;fill:#aebfd1}
+ .axis{stroke:#6e879f;stroke-width:1.5}.grid{stroke:#38516a;stroke-width:1;stroke-dasharray:4 5}
+ .tick{font:13px Arial,sans-serif;fill:#aebfd1}.lab{font:700 16px Arial,sans-serif;fill:#edf4fb}
+ .small{font:13px Arial,sans-serif;fill:#b5c7d9}.val{font:700 16px Arial,sans-serif;fill:#ffffff}
+ </style>
+</defs>
+<rect width="1100" height="590" rx="22" fill="url(#bg2)"/>
+<text x="52" y="52" class="title">WP2 · Reported observed convergence orders</text>
+<text x="52" y="80" class="muted">Observed slope p vs theoretical reference · report-derived values, not independently accepted evidence</text>
+<g>
+ <line x1="110" y1="465" x2="1000" y2="465" class="axis"/>
+ <line x1="110" y1="135" x2="110" y2="465" class="axis"/>
+ <g class="grid">
+  <line x1="110" y1="465" x2="1000" y2="465"/><line x1="110" y1="390" x2="1000" y2="390"/><line x1="110" y1="315" x2="1000" y2="315"/><line x1="110" y1="240" x2="1000" y2="240"/><line x1="110" y1="165" x2="1000" y2="165"/>
+ </g>
+ <g class="tick" text-anchor="end"><text x="96" y="470">0.0</text><text x="96" y="395">0.5</text><text x="96" y="320">1.0</text><text x="96" y="245">1.5</text><text x="96" y="170">2.0</text></g>
+ <text x="48" y="300" class="small" transform="rotate(-90 48 300)" text-anchor="middle">Observed order p</text>
+ <!-- scale 150 px per order; baseline 465 -->
+ <rect x="205" y="171.6" width="130" height="293.4" rx="9" fill="url(#bar)"/>
+ <line x1="190" y1="165" x2="350" y2="165" stroke="#f3c969" stroke-width="3" stroke-dasharray="7 5"/>
+ <text x="270" y="151" text-anchor="middle" class="val">1.956</text>
+ <text x="270" y="496" text-anchor="middle" class="lab">Smooth MMS · L²</text>
+ <text x="270" y="520" text-anchor="middle" class="small">Reference 2.000</text>
+ <rect x="485" y="317.55" width="130" height="147.45" rx="9" fill="url(#bar)"/>
+ <line x1="470" y1="315" x2="630" y2="315" stroke="#f3c969" stroke-width="3" stroke-dasharray="7 5"/>
+ <text x="550" y="298" text-anchor="middle" class="val">0.983</text>
+ <text x="550" y="496" text-anchor="middle" class="lab">Smooth MMS · H¹</text>
+ <text x="550" y="520" text-anchor="middle" class="small">Reference 1.000</text>
+ <rect x="765" y="264.9" width="130" height="200.1" rx="9" fill="url(#bar)"/>
+ <line x1="750" y1="265.05" x2="910" y2="265.05" stroke="#f3c969" stroke-width="3" stroke-dasharray="7 5"/>
+ <text x="830" y="246" text-anchor="middle" class="val">1.334</text>
+ <text x="830" y="496" text-anchor="middle" class="lab">L-shaped · L²</text>
+ <text x="830" y="520" text-anchor="middle" class="small">Reference 4/3 ≈ 1.333</text>
+</g>
+<rect x="52" y="548" width="14" height="4" fill="#f3c969"/><text x="74" y="555" class="small">Dashed line = theoretical reference order</text>
+<text x="1045" y="555" text-anchor="end" class="small">Source: WP2_MASTER_REPORT.md · branch report</text>
+</svg>
