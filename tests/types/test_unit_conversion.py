@@ -50,3 +50,11 @@ def test_invalid_unit_scale_and_non_atomic_alias_registration():
 def test_unit_conversion_rejects_integer_too_large_for_finite_float():
     with pytest.raises(UnitError, match="finite real number"):
         SI_UNITS.convert(10**10000, "m", "cm")
+
+
+def test_unit_base_conversion_rejects_integer_too_large_for_finite_float():
+    huge_integer = 10**10000
+    with pytest.raises(UnitError, match="finite real number"):
+        SI_UNITS.get("m").to_base(huge_integer)
+    with pytest.raises(UnitError, match="finite real number"):
+        SI_UNITS.get("m").from_base(huge_integer)
