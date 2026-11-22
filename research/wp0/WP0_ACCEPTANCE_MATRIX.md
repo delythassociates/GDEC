@@ -84,7 +84,7 @@ ALL LOCAL TARGETS EXIST (17/17); EXTERNAL URL REACHABILITY NOT CHECKED
 - **Status:** **PASS**
 - **Evidence:** All claims cite specific existing files:
   - $2.50\times$ fewer DOFs -> [`results/CantileverDemo_benchmark.json`](../../results/CantileverDemo_benchmark.json)
-  - $1.96\times - 2.00\times$ LU reuse speedup -> [`results/CantileverDemo_iterations.csv`](../../results/CantileverDemo_iterations.csv)
+  - Primal/adjoint factorization reuse tests -> [`tests/test_v02_profiling_and_reuse.py`](../../tests/test_v02_profiling_and_reuse.py)
   - Exact analytical scaling -> [`tests/test_v02_scaling.py`](../../tests/test_v02_scaling.py)
   - Refinement budget guarantee -> [`tests/test_runtime.py`](../../tests/test_runtime.py)
   - SPD iterative solver rejection -> [`tests/test_iterative_solvers.py`](../../tests/test_iterative_solvers.py)
