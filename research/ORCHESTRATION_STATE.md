@@ -1,13 +1,13 @@
 # GDEC Orchestration State
-Last updated: 2026-11-23T02:45:00+05:30  | Session #: 3
-Branch tip: research/wp2-remediation-evidence-closure  | Baseline: 437 passed / 0 skips / 0 failures on host with operational NVIDIA GPU (423 passed / 14 skipped in non-GPU CI)
+Last updated: 2026-11-23T03:25:00+05:30  | Session #: 3
+Branch tip: research/wp2-evidence-integrity-corrections  | Baseline: 448 passed / 0 skips / 0 failures on host with operational NVIDIA GPU (434 passed / 14 skipped in non-GPU CI)
 
 ## Work package board
 | WP | Status (todo/active/blocked/done) | Branch | Gates passed / total | Evidence path |
 |---|---|---|---|---|
 | WP0 | done | research/wp0-repo-integrity | 4 / 4 | research/wp0/ |
 | WP1 | done | research/wp1-eir-adversarial-hardening | 4 / 4 | research/wp1/ |
-| WP2 | active (final evidence closure complete — ready for review) | research/wp2-remediation-evidence-closure | 10 / 10 gates passed | research/wp2-remediation-evidence-closure/ |
+| WP2 | active (final evidence integrity corrections complete — ready for review) | research/wp2-evidence-integrity-corrections | 8 / 8 gates passed | research/wp2-evidence-integrity-corrections/ |
 | WP3 | todo | pending | 0 / 4 | pending |
 | WP4 | todo | pending | 0 / 2 | pending |
 | WP5 | todo | pending | 0 / 3 | pending |

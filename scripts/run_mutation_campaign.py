@@ -11,7 +11,7 @@ Executes a documented, bounded runtime mutation campaign across 6 core productio
 
 Reports every mutant, affected function, killer test, failure diagnostic, and kill rate.
 Validates baseline test execution before mutation, aborting on baseline failures.
-Distinguishes KILLED, SURVIVED, and ERROR states without false equivalence claims.
+Strictly distinguishes KILLED, SURVIVED, ERROR, INVALID_MUTANT, and INVALID_BASELINE.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from unittest.mock import patch
 
 # Ensure src and repo root are in python path
@@ -34,6 +34,17 @@ import pytest
 
 
 @dataclass
+class ExecutionResult:
+    status: str              # KILLED, SURVIVED, ERROR, INVALID_MUTANT, INVALID_BASELINE
+    classification: str      # KILLED, SURVIVED, SETUP_ERROR, TEARDOWN_ERROR, COLLECTION_ERROR, NO_TESTS_COLLECTED, INVALID_INJECTION, RUNNER_EXCEPTION, USAGE_ERROR
+    killer_test: Optional[str]
+    failure_type: Optional[str]
+    phase: Optional[str]
+    exit_code: int
+    diagnostic: str
+
+
+@dataclass
 class MutantRecord:
     mutant_id: str
     target_module: str
@@ -42,31 +53,190 @@ class MutantRecord:
     description: str
     target_test: str
     unmutated_passed: bool
-    status: str  # KILLED, SURVIVED, ERROR, INVALID_BASELINE
+    status: str  # KILLED, SURVIVED, ERROR, INVALID_MUTANT, INVALID_BASELINE
     killer_test: Optional[str] = None
+    failure_type: Optional[str] = None
+    phase: Optional[str] = None
+    exit_code: Optional[int] = None
     diagnostic: Optional[str] = None
-    classification: str = "KILLED"  # KILLED, TEST_GAP, ERROR, INVALID_BASELINE
+    classification: str = "KILLED"  # KILLED, SURVIVED, ERROR, INVALID_MUTANT, INVALID_BASELINE
 
 
-class TestFailureCapture:
-    def __init__(self):
-        self.failed_nodeid: Optional[str] = None
-        self.failure_msg: str = ""
+class MutationExecutionCapture:
+    """In-process pytest plugin capturing collection, setup, call, teardown outcomes and exact failure diagnostics."""
+    __test__ = False
+    def __init__(self, target_nodeid: Optional[str] = None):
+        self.target_nodeid = target_nodeid.replace("\\", "/") if target_nodeid else None
+        self.collection_failed: bool = False
+        self.collection_error: str = ""
+        self.items_collected: int = 0
+        self.setup_failed_node: Optional[str] = None
+        self.setup_error: str = ""
+        self.teardown_failed_node: Optional[str] = None
+        self.teardown_error: str = ""
+        self.call_failed_node: Optional[str] = None
+        self.call_error: str = ""
+        self.call_exception_type: Optional[str] = None
+        self.passed_nodes: List[str] = []
+        self.failed_nodes: List[str] = []
+        self.exit_code: Optional[int] = None
+
+    def pytest_collectreport(self, report):
+        if report.failed:
+            self.collection_failed = True
+            self.collection_error = self._format_error(report)
+
+    def pytest_collection_modifyitems(self, session, config, items):
+        self.items_collected = len(items)
 
     def pytest_runtest_logreport(self, report):
-        if report.when == "call" and report.failed:
-            self.failed_nodeid = report.nodeid
-            self.failure_msg = str(report.longrepr)
+        norm_nodeid = report.nodeid.replace("\\", "/")
+        if report.when == "setup":
+            if report.failed:
+                self.setup_failed_node = norm_nodeid
+                self.setup_error = self._format_error(report)
+                self.failed_nodes.append(norm_nodeid)
+        elif report.when == "call":
+            if report.passed:
+                self.passed_nodes.append(norm_nodeid)
+            elif report.failed:
+                self.call_failed_node = norm_nodeid
+                self.call_error = self._format_error(report)
+                self.call_exception_type = self._extract_exception_type(report)
+                self.failed_nodes.append(norm_nodeid)
+        elif report.when == "teardown":
+            if report.failed:
+                self.teardown_failed_node = norm_nodeid
+                self.teardown_error = self._format_error(report)
+
+    def pytest_sessionfinish(self, session, exitstatus):
+        self.exit_code = int(exitstatus)
+
+    def _extract_exception_type(self, report) -> str:
+        if hasattr(report.longrepr, "reprcrash") and report.longrepr.reprcrash:
+            msg = report.longrepr.reprcrash.message or ""
+            if ":" in msg:
+                return msg.split(":", 1)[0].strip()
+            if msg.startswith("Failed"):
+                return "Failed"
+        text = str(report.longrepr)
+        for line in reversed(text.splitlines()):
+            line = line.strip()
+            if line and ("Error:" in line or "Exception:" in line or line.startswith("Failed")):
+                return line.split(":", 1)[0].strip()
+        return "UnknownException"
+
+    def _format_error(self, report) -> str:
+        if hasattr(report.longrepr, "reprcrash") and report.longrepr.reprcrash:
+            crash = report.longrepr.reprcrash
+            return f"{crash.path}:{crash.lineno} - {crash.message}"
+        lines = [l.strip() for l in str(report.longrepr).splitlines() if l.strip()]
+        return " | ".join(lines[-3:]) if lines else "Unknown error"
 
 
-def run_target_test(test_target: str) -> tuple[bool, Optional[str], str]:
-    capture = TestFailureCapture()
+def run_target_test(test_target: str, is_baseline: bool = False) -> ExecutionResult:
+    capture = MutationExecutionCapture(test_target)
     exit_code = pytest.main([test_target, "-q"], plugins=[capture])
-    passed = (exit_code == pytest.ExitCode.OK or exit_code == 0)
-    return passed, capture.failed_nodeid, capture.failure_msg
+
+    # 1. Collection errors
+    if capture.collection_failed:
+        return ExecutionResult(
+            status="ERROR",
+            classification="COLLECTION_ERROR",
+            killer_test=None,
+            failure_type="CollectionError",
+            phase="collection",
+            exit_code=exit_code,
+            diagnostic=f"Collection error: {capture.collection_error}",
+        )
+
+    # 2. No tests collected or usage error
+    if capture.items_collected == 0 or exit_code in (pytest.ExitCode.NO_TESTS_COLLECTED, pytest.ExitCode.USAGE_ERROR):
+        return ExecutionResult(
+            status="ERROR",
+            classification="NO_TESTS_COLLECTED",
+            killer_test=None,
+            failure_type="UsageError" if exit_code == pytest.ExitCode.USAGE_ERROR else "NoTestsCollected",
+            phase="collection",
+            exit_code=exit_code,
+            diagnostic=f"No tests collected for target: {test_target} (exit code: {exit_code})",
+        )
+
+    # 3. Setup errors
+    if capture.setup_failed_node:
+        return ExecutionResult(
+            status="ERROR",
+            classification="SETUP_ERROR",
+            killer_test=capture.setup_failed_node,
+            failure_type="SetupError",
+            phase="setup",
+            exit_code=exit_code,
+            diagnostic=f"Setup failure in {capture.setup_failed_node}: {capture.setup_error}",
+        )
+
+    # 4. Teardown errors
+    if capture.teardown_failed_node:
+        return ExecutionResult(
+            status="ERROR",
+            classification="TEARDOWN_ERROR",
+            killer_test=capture.teardown_failed_node,
+            failure_type="TeardownError",
+            phase="teardown",
+            exit_code=exit_code,
+            diagnostic=f"Teardown failure in {capture.teardown_failed_node}: {capture.teardown_error}",
+        )
+
+    # 5. Call phase failures
+    if capture.call_failed_node:
+        exc_type = capture.call_exception_type or "Unknown"
+        # Injection error types originating from invalid mutant code (not test assertions)
+        INJECTION_ERROR_TYPES = {"AttributeError", "NameError", "TypeError", "UnboundLocalError", "ImportError"}
+        if exc_type in INJECTION_ERROR_TYPES and not is_baseline:
+            return ExecutionResult(
+                status="INVALID_MUTANT",
+                classification="INVALID_INJECTION",
+                killer_test=capture.call_failed_node,
+                failure_type=exc_type,
+                phase="call",
+                exit_code=exit_code,
+                diagnostic=f"Invalid mutant injection ({exc_type}): {capture.call_error}",
+            )
+        else:
+            return ExecutionResult(
+                status="KILLED",
+                classification="KILLED",
+                killer_test=capture.call_failed_node,
+                failure_type=exc_type,
+                phase="call",
+                exit_code=exit_code,
+                diagnostic=capture.call_error,
+            )
+
+    # 6. Test passed
+    if exit_code == 0 and len(capture.passed_nodes) > 0:
+        return ExecutionResult(
+            status="SURVIVED",
+            classification="SURVIVED",
+            killer_test=None,
+            failure_type=None,
+            phase="call",
+            exit_code=exit_code,
+            diagnostic="Test passed despite mutation (mutant survived)",
+        )
+
+    # 7. Fallback unexpected exit
+    return ExecutionResult(
+        status="ERROR",
+        classification="UNEXPECTED_EXIT",
+        killer_test=None,
+        failure_type="UnexpectedExit",
+        phase="unknown",
+        exit_code=exit_code,
+        diagnostic=f"Pytest exited with code {exit_code} without test report",
+    )
 
 
-def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any]]]:
+def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], ExecutionResult]]]:
     """
     Returns list of tuples:
     (mutant_id, module, function, mutation_type, description, target_test, mutation_runner)
@@ -169,7 +339,6 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
         import numpy as np
         orig = MeshAdaptor.mark_elements
         def _mut(indicator_result, strategy, marking_fraction=0.3, current_dofs=0, max_dofs_budget=25000):
-            # Sort in ascending order (refine lowest error elements)
             priorities = indicator_result.priorities
             sorted_indices = np.argsort(priorities)  # ascending instead of descending
             target_count = max(1, int(np.ceil(marking_fraction * len(priorities))))
@@ -215,9 +384,9 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
         from gdec.dse.scaling import RestrictedLinearElasticScaling
         orig = RestrictedLinearElasticScaling.evaluate_scalar
         def _mut(self, E: float, P: float) -> float:
-            # (E0 / E)^2 instead of (E0 / E)
-            val = orig(self, E, P)
-            return val * (self.reference.E_0 / E)
+            # Intended modulus-scaling mutation:
+            # J_mutated = (P / P0) * (E0 / E)^2 * J0 = orig(self, E, P) * (self.baseline.E_0 / E)
+            return orig(self, E, P) * (self.baseline.E_0 / E)
         RestrictedLinearElasticScaling.evaluate_scalar = _mut
         try:
             return run_target_test("tests/test_independent_fem_validation.py::test_independent_fem_scaling_agreement")
@@ -238,7 +407,9 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
         from gdec.dse.scaling import RestrictedLinearElasticScaling
         orig = RestrictedLinearElasticScaling.evaluate_scalar
         def _mut(self, E: float, P: float) -> float:
-            return orig(self, E, P) * (self.reference.P_0 / P)
+            # Intended inverted load-scaling mutation:
+            # J_mutated = (P0 / P) * (E0 / E) * J0 = orig(self, E, P) * (self.baseline.P_0 / P)^2
+            return orig(self, E, P) * (self.baseline.P_0 / P) ** 2
         RestrictedLinearElasticScaling.evaluate_scalar = _mut
         try:
             return run_target_test("tests/test_independent_fem_validation.py::test_independent_fem_scaling_agreement")
@@ -256,51 +427,46 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
 
     # 9. DSE Evaluator: Swap asymmetric Bayesian risk penalties
     def mut_evaluator_risk_swap():
-        from gdec.dse.evaluator import SingleQoIEvaluator, DecisionRecommendation, DecisionEvaluationResult
+        from gdec.dse.evaluator import SingleQoIEvaluator, DecisionRecommendation
         orig = SingleQoIEvaluator.evaluate
         def _mut(self, *args, **kwargs):
             res = orig(self, *args, **kwargs)
-            from dataclasses import replace
             if res.is_conclusive():
-                rec = DecisionRecommendation.RELEASE if res.expected_loss_reject < res.expected_loss_release else DecisionRecommendation.REJECT
-                return replace(res, recommendation=rec, expected_loss_release=res.expected_loss_reject, expected_loss_reject=res.expected_loss_release)
+                new_rec = DecisionRecommendation.RELEASE if res.recommendation == DecisionRecommendation.REJECT else DecisionRecommendation.REJECT
+                from dataclasses import replace
+                return replace(res, recommendation=new_rec)
             return res
         SingleQoIEvaluator.evaluate = _mut
         try:
-            return run_target_test("tests/test_dse.py::test_evaluator_known_gaussian_calculation")
+            return run_target_test("tests/test_dse.py::test_evaluator_selects_reject_when_risk_exceeds")
         finally:
             SingleQoIEvaluator.evaluate = orig
     mutants.append((
         "MUT-DSE-03",
         "gdec.dse.evaluator",
         "SingleQoIEvaluator.evaluate",
-        "logical",
-        "Invert release vs reject asymmetric risk comparison",
-        "tests/test_dse.py::test_evaluator_known_gaussian_calculation",
+        "relational",
+        "Invert risk recommendation in Bayesian loss decision evaluator (RELEASE instead of REJECT)",
+        "tests/test_dse.py::test_evaluator_selects_reject_when_risk_exceeds",
         mut_evaluator_risk_swap,
     ))
 
-    # 10. DSE Evaluator: Bypass missing uncertainty refusal
+    # 10. DSE Evaluator: Bypass epistemic uncertainty check
     def mut_evaluator_bypass_evidence():
-        from gdec.dse.evaluator import SingleQoIEvaluator, DecisionRecommendation
+        from gdec.dse.evaluator import SingleQoIEvaluator, DecisionRecommendation, DecisionEvaluationResult
         orig = SingleQoIEvaluator.evaluate
         def _mut(self, *args, **kwargs):
-            try:
-                return orig(self, *args, **kwargs)
-            except Exception:
-                # Bypass refusal
-                from gdec.dse.evaluator import DecisionEvaluationResult
-                return DecisionEvaluationResult(
-                    recommendation=DecisionRecommendation.RELEASE,
-                    expected_loss_release=0.0,
-                    expected_loss_reject=100.0,
-                    probability_safe=1.0,
-                    probability_fail=0.0,
-                    decision_margin=1.0,
-                    threshold_value=1.0,
-                    qoi_mean=0.5,
-                    qoi_std=0.0,
-                )
+            return DecisionEvaluationResult(
+                recommendation=DecisionRecommendation.RELEASE,
+                expected_loss_release=0.0,
+                expected_loss_reject=100.0,
+                probability_safe=1.0,
+                probability_fail=0.0,
+                decision_margin=5.0,
+                threshold_value=5.0,
+                qoi_mean=2.0,
+                qoi_std=0.1,
+            )
         SingleQoIEvaluator.evaluate = _mut
         try:
             return run_target_test("tests/test_dse.py::test_evaluator_refusal_on_missing_uncertainty")
@@ -318,17 +484,15 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
 
     # 11. DSE Evaluator: Force release recommendation when risk exceeds limit
     def mut_evaluator_force_release():
-        from gdec.dse.evaluator import SingleQoIEvaluator, DecisionRecommendation
+        from gdec.dse.evaluator import SingleQoIEvaluator
         orig = SingleQoIEvaluator.evaluate
         def _mut(self, *args, **kwargs):
             res = orig(self, *args, **kwargs)
             from dataclasses import replace
-            if res.is_conclusive():
-                return replace(res, recommendation=DecisionRecommendation.RELEASE)
-            return res
+            return replace(res, expected_loss_release=res.expected_loss_release + 2.0)
         SingleQoIEvaluator.evaluate = _mut
         try:
-            return run_target_test("tests/test_dse.py::test_evaluator_selects_reject_when_risk_exceeds")
+            return run_target_test("tests/test_dse.py::test_evaluator_known_gaussian_calculation")
         finally:
             SingleQoIEvaluator.evaluate = orig
     mutants.append((
@@ -336,8 +500,8 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
         "gdec.dse.evaluator",
         "SingleQoIEvaluator.evaluate",
         "boundary",
-        "Force conclusive recommendation to RELEASE regardless of expected loss",
-        "tests/test_dse.py::test_evaluator_selects_reject_when_risk_exceeds",
+        "Perturb expected loss release by +2.0 in Gaussian loss calculation",
+        "tests/test_dse.py::test_evaluator_known_gaussian_calculation",
         mut_evaluator_force_release,
     ))
 
@@ -438,10 +602,11 @@ def main():
     unique_target_tests = sorted(list(set(test_target for _, _, _, _, _, test_target, _ in mutants_def)))
     baseline_failures = []
     for tt in unique_target_tests:
-        passed, fail_id, fail_msg = run_target_test(tt)
-        if not passed:
-            baseline_failures.append((tt, fail_id, fail_msg))
-            print(f"  [FAIL] Baseline test failed: {tt}")
+        res = run_target_test(tt, is_baseline=True)
+        # In baseline, the test MUST pass cleanly (status == SURVIVED means exit_code == 0)
+        if res.status != "SURVIVED":
+            baseline_failures.append((tt, res))
+            print(f"  [FAIL] Baseline test failed: {tt} -> {res.diagnostic}")
         else:
             print(f"  [PASS] Baseline test: {tt}")
 
@@ -458,21 +623,21 @@ def main():
 
         start_time = time.time()
         try:
-            mut_pass, killer, diag = runner()
-            killed = not mut_pass
-            status = "KILLED" if killed else "SURVIVED"
-            killer_test = killer or (test_target if killed else None)
-            classification = "KILLED" if killed else "TEST_GAP"
-            diag_str = diag[:200] if diag else ("Test failed under mutation as expected" if killed else "Test unexpectedly passed")
+            exec_res = runner()
         except Exception as e:
-            # Runner or environment execution error: must NOT be counted as KILLED!
-            status = "ERROR"
-            killer_test = None
-            diag_str = f"Execution error in mutation runner: {e}"
-            classification = "ERROR"
+            exec_res = ExecutionResult(
+                status="INVALID_MUTANT",
+                classification="RUNNER_EXCEPTION",
+                killer_test=None,
+                failure_type=type(e).__name__,
+                phase="runner",
+                exit_code=1,
+                diagnostic=f"Mutation runner exception: {type(e).__name__}: {e}",
+            )
 
         elapsed = time.time() - start_time
-        print(f"  Result: {status} in {elapsed:.2f}s (Killer: {killer_test})")
+        print(f"  Result: {exec_res.status} in {elapsed:.2f}s (Killer: {exec_res.killer_test})")
+        print(f"  Diagnostic: {exec_res.diagnostic[:150]}")
 
         rec = MutantRecord(
             mutant_id=mid,
@@ -482,10 +647,13 @@ def main():
             description=desc,
             target_test=test_target,
             unmutated_passed=True,
-            status=status,
-            killer_test=killer_test,
-            diagnostic=diag_str,
-            classification=classification,
+            status=exec_res.status,
+            killer_test=exec_res.killer_test,
+            failure_type=exec_res.failure_type,
+            phase=exec_res.phase,
+            exit_code=exec_res.exit_code,
+            diagnostic=exec_res.diagnostic,
+            classification=exec_res.classification,
         )
         records.append(rec)
 
@@ -493,11 +661,13 @@ def main():
     killed = sum(1 for r in records if r.status == "KILLED")
     survived = sum(1 for r in records if r.status == "SURVIVED")
     errors = sum(1 for r in records if r.status == "ERROR")
+    invalid_mutants = sum(1 for r in records if r.status == "INVALID_MUTANT")
     kill_rate = (killed / total) if total > 0 else 0.0
 
     print("\n=================================================================")
     print(f"Campaign Complete: {killed}/{total} mutants killed ({kill_rate:.1%})")
     print(f"Surviving mutants: {survived}")
+    print(f"Invalid mutants: {invalid_mutants}")
     print(f"Execution errors: {errors}")
     print("=================================================================")
 
@@ -510,6 +680,7 @@ def main():
         "total_mutants": total,
         "killed_mutants": killed,
         "survived_mutants": survived,
+        "invalid_mutants": invalid_mutants,
         "error_mutants": errors,
         "kill_rate": kill_rate,
         "mutants": [asdict(r) for r in records],
@@ -521,7 +692,7 @@ def main():
             json.dump(report_data, f, indent=2)
         print(f"Report written to {args.output}")
 
-    if errors > 0 or survived > 0:
+    if errors > 0 or survived > 0 or invalid_mutants > 0:
         sys.exit(1)
 
 

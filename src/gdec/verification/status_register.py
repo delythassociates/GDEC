@@ -414,6 +414,10 @@ class PytestCollector:
         self.exit_code = int(exitstatus)
 
 
+class GitInspectionError(RuntimeError):
+    """Raised when Git repository inspection fails or repository state cannot be verified."""
+
+
 def collect_live_test_results(test_files: Optional[List[str]] = None) -> Tuple[Dict[str, str], List[str], int]:
     """Execute pytest on target files and collect live outcomes for every individual test."""
     import pytest
@@ -423,17 +427,37 @@ def collect_live_test_results(test_files: Optional[List[str]] = None) -> Tuple[D
     return collector.results, collector.collection_errors, collector.exit_code
 
 
-def get_git_info(repo_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Retrieve current commit SHA, branch name, and dirty working tree status safely."""
+def get_git_info(repo_dir: Optional[str] = None, fail_fast: bool = False) -> Dict[str, Any]:
+    """
+    Retrieve current commit SHA, branch name, and dirty working tree status.
+    Fails closed: if any required Git command fails, records explicit error details
+    and marks git inspection as failed (git_valid=False).
+    Never silently converts Git failures into clean/unknown status.
+    """
     cwd = repo_dir if repo_dir else os.getcwd()
+    git_errors: List[str] = []
+
     try:
-        sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=cwd, text=True).strip()
-    except Exception:
+        sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=cwd, text=True, stderr=subprocess.PIPE
+        ).strip()
+        if not sha or len(sha) < 7:
+            sha = "unknown"
+            git_errors.append("git rev-parse HEAD returned empty or invalid commit SHA.")
+    except Exception as e:
         sha = "unknown"
+        git_errors.append(f"git rev-parse HEAD failed: {e}")
+
     try:
-        branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd, text=True).strip()
-    except Exception:
+        branch = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd, text=True, stderr=subprocess.PIPE
+        ).strip()
+        if not branch:
+            branch = "unknown"
+            git_errors.append("git rev-parse --abbrev-ref HEAD returned empty branch.")
+    except Exception as e:
         branch = "unknown"
+        git_errors.append(f"git rev-parse --abbrev-ref HEAD failed: {e}")
 
     PRESERVED_USER_PREFIXES = (
         "src/gdec/core/analyser.py",
@@ -442,7 +466,9 @@ def get_git_info(repo_dir: Optional[str] = None) -> Dict[str, Any]:
     )
     dirty_entries = []
     try:
-        raw_status = subprocess.check_output(["git", "status", "--porcelain", "-uall"], cwd=cwd, text=True).splitlines()
+        raw_status = subprocess.check_output(
+            ["git", "status", "--porcelain", "-uall"], cwd=cwd, text=True, stderr=subprocess.PIPE
+        ).splitlines()
         for line in raw_status:
             entry = line.strip()
             if not entry:
@@ -453,11 +479,23 @@ def get_git_info(repo_dir: Optional[str] = None) -> Dict[str, Any]:
             if code == "??" and any(norm_path.startswith(prefix.replace("\\", "/")) for prefix in PRESERVED_USER_PREFIXES):
                 continue
             dirty_entries.append(line)
-    except Exception:
-        dirty_entries = []
+    except Exception as e:
+        git_errors.append(f"git status --porcelain -uall failed: {e}")
 
-    is_dirty = len(dirty_entries) > 0
-    return {"commit_sha": sha, "branch": branch, "dirty": is_dirty, "dirty_entries": dirty_entries}
+    git_valid = (len(git_errors) == 0) and (sha != "unknown") and (branch != "unknown")
+    is_dirty = (len(dirty_entries) > 0) or (not git_valid)
+
+    if fail_fast and not git_valid:
+        raise GitInspectionError("Git inspection failed closed:\n" + "\n".join(f"  - {err}" for err in git_errors))
+
+    return {
+        "commit_sha": sha,
+        "branch": branch,
+        "dirty": is_dirty,
+        "dirty_entries": dirty_entries,
+        "git_valid": git_valid,
+        "git_errors": git_errors,
+    }
 
 
 def get_provenance_info() -> Dict[str, Any]:
@@ -575,7 +613,13 @@ def generate_status_register(
             demonstrated_status = "PARTIAL_SKIP"
         elif len(req_passed) == len(required_nodes):
             execution_state = "PASS"
-            demonstrated_status = cap.claimed_status
+            # Policy (WP2-EIP): Automated unit/verification tests alone cannot grant INDEPENDENTLY VALIDATED.
+            # Independent physical validation requires external physical/experimental attestation and human review.
+            # The maximum status achievable solely via automated test suite execution is NUMERICALLY VERIFIED.
+            if cap.claimed_status == "INDEPENDENTLY VALIDATED":
+                demonstrated_status = "NUMERICALLY VERIFIED"
+            else:
+                demonstrated_status = cap.claimed_status
         else:
             execution_state = "NOT_RUN"
             demonstrated_status = "PLANNED"
@@ -639,6 +683,18 @@ def verify_traceability(
     """
     live_git = get_git_info(repo_dir=repo_dir)
 
+    # 0. Fail closed on Git inspection errors
+    if not live_git.get("git_valid", False):
+        errs = live_git.get("git_errors", ["Unknown git inspection failure"])
+        raise TraceabilityVerificationError(
+            "Live repository Git inspection failed closed:\n" + "\n".join(f"  - {e}" for e in errs)
+        )
+    if not register_data.get("git", {}).get("git_valid", True):
+        errs = register_data.get("git", {}).get("git_errors", ["Recorded git state marked invalid"])
+        raise TraceabilityVerificationError(
+            "Status register indicates invalid git inspection state:\n" + "\n".join(f"  - {e}" for e in errs)
+        )
+
     # 1. Working tree cleanliness checks (both recorded and live)
     if not allow_dirty:
         if register_data.get("git", {}).get("dirty", False):
@@ -656,21 +712,31 @@ def verify_traceability(
     # 2. Freshness check
     current_sha = live_git.get("commit_sha", "unknown")
     recorded_sha = register_data.get("git", {}).get("commit_sha", "unknown")
-    if not allow_stale and recorded_sha != "unknown" and current_sha != "unknown" and recorded_sha != current_sha:
-        raise TraceabilityVerificationError(
-            f"Stale status register detected: recorded commit SHA '{recorded_sha}' "
-            f"does not match current HEAD commit SHA '{current_sha}'."
-        )
+    if not allow_stale:
+        if current_sha == "unknown" or recorded_sha == "unknown":
+            raise TraceabilityVerificationError(
+                f"Cannot verify status register freshness: commit SHA is unknown (live: '{current_sha}', recorded: '{recorded_sha}')."
+            )
+        if recorded_sha != current_sha:
+            raise TraceabilityVerificationError(
+                f"Stale status register detected: recorded commit SHA '{recorded_sha}' "
+                f"does not match current HEAD commit SHA '{current_sha}'."
+            )
 
     if on_disk_path and os.path.exists(on_disk_path):
         with open(on_disk_path, "r", encoding="utf-8") as f:
             disk_data = json.load(f)
         disk_sha = disk_data.get("git", {}).get("commit_sha", "unknown")
-        if not allow_stale and disk_sha != current_sha and disk_sha != "unknown" and current_sha != "unknown":
-            raise TraceabilityVerificationError(
-                f"Committed status register at '{on_disk_path}' is stale: "
-                f"records commit '{disk_sha}', but current HEAD is '{current_sha}'."
-            )
+        if not allow_stale:
+            if disk_sha == "unknown":
+                raise TraceabilityVerificationError(
+                    f"Committed status register at '{on_disk_path}' has unknown commit SHA."
+                )
+            if disk_sha != current_sha:
+                raise TraceabilityVerificationError(
+                    f"Committed status register at '{on_disk_path}' is stale: "
+                    f"records commit '{disk_sha}', but current HEAD is '{current_sha}'."
+                )
 
     # 3. Collection error / exit code check
     coll_errors = register_data.get("collection_errors", [])

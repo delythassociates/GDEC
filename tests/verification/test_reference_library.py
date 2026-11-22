@@ -279,6 +279,7 @@ class TestReferenceProblemLibrary:
             s_tt = s_xx * sin_t**2 + s_yy * cos_t**2 - 2.0 * t_xy * sin_t * cos_t
 
             # Full radial profile comparison against authoritative closed form
+            # using area-weighted centroid-sampled discrete error norm
             exact = lame_cylinder_analytical_plane_stress(rc, a, b, P_int, E, nu)
             w = elem_areas / np.sum(elem_areas)
             ur_err = float(np.sqrt(np.sum(w * (ur_c - exact["u_r"])**2)) / np.sqrt(np.sum(w * exact["u_r"]**2)))
@@ -390,6 +391,7 @@ class TestReferenceProblemLibrary:
             s_tt = s_xx * sin_t**2 + s_yy * cos_t**2 - 2.0 * t_xy * sin_t * cos_t
 
             # Full radial profile comparison against authoritative plane strain closed form
+            # using area-weighted centroid-sampled discrete error norm
             exact = lame_cylinder_analytical_plane_strain(rc, a, b, P_int, E, nu)
             w = elem_areas / np.sum(elem_areas)
             ur_err = float(np.sqrt(np.sum(w * (ur_c - exact["u_r"])**2)) / np.sqrt(np.sum(w * exact["u_r"]**2)))
@@ -433,7 +435,7 @@ class TestReferenceProblemLibrary:
         assert errors_szz[-1] < 0.070, f"Fine mesh axial stress error {errors_szz[-1]:.4%} exceeds 7.0%"
 
     def test_ref_06_plate_with_hole_stress_concentration(self):
-        """REF-06: Numerical Kirsch plate-with-hole stress concentration benchmark (Kt -> 3.000)."""
+        """REF-06: Numerical Kirsch plate-with-hole stress concentration benchmark (Kt -> 3.000) via area-weighted one-ring patch recovery."""
         spec = get_reference_problem("REF-06-PLATE-HOLE-KIRSCH")
         a = 1.0  # hole radius
         b = 5.0  # far-field boundary radius
@@ -475,7 +477,7 @@ class TestReferenceProblemLibrary:
             f = skfem.asm(outer_traction, fb_outer)
             u_sol = skfem.solve(*skfem.condense(K, f, D=D))
 
-            # Area-weighted patch stress recovery at hole boundary (0, a)
+            # Area-weighted one-ring patch stress recovery at hole boundary (0, a)
             # Physical justification: At (0, a), theta = pi/2.
             # Circumferential stress sigma_theta is tangential to the circular cavity.
             # Since the boundary at (0, a) is horizontal (parallel to x-axis),
@@ -496,7 +498,7 @@ class TestReferenceProblemLibrary:
             eps_yy = grad_v[1, elem_idx, 0]
             sigma_xx = (E / (1.0 - nu**2)) * (eps_xx + nu * eps_yy)
 
-            # Area-weighted patch average: \bar{\sigma} = \sum(A_i * \sigma_i) / \sum(A_i)
+            # Area-weighted one-ring patch average: \bar{\sigma} = \sum(A_i * \sigma_i) / \sum(A_i)
             peak_sigma = float(np.sum(patch_areas * sigma_xx) / np.sum(patch_areas))
             kt = peak_sigma / sigma_inf
             kt_values.append(kt)
@@ -559,8 +561,13 @@ class TestReferenceProblemLibrary:
         # Perturbed solve MUST fall outside valid acceptance interval [2.95, 3.05]
         assert not (2.95 <= kt_pert <= 3.05), f"Benchmark failed to detect perturbation: Kt={kt_pert:.4f}"
 
-    def test_ref_06_kirsch_production_defect_sensitivity(self):
-        """REF-06: Production solver defect sensitivity (plane-strain constitutive tensor applied to plate fails gate)."""
+    def test_ref_06_kirsch_reference_formulation_sensitivity(self):
+        """
+        REF-06: Reference model constitutive formulation sensitivity (Option B).
+        Demonstrates that assembling plane-strain stiffness on a plane-stress plate fails the acceptance gate.
+        Note: Production-solver defect sensitivity on Kirsch geometry remains open/deferred because GDEC's
+        LinearElasticitySolver is currently coupled to GDECMesh (structured rectangular domains).
+        """
         a, b = 1.0, 5.0
         E, nu = 200.0e9, 0.3
         sigma_inf = 10.0e6
@@ -572,7 +579,7 @@ class TestReferenceProblemLibrary:
         mesh = skfem.MeshTri(np.vstack([grid.p[0] * np.cos(grid.p[1]), grid.p[0] * np.sin(grid.p[1])]), grid.t)
 
         basis = skfem.Basis(mesh, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
-        # Deliberate production solver defect: assembling plane-strain stiffness on a plane-stress plate
+        # Reference formulation defect: assembling plane-strain stiffness on a plane-stress plate
         K_defective = skfem.asm(linear_elasticity(*lame_parameters(E, nu)), basis)
         bottom_nodes = np.where(np.isclose(mesh.p[1], 0.0))[0]
         left_nodes = np.where(np.isclose(mesh.p[0], 0.0))[0]

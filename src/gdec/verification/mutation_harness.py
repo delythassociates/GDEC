@@ -119,7 +119,7 @@ def run_mutation_trial_3_analytical_scaling() -> MutationResult:
         def mutated_eval(self, E: float, P: float) -> float:
             # Mutate: square the modulus scaling ratio
             val = orig(self, E, P)
-            return val * (self.reference.E_0 / E)
+            return val * (self.baseline.E_0 / E)
         RestrictedLinearElasticScaling.evaluate_scalar = mutated_eval
 
         mutated_pass, killer, diag = _run_single_test(target_test)

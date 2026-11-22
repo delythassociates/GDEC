@@ -15,7 +15,9 @@ from gdec.verification.status_register import (
     generate_status_register,
     verify_traceability,
     TraceabilityVerificationError,
+    GitInspectionError,
     SYSTEM_CAPABILITIES,
+    CapabilityEntry,
     get_git_info,
     get_environment_info,
     get_provenance_info,
@@ -386,3 +388,106 @@ class TestStatusRegisterTraceability:
         chk_proc = subprocess.run(chk_cmd, capture_output=True, text=True)
         assert chk_proc.returncode == 0, f"CLI check failed: {chk_proc.stderr}\n{chk_proc.stdout}"
         assert "[PASS]" in chk_proc.stdout
+
+    def test_git_inspection_fail_closed_on_subprocess_error(self, monkeypatch):
+        """WP2-R4: Git inspection must fail closed with git_valid=False and dirty=True on command failure."""
+        def mock_check_output(cmd, *args, **kwargs):
+            if "status" in cmd:
+                raise subprocess.CalledProcessError(1, cmd, output="mock git status error")
+            return "mock_output\n"
+
+        monkeypatch.setattr(subprocess, "check_output", mock_check_output)
+        
+        # When fail_fast is False, should not crash but report git_valid=False and dirty=True
+        info = get_git_info(fail_fast=False)
+        assert info["git_valid"] is False
+        assert info["dirty"] is True
+        assert any("status" in err for err in info["git_errors"])
+
+        # When fail_fast is True, must raise GitInspectionError
+        with pytest.raises(GitInspectionError) as exc_info:
+            get_git_info(fail_fast=True)
+        assert "Git inspection failed closed" in str(exc_info.value)
+
+    def test_traceability_fails_closed_on_invalid_live_git(self, monkeypatch):
+        """Traceability verification must reject if live git inspection failed."""
+        current_sha = "abc1234567890abcdef1234567890abcdef12345"
+        mock_register = {
+            "git": {"commit_sha": current_sha, "dirty": False, "git_valid": True},
+            "collection_errors": [],
+            "pytest_exit_code": 0,
+            "capabilities": [],
+        }
+
+        def mock_get_git_info(*args, **kwargs):
+            return {
+                "commit_sha": "unknown",
+                "branch": "unknown",
+                "dirty": True,
+                "dirty_entries": [],
+                "git_valid": False,
+                "git_errors": ["git command not found or broken repository"],
+            }
+
+        monkeypatch.setattr("gdec.verification.status_register.get_git_info", mock_get_git_info)
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(mock_register, allow_dirty=True, allow_stale=True)
+        assert "Live repository Git inspection failed closed" in str(exc_info.value)
+
+    def test_traceability_fails_closed_on_invalid_recorded_git(self):
+        """Traceability verification must reject if status register recorded git_valid=False."""
+        live_sha = get_git_info()["commit_sha"]
+        mock_register = {
+            "git": {"commit_sha": live_sha, "dirty": False, "git_valid": False, "git_errors": ["recorded git error"]},
+            "collection_errors": [],
+            "pytest_exit_code": 0,
+            "capabilities": [],
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(mock_register, allow_dirty=True, allow_stale=True)
+        assert "Status register indicates invalid git inspection state" in str(exc_info.value)
+
+    def test_traceability_fails_closed_on_unknown_sha(self):
+        """Traceability verification must fail closed when commit SHA is unknown unless allow_stale=True."""
+        mock_register = {
+            "git": {"commit_sha": "unknown", "dirty": False, "git_valid": True},
+            "collection_errors": [],
+            "pytest_exit_code": 0,
+            "capabilities": [],
+        }
+        # Disallow stale -> must raise
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(mock_register, allow_dirty=True, allow_stale=False)
+        assert "Cannot verify status register freshness: commit SHA is unknown" in str(exc_info.value)
+
+    def test_unit_tests_cannot_grant_independently_validated(self, monkeypatch):
+        """
+        Policy (WP2-EIP): Automated unit/verification tests alone cannot grant INDEPENDENTLY VALIDATED.
+        Even if all tests pass 100%, demonstrated status is capped at NUMERICALLY VERIFIED.
+        Consequently, claimed_status='INDEPENDENTLY VALIDATED' fails traceability verification.
+        """
+        dummy_cap = CapabilityEntry(
+            capability_id="test_cap_validation",
+            name="Physical Validation Test Capability",
+            subsystem="fem",
+            claimed_status="INDEPENDENTLY VALIDATED",
+            evidence_path="tests/test_dse.py",
+            test_files=["tests/test_dse.py"],
+            required_test_node_ids=["tests/test_dse.py::test_ok"],
+            verification_criteria="Passes physical test criteria.",
+            notes="Requires external experimental data.",
+        )
+        monkeypatch.setattr("gdec.verification.status_register.SYSTEM_CAPABILITIES", [dummy_cap])
+
+        results = {"tests/test_dse.py::test_ok": "PASS"}
+        reg = generate_status_register(run_tests=False, test_results=results, output_path="")
+        
+        cap_result = reg["capabilities"][0]
+        assert cap_result["claimed_status"] == "INDEPENDENTLY VALIDATED"
+        assert cap_result["demonstrated_status"] == "NUMERICALLY VERIFIED"
+        assert cap_result["test_execution_state"] == "PASS"
+
+        # Traceability must fail because claimed exceeds demonstrated
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(reg, allow_dirty=True, allow_stale=True)
+        assert "claimed status 'INDEPENDENTLY VALIDATED' exceeds demonstrated status 'NUMERICALLY VERIFIED'" in str(exc_info.value)
