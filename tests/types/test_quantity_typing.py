@@ -51,3 +51,34 @@ def test_nonfinite_and_below_absolute_zero_rejected():
         Quantity(float("nan"), LENGTH)
     with pytest.raises(QuantityKindError):
         Quantity.from_unit(-300, "degC")
+
+def test_temperature_interval_product_loses_affine_kind_when_dimension_changes():
+    interval = Quantity.from_unit(5, "delta_degC")
+    length = Quantity.from_unit(2, "m")
+    product = interval * length
+    assert product.kind == "linear"
+    assert product.dimension.exponents[1] == 1
+    assert product.dimension.exponents[4] == 1
+
+def test_temperature_interval_scalar_and_dimensionless_operations_preserve_interval_kind():
+    interval = Quantity.from_unit(5, "delta_degC")
+    assert (interval * 2).kind == "temperature_interval"
+    assert (interval / 2).kind == "temperature_interval"
+    dimensionless = Quantity.from_unit(2, "1")
+    assert (interval * dimensionless).kind == "temperature_interval"
+
+def test_quantity_zero_division_and_nonfinite_scalar_fail_closed():
+    distance = Quantity.from_unit(3, "m")
+    zero = Quantity.from_unit(0, "s")
+    with pytest.raises(ZeroDivisionError):
+        _ = distance / zero
+    with pytest.raises(ZeroDivisionError):
+        _ = distance / 0
+    with pytest.raises(ValueError):
+        _ = distance * float("inf")
+
+def test_temperature_interval_cannot_be_subtracted_from_absolute_temperature_in_reverse_order():
+    absolute = Quantity.from_unit(20, "degC")
+    interval = Quantity.from_unit(5, "delta_degC")
+    with pytest.raises(QuantityKindError):
+        _ = interval - absolute
