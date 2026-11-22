@@ -339,3 +339,38 @@ The separate foundational EIR package and expression-typing layer are real imple
 - The inspected legacy tests provide basic frontend and serialization regression coverage, not proof of adapter correctness.
 - No tests were executed as part of this remote source review. No test-pass claim is made.
 - No changes were made to the legacy compiler, parser, AST, semantic analyser, `ProblemIR`, FEM, solver, or existing tests.
+
+
+### 12.6 Concrete implemented EIR 0.1.0 model: important additional mapping blockers
+
+A further inspection of `src/gdec/eir/models.py` establishes a more precise distinction than the architecture draft alone:
+
+- The repository **does implement** a restricted `EngineeringProblemIR` model with `kind = gdec.engineering_problem`, `schema_version = 0.1.0`, and pinned `unit_registry_id = gdec-si-engineering-0.1`.
+- The model is structurally validated, exports a Pydantic JSON Schema, provides canonical JSON and SHA-256 methods, and validates identifiers, frame/domain/field references, selected shape rules, units and direct field-value QoIs.
+- This is a real, versioned restricted EIR core. It is not accurate to describe all canonical EIR implementation as merely conceptual.
+- However, the implemented model is intentionally incomplete relative to the legacy elasticity `ProblemIR`. It contains problem identity, coordinate frames, domains, scalar quantity parameters, fields, and QoIs whose operation is only `field_value`. Its `PhysicalModelIR` does not yet contain constitutive relations, governing equations, material models, boundary conditions, or loads. It has no explicit rectangle geometry entity, elasticity assumption, solver/adaptivity policy, legacy accuracy stopping criterion, or DOF/iteration budget.
+
+This yields the following concrete mapping status:
+
+| Legacy requirement | Implemented EIR 0.1.0 support | Adapter consequence |
+|---|---|---|
+| Problem name/identity | `ProblemIdentity` exists | Map name and stable ID only with deterministic ID policy; source problem name alone is not guaranteed globally unique. |
+| Rectangle width/height/thickness | `DomainIR` only records spatial dimension and frame reference | Cannot preserve rectangle extents or thickness in current EIR core. Refuse lossless conversion unless a separately versioned geometry entity is added. |
+| Young's modulus and Poisson ratio | Scalar `QuantityParameterIR` can hold values/units | Values can be stored as parameters, but no implemented constitutive relation binds them into an isotropic elastic material. Do not claim material semantics preserved. |
+| Plane stress / plane strain | No elasticity assumption field | Cannot map without extending the physics/constitutive model. |
+| Fixed boundary conditions | No boundary-condition entity | Cannot map. |
+| Edge traction loads | No load/traction entity | Cannot map. |
+| Average displacement on a boundary | QoI supports only direct `field_value` reference | Cannot preserve boundary integration/averaging semantics. |
+| Successive QoI-change stopping threshold | No accuracy/stopping policy entity | Cannot map. |
+| DOF/iteration budget | No resource-budget entity in the implemented core | Cannot map. |
+| Adaptivity strategy/fraction/cost-aware policy | No adaptivity policy entity | Cannot map. |
+| Requested backend | No execution-policy entity in the implemented core | Cannot map as structured EIR policy. |
+
+**Revised technical conclusion:** the current EIR 0.1.0 model is a useful typed identity/domain/field/parameter/QoI foundation, but it is not yet a target schema capable of representing the legacy elasticity problem without substantial semantic loss. A legacy-to-EIR adapter that returns a complete executable engineering problem is therefore **not implementable against the current EIR 0.1.0 model**. The safe choices are:
+
+1. Extend a future EIR schema version with reviewed elasticity, geometry, boundary/load, QoI, execution and resource-policy entities before writing the adapter; or
+2. Define an explicitly partial archival/import representation that preserves the original legacy JSON as opaque provenance and is never presented as an executable equivalent.
+
+Option 1 is recommended for the intended canonical compiler architecture. Option 2 may be useful for migration tooling but must not be mistaken for semantic lowering.
+
+The exact EIR model version and model source are now known; the remaining blocker is not simply selecting a version. It is specifying and implementing the missing semantic entity families, plus defining their invariants and serialization contract. This is a design blocker, not permission to add fields ad hoc in the adapter.
