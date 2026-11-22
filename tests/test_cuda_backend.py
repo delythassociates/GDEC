@@ -217,6 +217,42 @@ class TestCUDABackendOperational:
         assert info_eigensolve["host_matrix_transfers"] == 1
         assert info_eigensolve["spd_status"] == "VERIFIED_SPD"
 
+    def test_cuda_asserts_device_execution_and_no_silent_cpu_fallback(self):
+        """Verify CUDA backend executes directly on GPU device with zero silent CPU fallback."""
+        import cupy as cp
+        import cupyx.scipy.sparse as cp_sp
+
+        cuda = CUDABackend()
+        assert cuda.is_available is True
+
+        # Construct device-resident SPD matrix and RHS directly in GPU VRAM
+        n = 50
+        diags = [cp.full(n, 4.0), cp.full(n - 1, -1.0), cp.full(n - 1, -1.0)]
+        A_gpu = cp_sp.diags(diags, [0, -1, 1], format="csr", dtype=cp.float64)
+        b_gpu = cp.ones(n, dtype=cp.float64)
+
+        assert isinstance(A_gpu.data, cp.ndarray)
+        assert isinstance(b_gpu, cp.ndarray)
+
+        # Solve via CUDA CG
+        x_host, info = cuda.solve_cg(A_gpu, b_gpu, caller_certified_spd=True)
+
+        assert info["converged"] is True
+        assert info["device_resident_validation"] is True
+        assert info["host_matrix_transfers"] == 0
+
+        # Assert solution satisfies GPU-evaluated residual
+        x_gpu = cp.asarray(x_host)
+        r_gpu = b_gpu - A_gpu.dot(x_gpu)
+        res_norm = float(cp.linalg.norm(r_gpu).get())
+        assert res_norm < 1e-6
+
+        # Prove no silent CPU fallback on invalid GPU input
+        with pytest.raises(NumericalBackendError):
+            # Passing NaN into GPU solver must raise NumericalBackendError on device
+            b_bad = cp.full(n, cp.nan, dtype=cp.float64)
+            cuda.solve_cg(A_gpu, b_bad, caller_certified_spd=True)
+
 
 class TestCUDADetectionAndFallback:
     """Tests ensuring graceful handling when CUDA is absent or uninstalled."""

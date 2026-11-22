@@ -11,16 +11,26 @@ from dataclasses import dataclass, field
 from fractions import Fraction
 from types import MappingProxyType
 from typing import Mapping
+import unicodedata
 
 from gdec.types.dimensions import DIMENSIONLESS, Dimension
-from gdec.types.errors import DimensionError, QuantityKindError, ShapeError
+from gdec.types.errors import DimensionError, QuantityKindError, ShapeError, TypeSystemError
 from gdec.types.units import SI_UNITS
 
 QuantityKind = str
 _VALID_KINDS = {"linear", "absolute_temperature", "temperature_interval"}
 
+_DISALLOWED_CODEPOINTS = {
+    0x200B, 0x200C, 0x200D, 0xFEFF,  # Zero-width spaces, joiners, BOM
+    0x202A, 0x202B, 0x202C, 0x202D, 0x202E,  # Bidi overrides
+    0x2066, 0x2067, 0x2068, 0x2069,          # Bidi isolates
+}
 
-class ExpressionTypeError(ValueError):
+MAX_EXPRESSION_DEPTH: int = 128
+MAX_EXPRESSION_NODES: int = 2048
+
+
+class ExpressionTypeError(TypeSystemError):
     """Raised when an engineering expression is not well-typed."""
 
 
@@ -70,8 +80,14 @@ class Literal(Expr):
 
 
 def _validate_reference_id(value: str, label: str) -> None:
-    if not isinstance(value, str) or not value.strip():
-        raise ExpressionTypeError(f"{label} must be a non-empty string.")
+    if not isinstance(value, str) or not value.strip() or value != value.strip():
+        raise ExpressionTypeError(f"{label} must be a non-empty string without surrounding whitespace.")
+    norm = unicodedata.normalize("NFC", value)
+    for ch in norm:
+        cp = ord(ch)
+        cat = unicodedata.category(ch)
+        if cp in _DISALLOWED_CODEPOINTS or cat in ("Cc", "Cs") or (cat == "Cf" and cp != 0x00AD):
+            raise ExpressionTypeError(f"{label} contains invalid, control, or confusable characters: {value!r}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,7 +139,12 @@ class Power(Expr):
             raise ExpressionTypeError(
                 "Power exponents must be integers or fractions.Fraction values."
             )
-        object.__setattr__(self, "exponent", Fraction(self.exponent))
+        frac = Fraction(self.exponent)
+        if abs(frac.numerator) > 10_000 or frac.denominator > 10_000:
+            raise ExpressionTypeError(
+                f"Power exponent {frac} exceeds rational bound (numerator and denominator must be <= 10,000)."
+            )
+        object.__setattr__(self, "exponent", frac)
 
 
 @dataclass(frozen=True, slots=True)
@@ -230,12 +251,23 @@ def _multiply_type(left: ValueType, right: ValueType, *, divide: bool) -> ValueT
 def infer_expression_type(
     expression: Expr,
     environment: ExpressionEnvironment,
+    *,
+    max_depth: int = MAX_EXPRESSION_DEPTH,
+    max_nodes: int = MAX_EXPRESSION_NODES,
 ) -> ValueType:
     """Infer an expression's physical type, rejecting ambiguous operations."""
     active: set[str] = set()
     cache: dict[str, ValueType] = {}
+    node_count = 0
 
-    def visit(node: Expr) -> ValueType:
+    def visit(node: Expr, current_depth: int = 0) -> ValueType:
+        nonlocal node_count
+        node_count += 1
+        if node_count > max_nodes:
+            raise ExpressionTypeError(f"Expression node count {node_count} exceeds limit of {max_nodes}.")
+        if current_depth > max_depth:
+            raise ExpressionTypeError(f"Expression nesting depth {current_depth} exceeds limit of {max_depth}.")
+
         if isinstance(node, Literal):
             if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
                 raise ExpressionTypeError("Expression literals must be real numeric scalars.")
@@ -269,18 +301,19 @@ def infer_expression_type(
                 raise ExpressionTypeError(f"Unknown expression reference: {key!r}.") from exc
             active.add(key)
             try:
-                result = visit(target)
+                result = visit(target, current_depth + 1)
                 cache[key] = result
                 return result
             finally:
                 active.remove(key)
         if isinstance(node, Negate):
-            operand = visit(node.operand)
+            operand = visit(node.operand, current_depth + 1)
             if operand.kind == "absolute_temperature":
                 raise QuantityKindError("An absolute temperature cannot be negated.")
             return operand
         if isinstance(node, Binary):
-            left, right = visit(node.left), visit(node.right)
+            left = visit(node.left, current_depth + 1)
+            right = visit(node.right, current_depth + 1)
             if node.operator == "add":
                 return _add_type(left, right, subtract=False)
             if node.operator == "subtract":
@@ -291,7 +324,7 @@ def infer_expression_type(
                 return _multiply_type(left, right, divide=True)
             raise ExpressionTypeError(f"Unsupported binary operator: {node.operator!r}.")
         if isinstance(node, Power):
-            operand = visit(node.operand)
+            operand = visit(node.operand, current_depth + 1)
             if operand.kind != "linear":
                 raise QuantityKindError("Only linear quantities may be raised to a power.")
             if operand.shape:

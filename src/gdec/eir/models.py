@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import unicodedata
 from fractions import Fraction
 from typing import Any, Literal
 
@@ -58,10 +59,23 @@ def _unit(symbol: str):
         ) from exc
 
 
+_DISALLOWED_CODEPOINTS = {
+    0x200B, 0x200C, 0x200D, 0xFEFF,  # Zero-width spaces, joiners, BOM
+    0x202A, 0x202B, 0x202C, 0x202D, 0x202E,  # Bidi overrides
+    0x2066, 0x2067, 0x2068, 0x2069,          # Bidi isolates
+}
+
+
 def _identifier(value: Any) -> str:
     if not isinstance(value, str) or not value.strip() or value != value.strip():
         raise ValueError("Identifiers must be non-empty strings without surrounding whitespace.")
-    return value
+    norm = unicodedata.normalize("NFC", value)
+    for ch in norm:
+        cp = ord(ch)
+        cat = unicodedata.category(ch)
+        if cp in _DISALLOWED_CODEPOINTS or cat in ("Cc", "Cs") or (cat == "Cf" and cp != 0x00AD):
+            raise ValueError(f"Identifier contains invalid, control, or confusable characters: {value!r}")
+    return norm
 
 
 def _finite_number(value: Any) -> float:
