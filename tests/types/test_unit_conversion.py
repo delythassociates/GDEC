@@ -45,3 +45,8 @@ def test_invalid_unit_scale_and_non_atomic_alias_registration():
     with pytest.raises(UnitError):
         registry.register(Unit("cm", LENGTH), aliases=("m",))
     assert "cm" not in registry.units
+
+
+def test_unit_conversion_rejects_integer_too_large_for_finite_float():
+    with pytest.raises(UnitError, match="finite real number"):
+        SI_UNITS.convert(10**10000, "m", "cm")
