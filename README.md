@@ -1,10 +1,10 @@
 # GDEC — Goal-Driven Engineering Computation (v0.3.0-alpha)
 ## Verified Adaptive Finite Element Mechanics, Decision Sufficiency & Engineering Evidence
 
-[![Tests](https://img.shields.io/badge/pytest-371%20passed%20(0%20failed)-brightgreen.svg)]()
-[![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)]()
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-informational.svg)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
+![Tests](https://img.shields.io/badge/pytest-371%20tests-informational.svg)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-informational.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
 [![Status](https://img.shields.io/badge/Status-Research%20Alpha-orange.svg)](docs/GDEC_ENGINEERING_STATUS.md)
 
 ---
@@ -18,8 +18,8 @@ Rather than treating simulation as a black-box contour generator, GDEC inverts t
 1. **Goal-Driven Declaration:** The engineer declares the physical domain, material parameters, target Quantity of Interest (QoI), required accuracy threshold, and computational budget.
 2. **Dual-Weighted Adaptivity:** The system formulates the primal problem and dual adjoint problem, evaluating goal-specific discretization error.
 3. **Decision Sufficiency Engine (DSE):** Evaluates Bayesian expected loss against user-defined decision contracts to determine whether additional compute reduces engineering decision risk.
-4. **Machine-Checkable Evidence:** Computations produce a content-addressed evidence record (Merkle DAG) containing input hashes, solver settings, convergence metrics, and error bounds.
-5. **Deterministic Refusal:** When mathematical assumptions (such as positive-definiteness or small-strain elasticity limits) are violated, GDEC deterministically refuses to return an unqualified number.
+4. **Machine-Checkable Evidence:** GDEC includes canonical input hashing and structured decision/evidence components. End-to-end evidence completeness is still under development; DWR indicators are estimators, not certified error bounds.
+5. **Deterministic Refusal:** Implemented subsystems reject selected invalid inputs and unsupported numerical operations with typed diagnostics. Refusal coverage is not yet comprehensive across every physical-model assumption.
 
 ### What GDEC Is Not
 - **Not a General-Purpose Commercial FEA Replacement:** GDEC does not provide 3D solid elements, nonlinear contact, crash plasticity, or general multiphysics. It focuses intentionally on verified 2D continuum problems (linear elasticity, steady heat conduction).
@@ -28,9 +28,9 @@ Rather than treating simulation as a black-box contour generator, GDEC inverts t
 
 ---
 
-## 2. 10-Minute Quickstart
+## 2. Quickstart
 
-GDEC is cross-platform and runs on Linux, macOS, and Windows with Python 3.10 or higher.
+GDEC targets Python 3.10 or higher and provides setup instructions for Linux, macOS, and Windows. The current automated CI workflow runs on Ubuntu with Python 3.10–3.12; other OS/Python combinations require separate verification.
 
 ### Step 1: Clone the Repository
 ```bash
@@ -63,7 +63,7 @@ pip install -e ".[test]"
 ```bash
 pytest -v
 ```
-*Expected result: 371 passed on hosts with NVIDIA GPU hardware; 358 passed / 13 CUDA-skipped on CPU-only nodes.*
+*Expected result: the test suite should pass. CUDA-operational tests are skipped when an operational NVIDIA device is unavailable; exact pass/skip counts depend on the test revision and host. The WP0 artifacts do not yet reconcile the CPU-only skip count.*
 
 ### Step 5: Run Your First Goal-Driven Simulation
 ```bash
@@ -109,7 +109,7 @@ Engineering Specification (.gdc)
   Decision Sufficiency Engine (Bayesian Loss & Refusal Rules)
                │
                ▼
-  Verified QoI Result + Machine-Checkable Evidence Record
+  QoI Result + Solver Diagnostics and Available Evidence
 ```
 
 ---
@@ -123,7 +123,7 @@ In accordance with GDEC's engineering ethics, all performance and capability cla
 - **Primal-Adjoint Factorization Reuse:** Reusing the primal sparse LU factorization for the dual adjoint solve achieves a **$1.96\times - 2.00\times$ speedup** on isolated linear solves.
   - *Evidence:* [`results/CantileverDemo_iterations.csv`](results/CantileverDemo_iterations.csv).
 - **Exact Zero-Solve Parameter Scaling:** Vectorized analytical scaling enables exact Monte Carlo UQ parameter evaluation across 100,000+ samples in $<25\text{ ms}$ with zero surrogate error.
-  - *Evidence:* [`tests/test_v02_scaling.py`](tests/test_v02_scaling.py), [`tests/test_cuda_backend.py`](tests/test_cuda_backend.py).
+  - *Evidence:* [`tests/test_cuda_backend.py`](tests/test_cuda_backend.py).
 - **Safe Refinement Transaction Protocol:** Transactional budget bounds guarantee that adaptive refinement terminates with $\text{final\_dofs} \le \text{max\_dofs}$ in 100% of tested cases.
   - *Evidence:* [`tests/test_runtime.py`](tests/test_runtime.py).
 - **Iterative Solver SPD Eligibility Gates:** PCG solver strictly enforces structural and algebraic symmetry and positive-definiteness, deterministically rejecting indefinite systems.
