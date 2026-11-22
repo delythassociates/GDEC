@@ -20,6 +20,8 @@ The new package `src/gdec/eir/` implements a deliberately limited, solver-indepe
 - Coordinate-frame parent-cycle rejection and parent/domain dimensionality checks.
 - Field unit/dimension/kind consistency and field/QoI reference checks.
 - Deterministic canonical JSON and SHA-256 content hashing.
+- Canonical unit normalization: quantity parameters are converted to coherent SI base values before hashing, and field/QoI units are normalized to the pinned coherent base unit for their dimension and quantity kind.
+- JSON Schema export through the Pydantic model schema API.
 
 The pinned unit definitions are snapshotted at module import. Extending the general-purpose `SI_UNITS` registry does not silently change the meaning of an existing EIR 0.1 document.
 
@@ -46,9 +48,9 @@ The new package is additive. It does not alter the existing `gdec_ir_v0.1` Pydan
 
 ## Canonicalization
 
-Entity collections that are semantically unordered are sorted by stable ID before canonical JSON serialization. The canonical hash is SHA-256 over UTF-8 canonical JSON with compact separators and sorted object keys. The pinned unit-registry identifier is included in the document.
+Entity collections that are semantically unordered are sorted by stable ID before canonical JSON serialization. Quantity parameter values are converted to coherent SI base values; field and QoI unit symbols are normalized to the corresponding base unit. Thus equivalent inputs such as 210 GPa and 210,000 MPa produce the same canonical representation when all other semantics are equal. The canonical hash is SHA-256 over UTF-8 canonical JSON with compact separators and sorted object keys. The pinned unit-registry identifier is included in the document.
 
-This canonicalization is a first implementation and must be treated as a versioned wire contract. A future schema revision must define how floating-point source values, unit normalization and extension namespaces evolve.
+This canonicalization is a first implementation and must be treated as a versioned wire contract. Floating-point canonicalization, additional physical dimensions, custom unit definitions and extension namespaces require explicit future policy.
 
 ## Acceptance still required
 
