@@ -29,3 +29,13 @@ def test_boolean_extents_and_frame_dimensions_are_rejected():
 def test_coordinate_frame_rejects_blank_parent_reference():
     with pytest.raises(ShapeError):
         CoordinateFrame("local", 2, parent_id="   ")
+
+def test_tensor_shape_copies_mutable_extents_to_immutable_tuple():
+    source = [2, 3]
+    shape = TensorShape(source)
+    source.append(4)
+    assert shape.extents == (2, 3)
+
+def test_value_shape_rejects_untyped_shape_metadata():
+    with pytest.raises(ShapeError):
+        ValueShape((2, 3))
