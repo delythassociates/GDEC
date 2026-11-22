@@ -37,3 +37,17 @@ def test_absolute_temperature_cannot_be_multiplied_or_negated():
 def test_quantity_rejects_dimension_mismatch_in_required_context():
     with pytest.raises(DimensionError):
         Quantity.from_unit(1, "s").require_dimension(LENGTH, context="geometry length")
+
+def test_temperature_interval_can_participate_in_dimensional_products():
+    delta = Quantity.from_unit(5, "delta_degC")
+    length = Quantity.from_unit(2, "m")
+    product = delta * length
+    assert product.dimension.exponents[1] == 1
+    assert product.dimension.exponents[4] == 1
+    assert product.value == pytest.approx(10)
+
+def test_nonfinite_and_below_absolute_zero_rejected():
+    with pytest.raises(ValueError):
+        Quantity(float("nan"), LENGTH)
+    with pytest.raises(QuantityKindError):
+        Quantity.from_unit(-300, "degC")
