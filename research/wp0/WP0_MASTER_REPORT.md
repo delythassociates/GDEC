@@ -19,7 +19,7 @@ Work Package 0 (WP0) remediates the repository front door and integrity issues t
 4. Standard community governance files (`CHANGELOG.md`, `CITATION.cff`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue/PR templates) were absent.
 5. The package version in `pyproject.toml` remained statically fixed at `0.2.2`.
 
-All tasks of WP0 have been completed without modifying any numerical or finite-element solver code. The test baseline (371 tests on local GPU host, 358 passed / 13 CUDA skips on CPU-only nodes) passes with 100% success.
+All tasks of WP0 have been completed without modifying any numerical or finite-element solver code. The reported local-host run completed with 371 passed and 1 warning. The CPU-only pass/skip split is not independently reconciled in this package: the current CUDA test module has 11 hardware-gated tests and 2 non-hardware detection tests, so the stated 358 passed / 13 skipped split needs a full CPU-only rerun.
 
 ---
 
@@ -49,10 +49,10 @@ The root directory was cataloged and audited. Every file/directory that is not s
    - Removed binary zips `GDEC_v0.2.2_PRIVATE_REVIEW.zip` and `materials-simulation-skills-main.zip` from working tree using `git rm`.
    - Updated `.gitignore` to ignore `*.zip` and `scratch/`.
 2. **Modernized, Truthful `README.md`:**
-   - Accurate badges for tests (`371 passed`), Python matrix (`3.10 | 3.11 | 3.12 | 3.13`), platform (`Linux | macOS | Windows`), and license (`MIT`).
+   - Badges report the 371-test suite size, Python 3.10+ target, platform targets, and MIT license. Automated CI is currently configured for Ubuntu / Python 3.10–3.12; Windows, macOS, and Python 3.13 are not covered by that workflow.
    - Added clear "What GDEC is / What GDEC is not" section defining the Decision Sufficiency Engine, goal adaptivity, and deterministic refusal boundaries.
    - Added cross-platform 10-minute Quickstart with verified CLI commands.
-   - Converted all `file:///` URLs to clean relative links.
+   - Converted README evidence links to repository-relative links. Historical local paths in earlier audit notes are not portable and must not be treated as live evidence links.
    - Explicitly linked all numerical performance claims to repo result files.
 3. **Community & Governance Infrastructure:**
    - Authored `CHANGELOG.md` adhering to Keep-a-Changelog and SemVer 2.0.0.
@@ -82,6 +82,6 @@ The root directory was cataloged and audited. Every file/directory that is not s
 | Gate | Requirement | Status | Evidence |
 |---|---|---|---|
 | **Gate 1** | Quickstart reproduction on clean venv | **PASS** | `gdec hardware`, `validate`, `compile`, and `run` executed successfully in 0.271s |
-| **Gate 2** | Every README link & badge resolves | **PASS** | 22/22 links verified by link checker script |
+| **Gate 2** | README local targets exist; external badge URLs identified | **PASS WITH LIMITATION** | 17 local targets found; 5 external badge URLs were classified but not HTTP-checked |
 | **Gate 3** | Claims backed by repo file paths | **PASS** | All performance metrics link to `results/` or `tests/` files |
-| **Gate 4** | 358 baseline tests still pass | **PASS** | 371 passed (0 failed, 1 warning) in 13.35s |
+| **Gate 4** | Full local-host suite passes | **PASS (reported)** | 371 passed (0 failed, 1 warning) in 13.35s; CPU-only skip split remains unverified |
