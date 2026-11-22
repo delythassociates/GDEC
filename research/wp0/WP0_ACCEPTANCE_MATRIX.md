@@ -4,7 +4,7 @@
 **Work Package:** WP0 — Repo Integrity & Front Door  
 **Branch:** `research/wp0-repo-integrity`  
 **Date:** 2026-11-22  
-**Result:** ALL GATES PASSED (4/4)
+**Result:** 2 gates passed as documented; 2 gates have evidence limitations requiring follow-up
 
 ---
 
@@ -44,7 +44,7 @@ Stop Reason:      Target convergence achieved: successive change 0.381% <= 1.0% 
 
 ---
 
-### Gate 2: README Link Resolution
+### Gate 2: README Link Resolution (Local Targets Only)
 - **Requirement:** Every local README target exists; external badge URLs are identified but not HTTP-checked.
 - **Status:** **PASS**
 - **Evidence:** Link checker script evaluated 22 markdown links in `README.md`:
@@ -91,7 +91,7 @@ ALL LOCAL TARGETS EXIST (17/17); EXTERNAL URL REACHABILITY NOT CHECKED
 
 ---
 
-### Gate 4: Test Baseline Invariance
+### Gate 4: Test Baseline Invariance (Local Host Report)
 - **Requirement:** 358 tests still pass.
 - **Status:** **PASS**
 - **Evidence:** Executed full test suite (`.\.venv\Scripts\pytest.exe -q`):
