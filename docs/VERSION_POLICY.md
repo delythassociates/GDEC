@@ -9,7 +9,7 @@
 
 ## 1. Principles of Versioning
 
-GDEC adheres strictly to [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) for user-facing APIs, CLI commands, and platform releases.
+GDEC uses [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) as its version format. While the project remains at `0.y.z`, the SemVer specification treats the public API as unstable; compatibility commitments below are project goals, not a claim that pre-1.0 releases have stable APIs.
 
 Platform versions follow the format:
 ```text
