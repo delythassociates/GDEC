@@ -1,6 +1,7 @@
 """Dimension-checked scalar quantities with explicit temperature semantics."""
 from __future__ import annotations
 from dataclasses import dataclass
+import math
 from .dimensions import Dimension, DIMENSIONLESS, TEMPERATURE
 from .units import UnitRegistry, SI_UNITS
 from .errors import DimensionError, QuantityKindError, UnitError
@@ -17,6 +18,10 @@ class Quantity:
             raise QuantityKindError(f"Unsupported quantity kind: {self.kind}")
         if self.kind != "linear" and self.dimension != TEMPERATURE:
             raise QuantityKindError("Temperature quantity kinds require temperature dimension.")
+        if not math.isfinite(float(self.value)):
+            raise ValueError("Quantity values must be finite.")
+        if self.kind == "absolute_temperature" and self.value < 0:
+            raise QuantityKindError("Absolute temperature cannot be below 0 K.")
 
     @classmethod
     def from_unit(cls, value: float, symbol: str, registry: UnitRegistry = SI_UNITS) -> "Quantity":
@@ -54,22 +59,22 @@ class Quantity:
         return Quantity(self.value - other.value, self.dimension, self.kind)
 
     def __mul__(self, other: "Quantity" | float | int) -> "Quantity":
-        if self.kind != "linear":
-            raise QuantityKindError("Absolute temperatures and temperature intervals cannot be multiplied directly.")
+        if self.kind == "absolute_temperature":
+            raise QuantityKindError("An absolute temperature cannot be multiplied directly.")
         if isinstance(other, Quantity):
-            if other.kind != "linear":
-                raise QuantityKindError("Temperature quantities cannot be multiplied directly.")
+            if other.kind == "absolute_temperature":
+                raise QuantityKindError("An absolute temperature cannot be multiplied directly.")
             return Quantity(self.value * other.value, self.dimension * other.dimension)
-        return Quantity(self.value * float(other), self.dimension)
+        return Quantity(self.value * float(other), self.dimension, self.kind)
 
     def __truediv__(self, other: "Quantity" | float | int) -> "Quantity":
-        if self.kind != "linear":
-            raise QuantityKindError("Absolute temperatures and temperature intervals cannot be divided directly.")
+        if self.kind == "absolute_temperature":
+            raise QuantityKindError("An absolute temperature cannot be divided directly.")
         if isinstance(other, Quantity):
-            if other.kind != "linear":
-                raise QuantityKindError("Temperature quantities cannot be divided directly.")
+            if other.kind == "absolute_temperature":
+                raise QuantityKindError("An absolute temperature cannot be used as a divisor.")
             return Quantity(self.value / other.value, self.dimension / other.dimension)
-        return Quantity(self.value / float(other), self.dimension)
+        return Quantity(self.value / float(other), self.dimension, self.kind)
 
     def __rmul__(self, other: float | int) -> "Quantity":
         return self * other
