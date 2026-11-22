@@ -9,4 +9,4 @@ All participants agree to:
 - Support peer review by welcoming falsification tests, adversarial test cases, and reproducibility audits.
 
 ## Enforcement
-Maintainers oversee enforcement of these standards. Project participants may report unacceptable conduct to project maintainers at `conduct@delythassociates.com`.
+Maintainers oversee enforcement of these standards. Project participants may report unacceptable conduct to project maintainers at `[private maintainer contact route not yet specified]`.
