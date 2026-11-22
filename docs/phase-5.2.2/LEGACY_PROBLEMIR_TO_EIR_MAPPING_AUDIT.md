@@ -284,3 +284,58 @@ The supported legacy subset can be mapped in principle, but a safe adapter requi
 - Actual example: `examples/cantilever.gdc`
 - Legacy IR overview: `docs/intermediate_representation.md`
 - Language overview: `docs/language_specification.md`
+
+
+## 12. Additional source and test verification (follow-up audit)
+
+A second pass inspected the concrete grammar, AST, parser, compiler orchestration, language tests, compiler tests, IR round-trip test, and both the older language documentation and the newer normative language profile.
+
+### 12.1 Concrete grammar limits
+
+The grammar is materially narrower than a general expression language:
+
+- It accepts one `problem` block as the start symbol.
+- A declaration RHS is one function call, identifier, signed numeric token, or escaped string.
+- It does not define arithmetic operators, comparison operators, array/list/map literals, imports, user functions, or multiple problem blocks.
+- Boolean words are identifiers, not Boolean tokens.
+- The AST stores number literals as Python floats while retaining their raw token spelling; the legacy `ProblemIR` does not retain that raw spelling.
+- String transformation removes surrounding quotes. The parser implementation does not explicitly decode escape sequences into a defined language-level string semantics.
+- The grammar accepts mixed positional/named arguments syntactically; constructor-specific semantic checks reject many combinations.
+- Duplicate named arguments are rejected in AST transformation via `ValueError`, then wrapped as a parser error. This path does not preserve the token's precise line/column in the same way as ordinary syntax errors.
+
+These are important migration constraints: the adapter should consume validated IR, not attempt to reinterpret source syntax or invent expression semantics.
+
+### 12.2 Documentation drift
+
+The older `docs/language_specification.md` does not accurately describe the current grammar. Its abbreviated grammar omits signed numbers, string expressions, positional arguments, trailing commas, and comments. Its declaration table also understates currently accepted adaptivity strategies and describes backend support incompletely.
+
+The newer `docs/specifications/GDEC_LANGUAGE_SPECIFICATION_0.1.md` is substantially aligned with the actual grammar and semantic implementation. It explicitly describes the implemented profile and states that source code is authoritative if documentation disagrees.
+
+**Audit finding:** treat `docs/specifications/GDEC_LANGUAGE_SPECIFICATION_0.1.md` and the source implementation as the migration reference pair. The older `docs/language_specification.md` should be corrected in a separate documentation-only change; this audit does not modify it.
+
+### 12.3 Test files directly inspected
+
+The following files were fetched and read from the audited ref:
+
+| Test file | Directly observed coverage |
+|---|---|
+| `tests/test_language.py` | Valid parse, syntax rejection, missing/unsupported physics, negative Young's modulus, invalid Poisson ratio, non-CPU backend rejection. |
+| `tests/test_compiler.py` | Compile checked-in cantilever example, deterministic JSON serialization for repeated source compilation, source-context diagnostic. |
+| `tests/test_ir.py` | Legacy ProblemIR JSON round-trip for selected fields and schema version. |
+
+This is a list of inspected files, not a claim that these are the only tests in the repository. The tests directly inspected do not establish comprehensive adapter coverage for unit provenance, default provenance, frame conventions, all boundary/load semantics, all schema-version failure modes, or numerical equivalence after migration.
+
+### 12.4 Canonical EIR draft status and migration implication
+
+The current `docs/specifications/CANONICAL_ENGINEERING_IR_DRAFT_0.1.md` explicitly labels itself an architecture proposal, not implemented. Its illustrative JSON shape is conceptual and is not a production JSON Schema. It intentionally leaves entity-specific schema details and multiple design questions unresolved.
+
+The separate foundational EIR package and expression-typing layer are real implementation work on feature branches, but they do not turn the canonical draft into a frozen, complete target contract. The expression subsystem documentation also states that expression graphs are not yet persisted in the EIR wire schema or attached to QoIs.
+
+**Consequent gate:** an adapter may not claim to target “canonical EIR 0.1” merely by constructing existing type-system objects. The exact target model, serialization contract, version identifier, required fields, and invariants must be selected and reviewed first.
+
+### 12.5 Corrections and scope notes
+
+- The source code is the authority for implemented semantics; documentation is a separate evidence source and can drift.
+- The inspected legacy tests provide basic frontend and serialization regression coverage, not proof of adapter correctness.
+- No tests were executed as part of this remote source review. No test-pass claim is made.
+- No changes were made to the legacy compiler, parser, AST, semantic analyser, `ProblemIR`, FEM, solver, or existing tests.
