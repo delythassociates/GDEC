@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Foundational Engineering Type System (Phase 5.2):** Strongly typed dimensional algebra, SI unit conversion registry, scalar physical quantities, temperature scale semantics (absolute vs interval), and spatial tensors.
-- **Canonical Engineering IR (EIR) Core:** Versioned problem specification format (`0.1.0`) with content-addressed Merkle DAG canonical hashing (SHA-256).
+- **Canonical Engineering IR (EIR) Core:** Versioned problem specification format (`0.1.0`) with canonical content hashing (SHA-256).
 - **Execution Backend Protocol Layer:** Hardware-agnostic compute abstraction decoupling NumPy/SciPy CPU execution from optional CUDA/CuPy GPU acceleration.
 - **CuPy GPU Backend Prototype:** Device-resident sparse matrix-vector multiplication (SpMV), PCG iterative linear solver, and vectorized analytical parameter scaling.
-- **Decision Sufficiency Engine (DSE):** Declarative decision contracts, Bayesian expected loss formulation with asymmetric linear loss, and single-QoI decision evaluator conforming to ASME V&V 10/40.
+- **Decision Sufficiency Engine (DSE):** Declarative decision contracts, Bayesian expected loss formulation with asymmetric linear loss, and single-QoI decision evaluator. No formal ASME V&V 10/40 conformance claim is made.
 - **Analytical Parameter Scaling:** Exact zero-solve Monte Carlo parameter sampling ($E, P$) for linear elasticity with linear/quadratic QoIs.
 - **Standard Community Health Files:** `CHANGELOG.md`, `CITATION.cff`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and GitHub issue/PR templates.
 - **Merge Plan & Version Policy:** Documentation of research branch integration path and versioning contracts in `docs/VERSION_POLICY.md` and `research/wp0/WP0_MERGE_PLAN.md`.
