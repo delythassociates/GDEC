@@ -2,7 +2,7 @@
 
 **Repository:** `delythassociates/GDEC`  
 **Development Branch:** `research/phase-5.1.3-validation-and-ci-closure`  
-**Triggering Commit SHA:** `9c933d2e2fa9300fa6c04bbbf6a9fe78096f8c37`  
+**Triggering Commit SHA:** `9c933d2e0ccddce206389c1af65c4f566ba3ce28`  
 **Workflow Run ID:** `45034377590`  
 **Workflow Run URL:** [https://github.com/delythassociates/GDEC/actions/runs/45034377590](https://github.com/delythassociates/GDEC/actions/runs/45034377590)  
 **Workflow File:** `.github/workflows/ci.yml`  
