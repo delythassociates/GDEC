@@ -46,12 +46,12 @@ Stop Reason:      Target convergence achieved: successive change 0.381% <= 1.0% 
 
 ### Gate 2: README Link Resolution (Local Targets Only)
 - **Requirement:** Every local README target exists; external badge URLs are identified but not HTTP-checked.
-- **Status:** **PASS**
-- **Evidence:** Link checker script evaluated 22 markdown links in `README.md`:
+- **Status:** **PASS WITH LIMITATION**
+- **Evidence:** Link checker script evaluated 22 markdown links in the README revision used for the original check:
 ```text
 Total markdown links found: 22
 Checked link summary:
-  [EXTERNAL_URL] ![Tests -> https://img.shields.io/badge/pytest-371%20passed%20(0%20failed
+  [EXTERNAL_URL] ![Tests -> historical badge URL from the checked README revision
   [EXTERNAL_URL] ![Python -> https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg
   [EXTERNAL_URL] ![Platform -> https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-informational.svg
   [EXTERNAL_URL] ![License -> https://img.shields.io/badge/License-MIT-green.svg
@@ -93,7 +93,7 @@ ALL LOCAL TARGETS EXIST (17/17); EXTERNAL URL REACHABILITY NOT CHECKED
 
 ### Gate 4: Test Baseline Invariance (Local Host Report)
 - **Requirement:** 358 tests still pass.
-- **Status:** **PASS**
+- **Status:** **PASS (REPORTED LOCAL-HOST RUN)**
 - **Evidence:** Executed full test suite (`.\.venv\Scripts\pytest.exe -q`):
 ```text
 371 passed, 1 warning in 13.35s
