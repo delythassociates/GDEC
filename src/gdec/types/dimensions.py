@@ -2,6 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from fractions import Fraction
+import math
 from typing import Iterable
 
 _EXPONENTS = 7
@@ -10,9 +11,16 @@ _BASE_NAMES = ("mass", "length", "time", "current", "temperature", "amount", "lu
 
 def _rational(value: int | float | Fraction) -> Fraction:
     """Convert exponents to bounded rationals; preserve explicit Fractions exactly."""
-    if isinstance(value, float):
-        return Fraction(value).limit_denominator(10_000)
-    return Fraction(value)
+    if isinstance(value, bool):
+        raise TypeError("Dimension exponents cannot be booleans.")
+    try:
+        if isinstance(value, float):
+            if not math.isfinite(value):
+                raise ValueError("Dimension exponents must be finite.")
+            return Fraction(value).limit_denominator(10_000)
+        return Fraction(value)
+    except (TypeError, ValueError, ZeroDivisionError, OverflowError) as exc:
+        raise ValueError(f"Invalid rational dimension exponent: {value!r}") from exc
 
 @dataclass(frozen=True, slots=True)
 class Dimension:
