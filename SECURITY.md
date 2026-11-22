@@ -7,11 +7,11 @@ GDEC is computational mechanics and scientific software intended for engineering
 3. Refusal to evaluate or export unverified or tampered engineering data.
 
 ## Supported Versions
-Security patches and verification fixes are provided for the active development branch:
+Security fixes are developed on active research branches. Release support is subject to maintainer review; branch names are not independently versioned releases:
 
 | Version | Supported | Notes |
 |---|---|---|
-| `0.3.0-alpha` (`research/*`) | Yes | Active engineering development |
+| `0.3.0a0` (pre-release development snapshot) | Development only | No stable release support commitment; fixes are applied to the relevant maintained branch |
 | `0.2.2` | Critical fixes only | Legacy evaluation baseline |
 | `< 0.2.2` | No | Historical research prototypes |
 
