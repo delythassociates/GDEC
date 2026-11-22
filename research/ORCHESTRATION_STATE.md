@@ -15,7 +15,9 @@ WP0 completion tip: research/wp0-repo-integrity@e3497b1c3b881ef016d87f3f08914772
 | WP7 | todo | pending | 0 / 3 | pending |
 
 ## Open defects
-- None currently recorded. (Baseline suite fully passing: 371/371 items).
+- DOC-WP0-01: CPU-only test count is inconsistent across artifacts. The CUDA test module currently has 11 hardware-gated tests plus 2 non-hardware detection tests; the reported 358 passed / 13 skipped split is not explained by that module alone. Re-run the full suite on a CPU-only host and reconcile.
+- DOC-WP0-02: WP0 link-check evidence classifies external badge URLs but does not show HTTP status checks; do not describe all external links as verified.
+- DOC-WP0-03: WP0 commit-specific GitHub Actions evidence is not attached in the acceptance package.
 
 ## Decisions recorded (owner-confirm needed marked)
 - `ADR-013: Phase 5.2 Execution Authorization` — Confirmed by Owner in Session 2 note (2026-11-22).
@@ -29,7 +31,7 @@ WP0 completion tip: research/wp0-repo-integrity@e3497b1c3b881ef016d87f3f08914772
 | Date | Tests | Coverage | Mutation | CI Green | Docs Warnings |
 |---|---|---|---|---|---|
 | 2026-11-22 (S1) | Reported: 371 passed on local host; CPU-only split unverified | unmeasured (offline venv) | pending | Workflow configured for Linux py3.10-3.12; commit-specific result not attached | docs build pending |
-| 2026-11-22 (S2) | Reported: 371 passed / 1 warning on local host; CPU-only split unverified | unmeasured (offline venv) | pending | 100% (Linux py3.10-3.12) | 17 local README targets found; 5 external badge URLs not HTTP-checked |
+| 2026-11-22 (S2) | Reported: 371 passed / 1 warning on local host; CPU-only split unverified | unmeasured (offline venv) | pending | Workflow configured for Linux py3.10-3.12; commit-specific result not attached | 17 local README targets found; 5 external badge URLs not HTTP-checked |
 
 ## Deferred list (idea | why deferred)
 - Hardware synthesis & custom GPU/FPGA/ISA kernels | Deferred per Rule R5 and Parking Lot until WP3/WP4 produce profile-guided evidence.
