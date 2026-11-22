@@ -357,3 +357,35 @@ A credible contribution would need to establish all of the following:
 13. *CODECHECK: an Open Science initiative for the independent execution of computations underlying research articles during peer review to improve reproducibility*. (2021). https://pmc.ncbi.nlm.nih.gov/articles/PMC8311796/
 14. UK Information Commissioner's Office. *Annexe 5: Argument-based assurance cases*. https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/artificial-intelligence/explaining-decisions-made-with-artificial-intelligence/annexe-5-argument-based-assurance-cases
 15. NIST. (2022). *Engineering Trustworthy Secure Systems* (SP 800-160 Vol. 1 Rev. 1). https://doi.org/10.6028/NIST.SP.800-160v1r1
+
+
+### 7.6 Standards boundary: SACM 2.2 and ISO/IEC/IEEE 15026-2:2022
+
+Primary standards reviewed:
+- Object Management Group, *Structured Assurance Case Metamodel (SACM), Version 2.2* (formal specification adopted June 2021), https://www.omg.org/spec/SACM/2.2/PDF.
+- ISO/IEC/IEEE 15026-2:2022, *Systems and software engineering — Systems and software assurance — Part 2: Assurance case*, https://www.iso.org/standard/80625.html.
+
+**Read:** SACM 2.2 sections on structured arguments and precise statements related to evidence; ISO/IEC/IEEE 15026-2:2022 scope, introduction and definitions.
+
+SACM supplies a metamodel for representing structured arguments as linked claims, evidence and contextual information, plus artifact/provenance relationships. Critically, SACM states that representing an argument does not imply that it is complete, valid or correct; evaluation or acceptance by a separate party is outside its scope. ISO/IEC/IEEE 15026-2:2022 defines assurance-case structure and terminology, but explicitly does not prescribe the quality of the assurance-case content or a particular concrete representation or physical implementation.
+
+**Consequence:** GDEC should not create a competing generic assurance-case graph or claim that typed claims/evidence/provenance are new. A possible complementary layer would bind assurance-case elements to executable engineering action contracts and independent discharge checkers. The standards' deliberate separation between representation and evaluation makes this a legitimate engineering integration problem, but does not establish algorithmic novelty.
+
+### 7.7 Refined research question and architectural boundary
+
+The candidate is now:
+
+> Given an engineering decision claim and an assurance-case structure, can GDEC derive a finite set of machine-checkable obligations, identify admissible numerical/physical actions with explicit evidence-production contracts, schedule actions under resource constraints, and independently verify that the resulting evidence discharges each obligation without violating assumptions or evidence-dependency constraints?
+
+This suggests a strict separation of concerns:
+
+1. **Assurance-case representation:** reuse or interoperate with SACM/GSN/CAE rather than inventing another generic claim/evidence notation.
+2. **Engineering obligation compiler:** translate supported engineering claim templates and declared assurance levels into explicit verification/validation obligations. Unsupported claim templates must be rejected.
+3. **Action-contract registry:** each numerical or physical action declares preconditions, supported problem scope, output evidence types, assumptions, provenance, dependency lineage, cost model and a checker.
+4. **Planner:** choose only actions whose preconditions are met and whose contracts can discharge outstanding obligations. Cost/VOI may rank admissible actions but cannot waive mandatory obligations.
+5. **Independent evidence checker:** verify artifact identity, contract conformance, assumptions, provenance and dependency constraints. It must not trust the planner's own assertion that an obligation is discharged.
+6. **Decision/refusal gate:** issue a supported conclusion only when all mandatory obligations are independently discharged or explicitly accepted as assumptions by an authorised party. Otherwise return inconclusive/refused with the unresolved obligations listed.
+
+This architecture is a requirements hypothesis, not a proven design. The crucial unknown is whether the engineering obligation compiler and action contracts require a new formal mechanism or can be implemented as domain-specific profiles and executable extensions over existing assurance-case standards.
+
+**Next kill test:** select one narrowly scoped GDEC task—2D linear-elastic cantilever with a declared displacement-threshold decision—and model its assurance case using SACM/GSN plus existing numerical verification tools. Attempt to express the action contracts, dependencies, mandatory obligations and refusal conditions without introducing a new formal semantics. If that works cleanly, GDEC's contribution is likely integration and tooling, not a new algorithm. If it fails, document the exact semantic gap before proposing a new formalism.
