@@ -18,5 +18,5 @@ Security fixes are developed on active research branches. Release support is sub
 ## Reporting Vulnerabilities
 If you discover a security vulnerability, input parsing flaw that permits arbitrary execution, or cryptographic hash collision vulnerability:
 - Do not open a public issue.
-- Email details to the engineering team at `security@delythassociates.com` with a reproducible test script.
-- The engineering team will acknowledge within 48 hours and coordinate a verification patch.
+- Use GitHub private vulnerability reporting / Security Advisories if enabled for this repository.
+- Otherwise, contact maintainers privately through a verified contact route published by the organization. Include a minimal reproduction where safe. No acknowledgement-time SLA is currently published.
