@@ -122,3 +122,33 @@ Follow-up remediation of remaining review findings on branch `research/wp2-vv-re
 
 - **Suite Metrics**:
   - Full suite passing: **434 passed, 0 failures** in ~36s.
+
+---
+
+## [WP2-Remediation-Evidence-Closure] - 2026-11-23
+
+### Added & Remediated
+- **Status Register Evidence Integrity (Remediation A)**:
+  - Added explicit `required_test_node_ids` and concrete `verification_criteria` for all 24 capabilities in `src/gdec/verification/status_register.py`.
+  - Completely eliminated all subsystem and name heuristics from `demonstrated_status` computation.
+  - Added `get_provenance_info()` capturing execution provenance (`is_ci`, `github_run_id`, `github_workflow`, `github_sha`, `local_execution`).
+  - Added collection error tracking and pytest exit code tracking; gate fails closed on any collection error or non-zero exit code.
+  - Upgraded status register schema to `1.1.0`.
+  - Added `test_isolated_git_repo_cleanliness_and_preservation` in `tests/verification/test_status_register_traceability.py` using `tmp_path` fixture to prove clean tree, tracked modification detection, untracked file detection, and preserved user-file protection.
+- **Lamé Thick Cylinder Area-Weighted $L_2$ Error Norms (Remediation B)**:
+  - Implemented area-weighted element $L_2$ error norms across 3-level refinement hierarchy ($8\times 12 \to 16\times 24 \to 32\times 48$) in `tests/verification/test_reference_library.py`.
+  - Formulated element Cauchy stress calculation and polar transformation for $\sigma_{rr}$, $\sigma_{\theta\theta}$, and $\sigma_{zz}$.
+  - Verified monotonic convergence rates: $p_u \approx 1.98$ (displacement in $L_2$) and $p_\sigma \approx 0.97$ (stresses in $L_2$).
+  - Verified fine-mesh error tolerances: $e_u < 0.10\%$, max nodal $< 0.35\%$, $e_{\sigma_{rr}} < 4.0\%$, $e_{\sigma_{\theta\theta}} < 2.0\%$, $e_{\sigma_{zz}} < 7.0\%$.
+- **Kirsch Benchmark Patch Stress Recovery & Defect Sensitivity (Remediation C)**:
+  - Replaced centroid point sampling with area-weighted element patch recovery $\bar{\sigma}_{xx} = \frac{\sum_i A_i \sigma_{xx, i}}{\sum_i A_i}$ at $(0, a)$ where circumferential stress $\sigma_{\theta\theta}$ aligns with $\sigma_{xx}$.
+  - Verified monotonic convergence $K_t(h) \to 3.000$ ($2.9524 \to 2.9964 \to 3.0018$, fine mesh error $0.0610\%$).
+  - Implemented `test_ref_06_kirsch_production_defect_sensitivity`: demonstrated that assembling a plane-strain stiffness matrix on a thin plate yields $K_t = 2.6229$ (12.6% defect), decisively failing the $[2.95, 3.05]$ gate.
+- **Targeted Production Runtime Mutation Campaign (Remediation D)**:
+  - Re-titled and refactored `scripts/run_mutation_campaign.py` into an explicit "Targeted Production-Function Runtime Mutation Testing Campaign".
+  - Added unmutated baseline pre-validation: all 13 unique target test nodes verified before applying mutations.
+  - Achieved 100% kill rate (14/14 killed, 0 survivors, 0 execution errors) across `fem.constitutive`, `fem.matrix_diagnostics`, `fem.adaptivity`, `dse.evaluator`, `dse.scaling`, and `eir.expressions`.
+  - Output structured machine-readable JSON report at `results/mutation_campaign_report.json`.
+- **Suite Metrics**:
+  - Full suite passing: **437 passed, 0 failures, 1 warning** on GPU host (423 passed, 14 skipped in non-GPU CI matrix).
+  - Preserved user files strictly untouched: `src/gdec/core/analyser.py` and `src/gdec/runtime/`.

@@ -1,8 +1,8 @@
 # GDEC Work Package 2 (WP2) Acceptance Matrix
 ## Verification & Validation Suite as a Product + CI Matrix (Remediated Follow-up)
 
-**Branch:** `research/wp2-vv-remediation-followup`  
-**Starting Commit:** `21c92dd6f4100423e1236210ea1d58d96357ccb4`  
+**Branch:** `research/wp2-remediation-evidence-closure`  
+**Starting Commit:** `29c0c51f0e2a8134d5bdb59aa9f8ffac18840ca2`  
 **Original WP2 Baseline:** `dc3cf683db15a51177419aae68fdad357660621d`  
 **Parent Tip:** `1c55628d64afed670b813b9d04e97a2249235c3c`  
 **Verification Date:** 2026-11-23  

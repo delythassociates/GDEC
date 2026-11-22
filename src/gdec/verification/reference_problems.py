@@ -99,8 +99,8 @@ REFERENCE_PROBLEMS: Dict[str, ReferenceProblemSpec] = {
         boundary_conditions="Internal pressure P_int on r=a, zero traction on r=b, symmetry rollers on x=0 and y=0",
         expected_qoi_formula="Plane stress: u_r(r) = (P_int*a^2/(E*(b^2-a^2)))*((1-nu)*r + (1+nu)*b^2/r); Plane strain: u_r(r) = ((1+nu)*P_int*a^2/(E*(b^2-a^2)))*((1-2*nu)*r + b^2/r)",
         expected_order_h=2.0,
-        expected_tolerance="Observed L2 convergence order p_obs in [1.90, 2.15]; max relative nodal displacement error <= 0.35%",
-        limitations="Curved boundary discretized with linear chord facets; full analytical profiles verified for both plane stress and plane strain",
+        expected_tolerance="Observed area-weighted L2 convergence orders p_u in [1.85, 2.15], p_sigma in [0.85, 1.15]; max relative nodal displacement error <= 0.35%",
+        limitations="Curved boundary discretized with linear chord facets; full analytical displacement and stress profiles (sigma_rr, sigma_theta, sigma_zz) verified for both plane stress and plane strain using area-weighted element L2 norms",
         cross_check_target="Authoritative closed-form Lame radial profiles; dual plane stress and plane strain FEM solves",
     ),
     "REF-06-PLATE-HOLE-KIRSCH": ReferenceProblemSpec(
@@ -111,11 +111,11 @@ REFERENCE_PROBLEMS: Dict[str, ReferenceProblemSpec] = {
         governing_equations="Plane stress elastostatics with circular hole of radius a under far-field tension sigma_inf",
         domain_description="Quarter-annulus / quadrant with hole radius a at origin, far-field radius b >> a",
         boundary_conditions="Symmetry on x=0 (u=0) and y=0 (v=0), far-field Kirsch traction on outer boundary r=b, traction-free hole r=a",
-        expected_qoi_formula="Peak circumferential stress sigma_theta(a, pi/2) == 3.0 * sigma_inf; K_t = sigma_theta / sigma_inf == 3.0",
-        expected_order_h=1.0,  # stress recovery convergence order in H1/patch
-        expected_tolerance="Mesh refinement series demonstrates K_t -> 3.000 monotonically with relative error <= 0.10% on fine mesh",
-        limitations="Piecewise linear approximation of circular cavity; area-weighted patch stress recovery at hole boundary",
-        cross_check_target="Classical Kirsch analytical solution; mesh-refinement series and deliberate-defect sensitivity",
+        expected_qoi_formula="Peak circumferential stress sigma_theta(a, pi/2) == sigma_xx(0, a) == 3.0 * sigma_inf; K_t = sigma_theta / sigma_inf == 3.0",
+        expected_order_h=1.0,  # stress recovery convergence order in patch
+        expected_tolerance="Mesh refinement series demonstrates K_t -> 3.000 monotonically with relative error <= 0.10% on fine mesh under area-weighted patch recovery",
+        limitations="Piecewise linear approximation of circular cavity; area-weighted patch stress recovery at hole boundary (0, a) where theta=pi/2 aligns sigma_theta with sigma_xx",
+        cross_check_target="Classical Kirsch analytical solution; mesh-refinement series, input traction sensitivity, and production defect sensitivity",
     ),
     "REF-07-L-SHAPED-DOMAIN-SINGULAR": ReferenceProblemSpec(
         problem_id="REF-07-L-SHAPED-DOMAIN-SINGULAR",

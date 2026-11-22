@@ -210,13 +210,15 @@ class TestReferenceProblemLibrary:
         assert max_err < 1e-10, f"REF-04 max error: {max_err}"
 
     def test_ref_05_lame_cylinder_plane_stress(self):
-        """REF-05: Lame thick cylinder quadrant under plane stress with full radial profiles."""
+        """REF-05: Lame thick cylinder quadrant under plane stress with full displacement and stress profiles."""
         spec = get_reference_problem("REF-05-LAME-CYLINDER")
         a, b = 1.0, 2.0
         P_int = 10.0e6
         E, nu = 200.0e9, 0.3
 
-        errors = []
+        errors_u = []
+        errors_srr = []
+        errors_stt = []
         hs = []
         for nr, ntheta in [(8, 12), (16, 24), (32, 48)]:
             h = (b - a) / nr
@@ -244,37 +246,86 @@ class TestReferenceProblemLibrary:
             f = skfem.asm(pressure_form, fb_inner)
             u_sol = skfem.solve(*skfem.condense(K, f, D=D))
 
-            r_nodes = np.sqrt(cyl_mesh.p[0]**2 + cyl_mesh.p[1]**2)
-            ur_nodes = np.sqrt(u_sol[basis.nodal_dofs[0]]**2 + u_sol[basis.nodal_dofs[1]]**2)
+            # Displacements at element centroids
+            pts = cyl_mesh.p[:, cyl_mesh.t]
+            elem_areas = 0.5 * np.abs((pts[0, 1] - pts[0, 0]) * (pts[1, 2] - pts[1, 0]) - (pts[0, 2] - pts[0, 0]) * (pts[1, 1] - pts[1, 0]))
+            xc = np.mean(pts[0], axis=0)
+            yc = np.mean(pts[1], axis=0)
+            rc = np.sqrt(xc**2 + yc**2)
+            thc = np.arctan2(yc, xc)
+
+            scalar_basis = skfem.Basis(cyl_mesh, skfem.ElementTriP1())
+            dofs_u = u_sol[basis.nodal_dofs[0]]
+            dofs_v = u_sol[basis.nodal_dofs[1]]
+            u_c = np.mean(dofs_u[cyl_mesh.t], axis=0)
+            v_c = np.mean(dofs_v[cyl_mesh.t], axis=0)
+            ur_c = u_c * np.cos(thc) + v_c * np.sin(thc)
+
+            # Element Cauchy stresses
+            grad_u = scalar_basis.interpolate(dofs_u).grad
+            grad_v = scalar_basis.interpolate(dofs_v).grad
+            eps_xx = grad_u[0, :, 0]
+            eps_yy = grad_v[1, :, 0]
+            gamma_xy = grad_u[1, :, 0] + grad_v[0, :, 0]
+
+            s_xx = (E / (1.0 - nu**2)) * (eps_xx + nu * eps_yy)
+            s_yy = (E / (1.0 - nu**2)) * (eps_yy + nu * eps_xx)
+            t_xy = (E / (2.0 * (1.0 + nu))) * gamma_xy
+
+            # Polar stress transformation at element centroids
+            cos_t = np.cos(thc)
+            sin_t = np.sin(thc)
+            s_rr = s_xx * cos_t**2 + s_yy * sin_t**2 + 2.0 * t_xy * sin_t * cos_t
+            s_tt = s_xx * sin_t**2 + s_yy * cos_t**2 - 2.0 * t_xy * sin_t * cos_t
 
             # Full radial profile comparison against authoritative closed form
-            exact = lame_cylinder_analytical_plane_stress(r_nodes, a, b, P_int, E, nu)
-            ur_exact = exact["u_r"]
+            exact = lame_cylinder_analytical_plane_stress(rc, a, b, P_int, E, nu)
+            w = elem_areas / np.sum(elem_areas)
+            ur_err = float(np.sqrt(np.sum(w * (ur_c - exact["u_r"])**2)) / np.sqrt(np.sum(w * exact["u_r"]**2)))
+            srr_err = float(np.sqrt(np.sum(w * (s_rr - exact["sigma_rr"])**2)) / np.sqrt(np.sum(w * exact["sigma_rr"]**2)))
+            stt_err = float(np.sqrt(np.sum(w * (s_tt - exact["sigma_tt"])**2)) / np.sqrt(np.sum(w * exact["sigma_tt"]**2)))
 
-            rel_l2 = float(np.linalg.norm(ur_nodes - ur_exact) / np.linalg.norm(ur_exact))
-            errors.append(rel_l2)
+            errors_u.append(ur_err)
+            errors_srr.append(srr_err)
+            errors_stt.append(stt_err)
             hs.append(h)
 
-        # 1. Monotonic error reduction under uniform refinement
-        assert errors[1] < errors[0] and errors[2] < errors[1], f"Errors not monotonically decreasing: {errors}"
+        # Nodal max relative error on fine mesh
+        r_nodes = np.sqrt(cyl_mesh.p[0]**2 + cyl_mesh.p[1]**2)
+        ur_nodes = np.sqrt(u_sol[basis.nodal_dofs[0]]**2 + u_sol[basis.nodal_dofs[1]]**2)
+        exact_nodes = lame_cylinder_analytical_plane_stress(r_nodes, a, b, P_int, E, nu)
+        max_rel_nodal_err = float(np.max(np.abs(ur_nodes - exact_nodes["u_r"]) / exact_nodes["u_r"]))
 
-        # 2. Asymptotic convergence order p_obs ~ 2.0
-        p_obs = float(np.polyfit(np.log(hs), np.log(errors), 1)[0])
-        assert 1.85 <= p_obs <= 2.15, f"Observed order {p_obs:.3f} outside [1.85, 2.15]"
+        # 1. Monotonic error reduction for displacements and stresses under uniform refinement
+        assert errors_u[1] < errors_u[0] and errors_u[2] < errors_u[1], f"Displacement error not strictly decreasing: {errors_u}"
+        assert errors_srr[1] < errors_srr[0] and errors_srr[2] < errors_srr[1], f"Radial stress error not strictly decreasing: {errors_srr}"
+        assert errors_stt[1] < errors_stt[0] and errors_stt[2] < errors_stt[1], f"Hoop stress error not strictly decreasing: {errors_stt}"
 
-        # 3. Fine mesh accuracy within 0.10% L2 and 0.35% max relative nodal error
-        max_rel_err = float(np.max(np.abs(ur_nodes - ur_exact) / ur_exact))
-        assert errors[-1] < 0.0010, f"Fine mesh L2 error {errors[-1]:.4%} exceeds 0.10%"
-        assert max_rel_err < 0.0035, f"Max nodal error {max_rel_err:.4%} exceeds 0.35%"
+        # 2. Observed convergence orders (p_u ~ 2.0 in L2, p_sigma ~ 1.0 in L2)
+        p_u = float(np.polyfit(np.log(hs), np.log(errors_u), 1)[0])
+        p_srr = float(np.polyfit(np.log(hs), np.log(errors_srr), 1)[0])
+        p_stt = float(np.polyfit(np.log(hs), np.log(errors_stt), 1)[0])
+        assert 1.85 <= p_u <= 2.15, f"Observed displacement order {p_u:.3f} outside [1.85, 2.15]"
+        assert 0.85 <= p_srr <= 1.15, f"Observed radial stress order {p_srr:.3f} outside [0.85, 1.15]"
+        assert 0.85 <= p_stt <= 1.15, f"Observed hoop stress order {p_stt:.3f} outside [0.85, 1.15]"
+
+        # 3. Fine mesh tolerances
+        assert errors_u[-1] < 0.0010, f"Fine mesh displacement L2 error {errors_u[-1]:.4%} exceeds 0.10%"
+        assert max_rel_nodal_err < 0.0035, f"Max nodal error {max_rel_nodal_err:.4%} exceeds 0.35%"
+        assert errors_srr[-1] < 0.040, f"Fine mesh radial stress error {errors_srr[-1]:.4%} exceeds 4.0%"
+        assert errors_stt[-1] < 0.020, f"Fine mesh hoop stress error {errors_stt[-1]:.4%} exceeds 2.0%"
 
     def test_ref_05_lame_cylinder_plane_strain(self):
-        """REF-05: Lame thick cylinder quadrant under plane strain with full radial profiles."""
+        """REF-05: Lame thick cylinder quadrant under plane strain with full displacement and 3D stress profiles."""
         spec = get_reference_problem("REF-05-LAME-CYLINDER")
         a, b = 1.0, 2.0
         P_int = 10.0e6
         E, nu = 200.0e9, 0.3
 
-        errors = []
+        errors_u = []
+        errors_srr = []
+        errors_stt = []
+        errors_szz = []
         hs = []
         for nr, ntheta in [(8, 12), (16, 24), (32, 48)]:
             h = (b - a) / nr
@@ -303,24 +354,83 @@ class TestReferenceProblemLibrary:
             f = skfem.asm(pressure_form, fb_inner)
             u_sol = skfem.solve(*skfem.condense(K, f, D=D))
 
-            r_nodes = np.sqrt(cyl_mesh.p[0]**2 + cyl_mesh.p[1]**2)
-            ur_nodes = np.sqrt(u_sol[basis.nodal_dofs[0]]**2 + u_sol[basis.nodal_dofs[1]]**2)
+            # Displacements at element centroids
+            pts = cyl_mesh.p[:, cyl_mesh.t]
+            elem_areas = 0.5 * np.abs((pts[0, 1] - pts[0, 0]) * (pts[1, 2] - pts[1, 0]) - (pts[0, 2] - pts[0, 0]) * (pts[1, 1] - pts[1, 0]))
+            xc = np.mean(pts[0], axis=0)
+            yc = np.mean(pts[1], axis=0)
+            rc = np.sqrt(xc**2 + yc**2)
+            thc = np.arctan2(yc, xc)
+
+            scalar_basis = skfem.Basis(cyl_mesh, skfem.ElementTriP1())
+            dofs_u = u_sol[basis.nodal_dofs[0]]
+            dofs_v = u_sol[basis.nodal_dofs[1]]
+            u_c = np.mean(dofs_u[cyl_mesh.t], axis=0)
+            v_c = np.mean(dofs_v[cyl_mesh.t], axis=0)
+            ur_c = u_c * np.cos(thc) + v_c * np.sin(thc)
+
+            # Element Cauchy stresses in plane strain
+            grad_u = scalar_basis.interpolate(dofs_u).grad
+            grad_v = scalar_basis.interpolate(dofs_v).grad
+            eps_xx = grad_u[0, :, 0]
+            eps_yy = grad_v[1, :, 0]
+            gamma_xy = grad_u[1, :, 0] + grad_v[0, :, 0]
+
+            lam = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
+            mu = E / (2.0 * (1.0 + nu))
+            s_xx = (lam + 2.0 * mu) * eps_xx + lam * eps_yy
+            s_yy = (lam + 2.0 * mu) * eps_yy + lam * eps_xx
+            t_xy = mu * gamma_xy
+            s_zz = nu * (s_xx + s_yy)
+
+            # Polar stress transformation at element centroids
+            cos_t = np.cos(thc)
+            sin_t = np.sin(thc)
+            s_rr = s_xx * cos_t**2 + s_yy * sin_t**2 + 2.0 * t_xy * sin_t * cos_t
+            s_tt = s_xx * sin_t**2 + s_yy * cos_t**2 - 2.0 * t_xy * sin_t * cos_t
 
             # Full radial profile comparison against authoritative plane strain closed form
-            exact = lame_cylinder_analytical_plane_strain(r_nodes, a, b, P_int, E, nu)
-            ur_exact = exact["u_r"]
+            exact = lame_cylinder_analytical_plane_strain(rc, a, b, P_int, E, nu)
+            w = elem_areas / np.sum(elem_areas)
+            ur_err = float(np.sqrt(np.sum(w * (ur_c - exact["u_r"])**2)) / np.sqrt(np.sum(w * exact["u_r"]**2)))
+            srr_err = float(np.sqrt(np.sum(w * (s_rr - exact["sigma_rr"])**2)) / np.sqrt(np.sum(w * exact["sigma_rr"]**2)))
+            stt_err = float(np.sqrt(np.sum(w * (s_tt - exact["sigma_tt"])**2)) / np.sqrt(np.sum(w * exact["sigma_tt"]**2)))
+            szz_err = float(np.sqrt(np.sum(w * (s_zz - exact["sigma_zz"])**2)) / np.sqrt(np.sum(w * exact["sigma_zz"]**2)))
 
-            rel_l2 = float(np.linalg.norm(ur_nodes - ur_exact) / np.linalg.norm(ur_exact))
-            errors.append(rel_l2)
+            errors_u.append(ur_err)
+            errors_srr.append(srr_err)
+            errors_stt.append(stt_err)
+            errors_szz.append(szz_err)
             hs.append(h)
 
-        assert errors[1] < errors[0] and errors[2] < errors[1], f"Errors not monotonically decreasing: {errors}"
-        p_obs = float(np.polyfit(np.log(hs), np.log(errors), 1)[0])
-        assert 1.85 <= p_obs <= 2.15, f"Observed order {p_obs:.3f} outside [1.85, 2.15]"
+        # Nodal max relative error on fine mesh
+        r_nodes = np.sqrt(cyl_mesh.p[0]**2 + cyl_mesh.p[1]**2)
+        ur_nodes = np.sqrt(u_sol[basis.nodal_dofs[0]]**2 + u_sol[basis.nodal_dofs[1]]**2)
+        exact_nodes = lame_cylinder_analytical_plane_strain(r_nodes, a, b, P_int, E, nu)
+        max_rel_nodal_err = float(np.max(np.abs(ur_nodes - exact_nodes["u_r"]) / exact_nodes["u_r"]))
 
-        max_rel_err = float(np.max(np.abs(ur_nodes - ur_exact) / ur_exact))
-        assert errors[-1] < 0.0010, f"Fine mesh L2 error {errors[-1]:.4%} exceeds 0.10%"
-        assert max_rel_err < 0.0035, f"Max nodal error {max_rel_err:.4%} exceeds 0.35%"
+        # 1. Monotonic error reduction across all components under uniform refinement
+        assert errors_u[1] < errors_u[0] and errors_u[2] < errors_u[1], f"Displacement error not strictly decreasing: {errors_u}"
+        assert errors_srr[1] < errors_srr[0] and errors_srr[2] < errors_srr[1], f"Radial stress error not strictly decreasing: {errors_srr}"
+        assert errors_stt[1] < errors_stt[0] and errors_stt[2] < errors_stt[1], f"Hoop stress error not strictly decreasing: {errors_stt}"
+        assert errors_szz[1] < errors_szz[0] and errors_szz[2] < errors_szz[1], f"Axial stress error not strictly decreasing: {errors_szz}"
+
+        # 2. Observed convergence orders (p_u ~ 2.0 in L2, p_sigma ~ 1.0 in L2)
+        p_u = float(np.polyfit(np.log(hs), np.log(errors_u), 1)[0])
+        p_srr = float(np.polyfit(np.log(hs), np.log(errors_srr), 1)[0])
+        p_stt = float(np.polyfit(np.log(hs), np.log(errors_stt), 1)[0])
+        p_szz = float(np.polyfit(np.log(hs), np.log(errors_szz), 1)[0])
+        assert 1.85 <= p_u <= 2.15, f"Observed displacement order {p_u:.3f} outside [1.85, 2.15]"
+        assert 0.85 <= p_srr <= 1.15, f"Observed radial stress order {p_srr:.3f} outside [0.85, 1.15]"
+        assert 0.85 <= p_stt <= 1.15, f"Observed hoop stress order {p_stt:.3f} outside [0.85, 1.15]"
+        assert 0.85 <= p_szz <= 1.15, f"Observed axial stress order {p_szz:.3f} outside [0.85, 1.15]"
+
+        # 3. Fine mesh tolerances
+        assert errors_u[-1] < 0.0010, f"Fine mesh displacement L2 error {errors_u[-1]:.4%} exceeds 0.10%"
+        assert max_rel_nodal_err < 0.0035, f"Max nodal error {max_rel_nodal_err:.4%} exceeds 0.35%"
+        assert errors_srr[-1] < 0.050, f"Fine mesh radial stress error {errors_srr[-1]:.4%} exceeds 5.0%"
+        assert errors_stt[-1] < 0.030, f"Fine mesh hoop stress error {errors_stt[-1]:.4%} exceeds 3.0%"
+        assert errors_szz[-1] < 0.070, f"Fine mesh axial stress error {errors_szz[-1]:.4%} exceeds 7.0%"
 
     def test_ref_06_plate_with_hole_stress_concentration(self):
         """REF-06: Numerical Kirsch plate-with-hole stress concentration benchmark (Kt -> 3.000)."""
@@ -365,19 +475,29 @@ class TestReferenceProblemLibrary:
             f = skfem.asm(outer_traction, fb_outer)
             u_sol = skfem.solve(*skfem.condense(K, f, D=D))
 
-            # Stress recovery at hole boundary (0, a)
+            # Area-weighted patch stress recovery at hole boundary (0, a)
+            # Physical justification: At (0, a), theta = pi/2.
+            # Circumferential stress sigma_theta is tangential to the circular cavity.
+            # Since the boundary at (0, a) is horizontal (parallel to x-axis),
+            # sigma_theta(a, pi/2) == sigma_xx(0, a).
             top_hole_node = left_nodes[np.argmin(np.abs(mesh.p[1, left_nodes] - a))]
             elem_idx = np.where(np.any(mesh.t == top_hole_node, axis=0))[0]
+
+            pts = mesh.p[:, mesh.t[:, elem_idx]]
+            patch_areas = 0.5 * np.abs((pts[0, 1] - pts[0, 0]) * (pts[1, 2] - pts[1, 0]) - (pts[0, 2] - pts[0, 0]) * (pts[1, 1] - pts[1, 0]))
+
             scalar_basis = skfem.Basis(mesh, skfem.ElementTriP1())
             dofs_u = u_sol[basis.nodal_dofs[0]]
             dofs_v = u_sol[basis.nodal_dofs[1]]
             grad_u = scalar_basis.interpolate(dofs_u).grad
             grad_v = scalar_basis.interpolate(dofs_v).grad
 
-            eps_xx = grad_u[0, elem_idx, :]
-            eps_yy = grad_v[1, elem_idx, :]
+            eps_xx = grad_u[0, elem_idx, 0]
+            eps_yy = grad_v[1, elem_idx, 0]
             sigma_xx = (E / (1.0 - nu**2)) * (eps_xx + nu * eps_yy)
-            peak_sigma = float(np.mean(sigma_xx))
+
+            # Area-weighted patch average: \bar{\sigma} = \sum(A_i * \sigma_i) / \sum(A_i)
+            peak_sigma = float(np.sum(patch_areas * sigma_xx) / np.sum(patch_areas))
             kt = peak_sigma / sigma_inf
             kt_values.append(kt)
             rel_errors.append(abs(kt - 3.0) / 3.0)
@@ -389,8 +509,8 @@ class TestReferenceProblemLibrary:
         assert rel_errors[-1] <= 0.0010, f"Fine mesh relative error {rel_errors[-1]:.4%} exceeds 0.10% (Kt={kt_values[-1]:.4f})"
         assert 2.98 <= kt_values[-1] <= 3.02, f"Fine mesh Kt {kt_values[-1]:.4f} outside [2.98, 3.02]"
 
-    def test_ref_06_kirsch_perturbation_sensitivity(self):
-        """REF-06: Deliberate boundary condition / traction perturbation fails the benchmark."""
+    def test_ref_06_kirsch_input_traction_sensitivity(self):
+        """REF-06: Input boundary condition / traction perturbation sensitivity."""
         a, b = 1.0, 5.0
         E, nu = 200.0e9, 0.3
         sigma_inf = 10.0e6
@@ -426,14 +546,66 @@ class TestReferenceProblemLibrary:
 
         top_hole_node = left_nodes[np.argmin(np.abs(mesh.p[1, left_nodes] - a))]
         elem_idx = np.where(np.any(mesh.t == top_hole_node, axis=0))[0]
+        pts = mesh.p[:, mesh.t[:, elem_idx]]
+        patch_areas = 0.5 * np.abs((pts[0, 1] - pts[0, 0]) * (pts[1, 2] - pts[1, 0]) - (pts[0, 2] - pts[0, 0]) * (pts[1, 1] - pts[1, 0]))
+
         scalar_basis = skfem.Basis(mesh, skfem.ElementTriP1())
         grad_u = scalar_basis.interpolate(u_sol[basis.nodal_dofs[0]]).grad
         grad_v = scalar_basis.interpolate(u_sol[basis.nodal_dofs[1]]).grad
-        sigma_xx = (E / (1.0 - nu**2)) * (grad_u[0, elem_idx, :] + nu * grad_v[1, elem_idx, :])
-        kt_pert = float(np.mean(sigma_xx)) / sigma_inf
+        sigma_xx = (E / (1.0 - nu**2)) * (grad_u[0, elem_idx, 0] + nu * grad_v[1, elem_idx, 0])
+        peak_sigma = float(np.sum(patch_areas * sigma_xx) / np.sum(patch_areas))
+        kt_pert = peak_sigma / sigma_inf
 
         # Perturbed solve MUST fall outside valid acceptance interval [2.95, 3.05]
         assert not (2.95 <= kt_pert <= 3.05), f"Benchmark failed to detect perturbation: Kt={kt_pert:.4f}"
+
+    def test_ref_06_kirsch_production_defect_sensitivity(self):
+        """REF-06: Production solver defect sensitivity (plane-strain constitutive tensor applied to plate fails gate)."""
+        a, b = 1.0, 5.0
+        E, nu = 200.0e9, 0.3
+        sigma_inf = 10.0e6
+        nr, ntheta = 24, 32
+
+        r_vals = np.geomspace(a, b, nr + 1)
+        th_vals = np.linspace(0, np.pi / 2.0, ntheta + 1)
+        grid = skfem.MeshTri.init_tensor(r_vals, th_vals)
+        mesh = skfem.MeshTri(np.vstack([grid.p[0] * np.cos(grid.p[1]), grid.p[0] * np.sin(grid.p[1])]), grid.t)
+
+        basis = skfem.Basis(mesh, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
+        # Deliberate production solver defect: assembling plane-strain stiffness on a plane-stress plate
+        K_defective = skfem.asm(linear_elasticity(*lame_parameters(E, nu)), basis)
+        bottom_nodes = np.where(np.isclose(mesh.p[1], 0.0))[0]
+        left_nodes = np.where(np.isclose(mesh.p[0], 0.0))[0]
+        D = np.unique(np.concatenate([basis.nodal_dofs[1, bottom_nodes], basis.nodal_dofs[0, left_nodes]]))
+
+        outer_facets = mesh.facets_satisfying(lambda p: np.isclose(np.sqrt(p[0]**2 + p[1]**2), b, atol=0.05))
+        fb_outer = skfem.FacetBasis(mesh, skfem.ElementVector(skfem.ElementTriP1()), facets=outer_facets)
+
+        @skfem.LinearForm
+        def outer_traction(v, w):
+            th = np.arctan2(w.x[1], w.x[0])
+            tr_data = kirsch_plate_hole_analytical(b, th, a, sigma_inf)
+            return (tr_data["sigma_rr"] * np.cos(th) - tr_data["sigma_rth"] * np.sin(th)) * v[0] + (tr_data["sigma_rr"] * np.sin(th) + tr_data["sigma_rth"] * np.cos(th)) * v[1]
+
+        f = skfem.asm(outer_traction, fb_outer)
+        u_sol = skfem.solve(*skfem.condense(K_defective, f, D=D))
+
+        top_hole_node = left_nodes[np.argmin(np.abs(mesh.p[1, left_nodes] - a))]
+        elem_idx = np.where(np.any(mesh.t == top_hole_node, axis=0))[0]
+        pts = mesh.p[:, mesh.t[:, elem_idx]]
+        patch_areas = 0.5 * np.abs((pts[0, 1] - pts[0, 0]) * (pts[1, 2] - pts[1, 0]) - (pts[0, 2] - pts[0, 0]) * (pts[1, 1] - pts[1, 0]))
+
+        scalar_basis = skfem.Basis(mesh, skfem.ElementTriP1())
+        grad_u = scalar_basis.interpolate(u_sol[basis.nodal_dofs[0]]).grad
+        grad_v = scalar_basis.interpolate(u_sol[basis.nodal_dofs[1]]).grad
+
+        sigma_xx = (E / (1.0 - nu**2)) * (grad_u[0, elem_idx, 0] + nu * grad_v[1, elem_idx, 0])
+        peak_sigma_defective = float(np.sum(patch_areas * sigma_xx) / np.sum(patch_areas))
+        kt_defective = peak_sigma_defective / sigma_inf
+
+        # Defective solve yields Kt ~ 2.62, decisively failing the acceptance gate [2.95, 3.05]
+        assert not (2.95 <= kt_defective <= 3.05), f"Defective solver went undetected: Kt={kt_defective:.4f}"
+        assert abs(kt_defective - 3.0) / 3.0 > 0.10, f"Defect error {abs(kt_defective - 3.0) / 3.0:.2%} not large enough"
 
     def test_ref_07_l_shaped_domain_singular(self):
         """REF-07: Linear elasticity re-entrant corner singularity benchmark on L-shaped domain."""

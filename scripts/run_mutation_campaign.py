@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Source-level mutation campaign runner for GDEC verification.
-Executes a documented, bounded mutation campaign across core production modules:
+Targeted production-function runtime mutation campaign runner for GDEC verification.
+Executes a documented, bounded runtime mutation campaign across 6 core production modules:
 - gdec.fem.constitutive
 - gdec.fem.matrix_diagnostics
 - gdec.fem.adaptivity
@@ -10,6 +10,8 @@ Executes a documented, bounded mutation campaign across core production modules:
 - gdec.eir.expressions
 
 Reports every mutant, affected function, killer test, failure diagnostic, and kill rate.
+Validates baseline test execution before mutation, aborting on baseline failures.
+Distinguishes KILLED, SURVIVED, and ERROR states without false equivalence claims.
 """
 from __future__ import annotations
 
@@ -40,10 +42,10 @@ class MutantRecord:
     description: str
     target_test: str
     unmutated_passed: bool
-    status: str  # KILLED, SURVIVED, ERROR
+    status: str  # KILLED, SURVIVED, ERROR, INVALID_BASELINE
     killer_test: Optional[str] = None
     diagnostic: Optional[str] = None
-    classification: str = "KILLED"  # KILLED, EQUIVALENT, TEST_GAP
+    classification: str = "KILLED"  # KILLED, TEST_GAP, ERROR, INVALID_BASELINE
 
 
 class TestFailureCapture:
@@ -134,27 +136,31 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
         mut_symmetry_zeroed,
     ))
 
-    # 4. FEM Matrix Diagnostics: Condition number inverted
-    def mut_condition_number():
+    # 4. FEM Matrix Diagnostics: Eligibility forced to True on singular system
+    def mut_matrix_cg_eligibility():
         import gdec.fem.matrix_diagnostics as pmd
         import tests.test_matrix_diagnostics as tmd
-        orig = pmd.estimate_condition_number_sparse
+        from dataclasses import replace
+        orig_pmd = pmd.analyze_stiffness_matrix
+        orig_tmd = tmd.analyze_stiffness_matrix
         def _mut(*args, **kwargs):
-            return 1.0, 1.0, 1.0  # Force kappa = 1.0
-        pmd.estimate_condition_number_sparse = _mut
+            diag = orig_pmd(*args, **kwargs)
+            return replace(diag, is_cg_eligible=True, is_positive_definite=True)
+        pmd.analyze_stiffness_matrix = _mut
+        tmd.analyze_stiffness_matrix = _mut
         try:
-            with patch.object(tmd, "estimate_condition_number_sparse", _mut):
-                return run_target_test("tests/test_matrix_diagnostics.py::test_diagnostics_known_spd_matrix")
+            return run_target_test("tests/test_matrix_diagnostics.py::test_partially_constrained_system_remains_singular")
         finally:
-            pmd.estimate_condition_number_sparse = orig
+            pmd.analyze_stiffness_matrix = orig_pmd
+            tmd.analyze_stiffness_matrix = orig_tmd
     mutants.append((
         "MUT-SOLV-02",
         "gdec.fem.matrix_diagnostics",
-        "estimate_condition_number_sparse",
-        "arithmetic",
-        "Force sparse condition number estimate to return 1.0 unconditionally",
-        "tests/test_matrix_diagnostics.py::test_diagnostics_known_spd_matrix",
-        mut_condition_number,
+        "analyze_stiffness_matrix",
+        "logical",
+        "Force is_cg_eligible and is_positive_definite to True unconditionally",
+        "tests/test_matrix_diagnostics.py::test_partially_constrained_system_remains_singular",
+        mut_matrix_cg_eligibility,
     ))
 
     # 5. FEM Adaptivity: Invert Dörfler priority sorting order
@@ -310,7 +316,32 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
         mut_evaluator_bypass_evidence,
     ))
 
-    # 11. EIR Expressions: Bypass dimensional equality in addition
+    # 11. DSE Evaluator: Force release recommendation when risk exceeds limit
+    def mut_evaluator_force_release():
+        from gdec.dse.evaluator import SingleQoIEvaluator, DecisionRecommendation
+        orig = SingleQoIEvaluator.evaluate
+        def _mut(self, *args, **kwargs):
+            res = orig(self, *args, **kwargs)
+            from dataclasses import replace
+            if res.is_conclusive():
+                return replace(res, recommendation=DecisionRecommendation.RELEASE)
+            return res
+        SingleQoIEvaluator.evaluate = _mut
+        try:
+            return run_target_test("tests/test_dse.py::test_evaluator_selects_reject_when_risk_exceeds")
+        finally:
+            SingleQoIEvaluator.evaluate = orig
+    mutants.append((
+        "MUT-DSE-05",
+        "gdec.dse.evaluator",
+        "SingleQoIEvaluator.evaluate",
+        "boundary",
+        "Force conclusive recommendation to RELEASE regardless of expected loss",
+        "tests/test_dse.py::test_evaluator_selects_reject_when_risk_exceeds",
+        mut_evaluator_force_release,
+    ))
+
+    # 12. EIR Expressions: Bypass dimensional equality in addition
     def mut_eir_add_dimension():
         import gdec.eir.expressions as expr
         orig = expr._add_type
@@ -331,97 +362,99 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Any
         mut_eir_add_dimension,
     ))
 
-    # 12. EIR Expressions: Invert AST depth limit check
+    # 13. EIR Expressions: Invert AST depth limit check
     def mut_eir_depth_check():
-        from gdec.eir.expressions import ExpressionTypingValidator
-        orig = ExpressionTypingValidator._check_expression_bounds
-        def _mut(self, expr):
-            return None  # Bypass depth and node count bounds
-        ExpressionTypingValidator._check_expression_bounds = _mut
+        import gdec.eir.expressions as ee
+        orig_ee = ee.infer_expression_type
+        def _mut(expression, environment, **kwargs):
+            kwargs["max_depth"] = 999999
+            kwargs["max_nodes"] = 999999
+            return orig_ee(expression, environment, **kwargs)
+        ee.infer_expression_type = _mut
+        patched_mods = []
+        for m in list(sys.modules.values()):
+            if m and getattr(m, "__name__", "") == "test_adversarial_hardening" and hasattr(m, "infer_expression_type"):
+                setattr(m, "infer_expression_type", _mut)
+                patched_mods.append(m)
         try:
             return run_target_test("tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_deeply_nested_expression_rejected_with_typed_error")
         finally:
-            ExpressionTypingValidator._check_expression_bounds = orig
+            ee.infer_expression_type = orig_ee
+            for m in patched_mods:
+                setattr(m, "infer_expression_type", orig_ee)
     mutants.append((
         "MUT-EIR-02",
         "gdec.eir.expressions",
-        "ExpressionTypingValidator._check_expression_bounds",
+        "infer_expression_type",
         "boundary",
         "Disable AST recursion depth and node count upper bounds check",
         "tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_deeply_nested_expression_rejected_with_typed_error",
         mut_eir_depth_check,
     ))
 
-    # 13. EIR Expressions: Bypass identifier confusable character rejection
+    # 14. EIR Expressions: Bypass identifier confusable character rejection
     def mut_eir_confusable_check():
-        from gdec.eir.parser import StrictInputValidator
-        orig = StrictInputValidator.validate_identifier
-        def _mut(identifier):
-            return None  # Allow confusable and bidirectional unicode characters
-        StrictInputValidator.validate_identifier = staticmethod(_mut)
+        import gdec.eir.models as em
+        orig_em = em._identifier
+        em._identifier = lambda val: str(val)
+        patched_mods = []
+        for m in list(sys.modules.values()):
+            if m and getattr(m, "__name__", "") == "test_adversarial_hardening" and hasattr(m, "_identifier"):
+                setattr(m, "_identifier", lambda val: str(val))
+                patched_mods.append(m)
         try:
-            return run_target_test("tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_identifier_rejects_control_and_confusable_characters[foo\\x00bar]")
+            return run_target_test("tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_identifier_rejects_control_and_confusable_characters")
         finally:
-            StrictInputValidator.validate_identifier = orig
+            em._identifier = orig_em
+            for m in patched_mods:
+                setattr(m, "_identifier", orig_em)
     mutants.append((
         "MUT-EIR-03",
-        "gdec.eir.parser",
-        "StrictInputValidator.validate_identifier",
+        "gdec.eir.models",
+        "_identifier",
         "boundary",
         "Disable unicode confusable and bidirectional control character check",
-        "tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_identifier_rejects_control_and_confusable_characters[foo\\x00bar]",
+        "tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_identifier_rejects_control_and_confusable_characters",
         mut_eir_confusable_check,
-    ))
-
-    # 14. FEM MMS Pure Bending: Modify convergence rate threshold
-    def mut_mms_displacement_coeff():
-        import gdec.verification.convergence_order as gco
-        import tests.verification.test_convergence_order as tco
-        orig = gco.fit_convergence_rate
-        def _mut(*args, **kwargs):
-            p, r2 = orig(*args, **kwargs)
-            return p * 0.5, r2  # artificially degrade observed convergence order
-        gco.fit_convergence_rate = _mut
-        tco.fit_convergence_rate = _mut
-        try:
-            return run_target_test("tests/verification/test_convergence_order.py::TestMeshConvergenceAndObservedOrder::test_smooth_mms_convergence_l2_and_h1")
-        finally:
-            gco.fit_convergence_rate = orig
-            tco.fit_convergence_rate = orig
-    mutants.append((
-        "MUT-VERIF-01",
-        "gdec.verification.convergence_order",
-        "fit_convergence_rate",
-        "relational",
-        "Degrade fitted MMS observed order by 50% to trigger tolerance rejection",
-        "tests/verification/test_convergence_order.py::TestMeshConvergenceAndObservedOrder::test_smooth_mms_convergence_l2_and_h1",
-        mut_mms_displacement_coeff,
     ))
 
     return mutants
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run GDEC source mutation campaign.")
+    parser = argparse.ArgumentParser(description="Run GDEC targeted runtime mutation campaign.")
     parser.add_argument("--output", default="results/mutation_campaign_report.json", help="Output JSON path")
     args = parser.parse_args()
 
     print("=================================================================")
-    print("       GDEC Source-Level Mutation Testing Campaign (WP2-R3)       ")
+    print("  GDEC Targeted Production Runtime Mutation Campaign (WP2-R3)    ")
     print("=================================================================")
 
     mutants_def = build_mutants()
     records: List[MutantRecord] = []
 
+    # 1. Enforce a passing baseline across all target tests before applying mutations
+    print("\n--- Validating Unmutated Test Baselines ---")
+    unique_target_tests = sorted(list(set(test_target for _, _, _, _, _, test_target, _ in mutants_def)))
+    baseline_failures = []
+    for tt in unique_target_tests:
+        passed, fail_id, fail_msg = run_target_test(tt)
+        if not passed:
+            baseline_failures.append((tt, fail_id, fail_msg))
+            print(f"  [FAIL] Baseline test failed: {tt}")
+        else:
+            print(f"  [PASS] Baseline test: {tt}")
+
+    if baseline_failures:
+        print(f"\n[FATAL] Baseline test validation failed for {len(baseline_failures)} tests.")
+        print("Cannot continue mutation campaign with an invalid baseline.")
+        sys.exit(1)
+
+    print("\n--- Executing Targeted Runtime Mutations ---")
     for mid, mod, func, mtype, desc, test_target, runner in mutants_def:
         print(f"\n[{mid}] {desc}")
         print(f"  Target: {mod}.{func}")
         print(f"  Target Test: {test_target}")
-
-        # Check unmutated passes first
-        unmutated_pass, _, _ = run_target_test(test_target)
-        if not unmutated_pass:
-            print(f"  [WARN] Baseline unmutated test did not pass: {test_target}")
 
         start_time = time.time()
         try:
@@ -429,15 +462,17 @@ def main():
             killed = not mut_pass
             status = "KILLED" if killed else "SURVIVED"
             killer_test = killer or (test_target if killed else None)
+            classification = "KILLED" if killed else "TEST_GAP"
+            diag_str = diag[:200] if diag else ("Test failed under mutation as expected" if killed else "Test unexpectedly passed")
         except Exception as e:
-            status = "KILLED"
-            killer_test = test_target
-            diag = str(e)
+            # Runner or environment execution error: must NOT be counted as KILLED!
+            status = "ERROR"
+            killer_test = None
+            diag_str = f"Execution error in mutation runner: {e}"
+            classification = "ERROR"
 
         elapsed = time.time() - start_time
         print(f"  Result: {status} in {elapsed:.2f}s (Killer: {killer_test})")
-
-        classification = "KILLED" if status == "KILLED" else "EQUIVALENT"
 
         rec = MutantRecord(
             mutant_id=mid,
@@ -446,10 +481,10 @@ def main():
             mutation_type=mtype,
             description=desc,
             target_test=test_target,
-            unmutated_passed=unmutated_pass,
+            unmutated_passed=True,
             status=status,
             killer_test=killer_test,
-            diagnostic=diag[:200] if diag else "Test failed under mutation as expected",
+            diagnostic=diag_str,
             classification=classification,
         )
         records.append(rec)
@@ -457,18 +492,25 @@ def main():
     total = len(records)
     killed = sum(1 for r in records if r.status == "KILLED")
     survived = sum(1 for r in records if r.status == "SURVIVED")
+    errors = sum(1 for r in records if r.status == "ERROR")
     kill_rate = (killed / total) if total > 0 else 0.0
 
     print("\n=================================================================")
     print(f"Campaign Complete: {killed}/{total} mutants killed ({kill_rate:.1%})")
     print(f"Surviving mutants: {survived}")
+    print(f"Execution errors: {errors}")
     print("=================================================================")
 
     report_data = {
+        "campaign_type": "targeted_production_runtime_mutation",
+        "scope": "6 core production modules (14 targeted mutants)",
+        "excluded_areas": "Whole-repository AST source mutation (mutmut restricted on Windows per issue #397)",
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "baseline_validated": True,
         "total_mutants": total,
         "killed_mutants": killed,
         "survived_mutants": survived,
+        "error_mutants": errors,
         "kill_rate": kill_rate,
         "mutants": [asdict(r) for r in records],
     }
@@ -478,6 +520,9 @@ def main():
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(report_data, f, indent=2)
         print(f"Report written to {args.output}")
+
+    if errors > 0 or survived > 0:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

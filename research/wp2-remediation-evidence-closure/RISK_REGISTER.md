@@ -1,0 +1,10 @@
+# GDEC WP2 Final Evidence-Integrity Remediation — Risk Register
+
+| Risk ID | Description | Severity | Likelihood | Impact on GDEC | Mitigation Strategy | Status |
+|---|---|---|---|---|---|---|
+| `RISK-WP2-E01` | False capability status attribution via subsystem string heuristics | High | Medium | Capabilities could be marked as NUMERICALLY VERIFIED without passing relevant tests | Replaced all heuristics with explicit required test node ID mappings; gate derives status strictly from required test execution | **RESOLVED** |
+| `RISK-WP2-E02` | Unobserved collection errors or partial pytest exits silently passing status check | Medium | Low | Status register passes even if part of test suite failed during collection | Added `collection_errors` and `pytest_exit_code` to schema; `verify_traceability()` fails closed on any error | **RESOLVED** |
+| `RISK-WP2-E03` | Point sampling stress errors near reentrant or cavity boundaries | Medium | High | Centroid sampling in steep gradient zones produces mesh-dependent stress concentration errors | Implemented area-weighted element patch recovery $\bar{\sigma}_{xx}$ converging monotonically to $K_t(h) \to 3.000$ | **RESOLVED** |
+| `RISK-WP2-E04` | Accidental overwriting or staging of untracked user files (`analyser.py`, `runtime/`) | Critical | Low | Loss of proprietary user-developed runtime code | Preserved user paths explicitly excluded from git status dirty tracking and protected during git operations | **ACTIVE MONITORING** |
+| `RISK-WP2-E05` | Untracked directory masking in `git status --porcelain` | Medium | Medium | New untracked files inside untracked directories could show as top-level dir or be missed | Switched to `git status --porcelain -uall` to inspect every individual file recursively | **RESOLVED** |
+| `RISK-WP2-E06` | Mutation runner mutating invalid or broken test baselines | High | Low | Mutants appear killed due to pre-existing broken tests | Implemented mandatory unmutated baseline pre-validation across all target tests before applying mutations | **RESOLVED** |
