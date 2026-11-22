@@ -4,7 +4,7 @@
 **Repository:** `delythassociates/GDEC`  
 **Development Branch:** `research/phase-5.1.3-validation-and-ci-closure`  
 **Required Parent Commit:** `33aed0202aa5f4c359c9df3cb8d28e3a7753f475` (Phase 5.1.2 final commit)  
-**Triggering Commit SHA:** `9c933d2e2fa9300fa6c04bbbf6a9fe78096f8c37`  
+**Triggering Commit SHA:** `9c933d2e0ccddce206389c1af65c4f566ba3ce28`  
 **GitHub Actions Run ID:** `45034377590`  
 **GitHub Actions Run URL:** [https://github.com/delythassociates/GDEC/actions/runs/45034377590](https://github.com/delythassociates/GDEC/actions/runs/45034377590)  
 **Pull Request #1 State:** Kept open, draft, and strictly unmerged (`https://github.com/delythassociates/GDEC/pull/1`)  
