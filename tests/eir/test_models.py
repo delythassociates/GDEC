@@ -182,3 +182,10 @@ def test_json_schema_export_is_available_and_versioned():
     schema = EngineeringProblemIR.model_json_schema()
     assert schema["title"] == "EngineeringProblemIR"
     assert "schema_version" in schema["properties"]
+
+
+def test_parameter_rejects_integer_too_large_for_finite_float():
+    data = make_problem()
+    data["physical_model"]["parameters"][0]["value"] = 10**10000
+    with pytest.raises(ValidationError, match="Numeric values must be finite"):
+        EngineeringProblemIR.model_validate(data)
