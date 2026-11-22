@@ -19,3 +19,13 @@ def test_frame_mismatch_requires_explicit_transform():
 def test_field_requires_domain_and_function_space():
     with pytest.raises(ShapeError):
         FieldType(ValueShape(TensorShape((1,))), "", "H1")
+
+def test_boolean_extents_and_frame_dimensions_are_rejected():
+    with pytest.raises(ShapeError):
+        TensorShape((True, 2))
+    with pytest.raises(ShapeError):
+        CoordinateFrame("invalid", True)
+
+def test_coordinate_frame_rejects_blank_parent_reference():
+    with pytest.raises(ShapeError):
+        CoordinateFrame("local", 2, parent_id="   ")
