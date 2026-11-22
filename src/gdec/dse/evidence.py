@@ -137,6 +137,22 @@ class EvidenceAssessment(BaseModel):
         reports_by_category: Dict[str, List[RecordEvaluationReport]] = {}
         refusal_reasons: List[str] = []
 
+        # 0. Check for duplicate records with conflicting provenance or data
+        seen_records: Dict[str, EvidenceRecord] = {}
+        for rec in self.evidence_records:
+            if rec.id in seen_records:
+                prev = seen_records[rec.id]
+                if prev.provenance.strip() != rec.provenance.strip():
+                    refusal_reasons.append(
+                        f"Duplicate record ID '{rec.id}' with conflicting provenance: "
+                        f"'{prev.provenance}' vs '{rec.provenance}'."
+                    )
+                elif prev.validation_status != rec.validation_status or prev.numerical_metric != rec.numerical_metric:
+                    refusal_reasons.append(
+                        f"Duplicate record ID '{rec.id}' with conflicting status or numerical metric."
+                    )
+            seen_records[rec.id] = rec
+
         # 1. Audit every individual record
         for rec in self.evidence_records:
             cat_key = rec.category.strip().lower()

@@ -41,6 +41,7 @@ class DecisionEvaluationResult:
     dwr_asymptotic_indicator: Optional[float] = None
     refusal_reason: Optional[str] = None
     diagnostics: Dict[str, Any] = field(default_factory=dict)
+    selected_dwr_record_id: Optional[str] = None
 
     def is_conclusive(self) -> bool:
         """True if the decision is an actionable RELEASE or REJECT."""
@@ -61,6 +62,7 @@ class DecisionEvaluationResult:
             "dwr_asymptotic_indicator": self.dwr_asymptotic_indicator,
             "refusal_reason": self.refusal_reason,
             "diagnostics": self.diagnostics,
+            "selected_dwr_record_id": self.selected_dwr_record_id,
         }
 
 
@@ -225,49 +227,168 @@ class SingleQoIEvaluator:
         # ----------------------------------------------------------------------
         dwr_breached = False
         dwr_rel = None
+        selected_dwr_record_id: Optional[str] = None
 
+        DWR_CATEGORIES = ("discretization_error", "mesh_convergence", "dwr", "numerical_quality")
         dwr_required = any(
-            cat.strip().lower() in ("discretization_error", "mesh_convergence", "dwr", "numerical_quality")
+            cat.strip().lower() in DWR_CATEGORIES
             for cat in self.contract.evidence.required_categories
         )
 
-        effective_dwr = dwr_indicator
-        if effective_dwr is None and evidence_assessment is not None:
-            # Look for numerical_metric in discretization_error / mesh_convergence records
+        # A1: Find eligible evidence records that can supply the DWR metric
+        eligible_dwr_records: List[EvidenceRecord] = []
+        if evidence_assessment is not None:
+            # Map of record_id -> RecordEvaluationReport for fast lookup
+            reports_by_id = {
+                rep.record_id: rep
+                for cat_reps in reports_by_cat.values()
+                for rep in cat_reps
+            }
             for rec in evidence_assessment.evidence_records:
-                if rec.category.strip().lower() in ("discretization_error", "mesh_convergence", "dwr"):
-                    if rec.numerical_metric is not None and math.isfinite(rec.numerical_metric):
-                        effective_dwr = rec.numerical_metric
-                        break
+                if rec.category.strip().lower() in DWR_CATEGORIES:
+                    rep = reports_by_id.get(rec.id)
+                    # Must be acceptable under contract (ACCEPTED status)
+                    if rep is not None and rep.is_acceptable and rec.numerical_metric is not None:
+                        eligible_dwr_records.append(rec)
 
-        if dwr_required and effective_dwr is None:
-            reason = (
-                "Mandatory Discretization Quality Evidence Missing: Decision Contract specifies "
-                f"numerical_quality_threshold ({self.contract.evidence.numerical_quality_threshold}) or requires "
-                "discretization error assessment, but no DWR error indicator or valid numerical_metric was provided."
-            )
-            if raise_on_refusal:
-                raise DecisionRefusalError(reason)
-            return self._insufficient(reason, mu=mu, sigma=sigma)
+        selected_record: Optional[EvidenceRecord] = None
+        effective_dwr: Optional[float] = None
 
+        if dwr_indicator is not None:
+            effective_dwr = dwr_indicator
+            if eligible_dwr_records:
+                selected_record = eligible_dwr_records[0]
+                selected_dwr_record_id = selected_record.id
+        elif eligible_dwr_records:
+            # When selecting metric from evidence records, check for conflicting metrics across eligible records
+            first_metric = eligible_dwr_records[0].numerical_metric
+            for other_rec in eligible_dwr_records[1:]:
+                m = other_rec.numerical_metric
+                diff = abs(m - first_metric)
+                rel_diff = diff / max(abs(first_metric), 1e-14)
+                if diff > 1e-12 and rel_diff > 1e-6:
+                    reason = (
+                        f"Conflicting DWR metrics detected across eligible evidence records: "
+                        f"record '{eligible_dwr_records[0].id}' ({first_metric}) vs "
+                        f"record '{other_rec.id}' ({m}). Explicit refusal policy enforced."
+                    )
+                    if raise_on_refusal:
+                        raise DecisionRefusalError(reason)
+                    return self._insufficient(
+                        reason,
+                        mu=mu,
+                        sigma=sigma,
+                        diagnostics={"record_reports": reports_by_cat, "selected_dwr_record_id": None},
+                        selected_dwr_record_id=None,
+                    )
+
+            selected_record = eligible_dwr_records[0]
+            selected_dwr_record_id = selected_record.id
+            effective_dwr = selected_record.numerical_metric
+
+        # If DWR is required by the contract, we MUST have an eligible record and an effective DWR metric
+        if dwr_required:
+            if not eligible_dwr_records and dwr_indicator is None:
+                reason = (
+                    "Mandatory Discretization Quality Evidence Missing: Decision Contract specifies "
+                    f"numerical_quality_threshold ({self.contract.evidence.numerical_quality_threshold}) or requires "
+                    "discretization error assessment, but no eligible DWR error indicator or valid numerical_metric was provided."
+                )
+                if raise_on_refusal:
+                    raise DecisionRefusalError(reason)
+                return self._insufficient(
+                    reason,
+                    mu=mu,
+                    sigma=sigma,
+                    diagnostics={"record_reports": reports_by_cat, "selected_dwr_record_id": None},
+                    selected_dwr_record_id=None,
+                )
+            elif not eligible_dwr_records and dwr_indicator is not None:
+                reason = (
+                    "Mandatory Discretization Quality Evidence Missing: Decision Contract requires "
+                    "discretization error evidence, but no eligible DWR record was provided in EvidenceAssessment. "
+                    "Caller-supplied dwr_indicator cannot bypass missing eligible evidence."
+                )
+                if raise_on_refusal:
+                    raise DecisionRefusalError(reason)
+                return self._insufficient(
+                    reason,
+                    mu=mu,
+                    sigma=sigma,
+                    diagnostics={"record_reports": reports_by_cat, "selected_dwr_record_id": None},
+                    selected_dwr_record_id=None,
+                )
+
+        # A2: Validate metric semantics
         if effective_dwr is not None:
-            if not math.isfinite(effective_dwr) or effective_dwr < 0.0:
-                reason = f"Invalid DWR indicator: {effective_dwr} (must be non-negative finite)"
+            if not math.isfinite(effective_dwr):
+                reason = f"Invalid non-finite DWR indicator: {effective_dwr}"
                 if raise_on_refusal:
                     raise DecisionRefusalError(reason)
-                return self._insufficient(reason, mu=mu, sigma=sigma)
+                return self._insufficient(
+                    reason,
+                    mu=mu,
+                    sigma=sigma,
+                    diagnostics={"record_reports": reports_by_cat, "selected_dwr_record_id": selected_dwr_record_id},
+                    selected_dwr_record_id=selected_dwr_record_id,
+                )
 
-            # Determine reference scale (Option B: explicit reference scale)
-            if evidence_assessment.reference_scale is not None and evidence_assessment.reference_scale > 0.0:
-                ref_scale = evidence_assessment.reference_scale
-            elif abs(self.contract.criterion.limit) > 1e-12:
-                # Fallback to absolute threshold limit if reference scale not supplied
-                ref_scale = abs(self.contract.criterion.limit)
-            else:
-                reason = "Cannot assess relative DWR error: No explicit positive reference_scale provided and threshold is near-zero."
+            if effective_dwr < 0.0:
+                reason = f"Invalid DWR indicator: {effective_dwr} (must be non-negative finite magnitude)"
                 if raise_on_refusal:
                     raise DecisionRefusalError(reason)
-                return self._insufficient(reason, mu=mu, sigma=sigma)
+                return self._insufficient(
+                    reason,
+                    mu=mu,
+                    sigma=sigma,
+                    diagnostics={"record_reports": reports_by_cat, "selected_dwr_record_id": selected_dwr_record_id},
+                    selected_dwr_record_id=selected_dwr_record_id,
+                )
+
+            # Unit verification
+            if selected_record is not None and selected_record.units is not None:
+                rec_unit = selected_record.units.strip().lower()
+                contract_unit = self.contract.qoi.unit.strip().lower()
+                if rec_unit != contract_unit:
+                    reason = (
+                        f"Incompatible units: DWR evidence record '{selected_record.id}' has unit '{selected_record.units}', "
+                        f"but contract QoI requires unit '{self.contract.qoi.unit}'."
+                    )
+                    if raise_on_refusal:
+                        raise DecisionRefusalError(reason)
+                    return self._insufficient(
+                        reason,
+                        mu=mu,
+                        sigma=sigma,
+                        diagnostics={"record_reports": reports_by_cat, "selected_dwr_record_id": selected_dwr_record_id},
+                        selected_dwr_record_id=selected_dwr_record_id,
+                    )
+
+            # Reference scale verification
+            if evidence_assessment is None or evidence_assessment.reference_scale is None:
+                reason = "Cannot assess relative DWR error: Missing positive reference_scale in EvidenceAssessment."
+                if raise_on_refusal:
+                    raise DecisionRefusalError(reason)
+                return self._insufficient(
+                    reason,
+                    mu=mu,
+                    sigma=sigma,
+                    diagnostics={"record_reports": reports_by_cat, "selected_dwr_record_id": selected_dwr_record_id},
+                    selected_dwr_record_id=selected_dwr_record_id,
+                )
+
+            ref_scale = evidence_assessment.reference_scale
+            if not math.isfinite(ref_scale) or ref_scale <= 1e-12:
+                reason = f"Cannot assess relative DWR error: Non-positive or near-zero reference_scale ({ref_scale})."
+                if raise_on_refusal:
+                    raise DecisionRefusalError(reason)
+                return self._insufficient(
+                    reason,
+                    mu=mu,
+                    sigma=sigma,
+                    diagnostics={"record_reports": reports_by_cat, "selected_dwr_record_id": selected_dwr_record_id},
+                    selected_dwr_record_id=selected_dwr_record_id,
+                )
 
             dwr_rel = effective_dwr / ref_scale
             quality_tol = self.contract.evidence.numerical_quality_threshold
@@ -328,6 +449,7 @@ class SingleQoIEvaluator:
             "dwr_gate_breached": dwr_breached,
             "assessment_id": evidence_assessment.assessment_id,
             "record_reports": reports_by_cat,
+            "selected_dwr_record_id": selected_dwr_record_id,
         }
 
         # ----------------------------------------------------------------------
@@ -368,6 +490,7 @@ class SingleQoIEvaluator:
             dwr_asymptotic_indicator=dwr_indicator,
             refusal_reason=refusal_msg,
             diagnostics=diagnostics,
+            selected_dwr_record_id=selected_dwr_record_id,
         )
 
     def _insufficient(
@@ -376,7 +499,11 @@ class SingleQoIEvaluator:
         mu: float = float("nan"),
         sigma: float = float("nan"),
         diagnostics: Optional[Dict[str, Any]] = None,
+        selected_dwr_record_id: Optional[str] = None,
     ) -> DecisionEvaluationResult:
+        diag = diagnostics.copy() if diagnostics else {}
+        if selected_dwr_record_id is not None and "selected_dwr_record_id" not in diag:
+            diag["selected_dwr_record_id"] = selected_dwr_record_id
         return DecisionEvaluationResult(
             recommendation=DecisionRecommendation.INSUFFICIENT_EVIDENCE,
             expected_loss_release=float("nan"),
@@ -388,5 +515,6 @@ class SingleQoIEvaluator:
             qoi_mean=mu if math.isfinite(mu) else float("nan"),
             qoi_std=sigma if math.isfinite(sigma) else float("nan"),
             refusal_reason=reason,
-            diagnostics=diagnostics or {},
+            diagnostics=diag,
+            selected_dwr_record_id=selected_dwr_record_id,
         )

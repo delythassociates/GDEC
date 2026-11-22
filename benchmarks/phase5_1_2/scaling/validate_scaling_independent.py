@@ -74,25 +74,55 @@ def run_independent_validation(output_csv: str) -> None:
         u_full = u_init.copy()
         u_full[I_dofs] = u_free
 
-        # Residual verification: ||f - K u|| / ||f||
-        res_norm = float(np.linalg.norm(f_vec - K_mat @ u_full) / max(np.linalg.norm(f_vec), 1e-14))
+        # 1. Free-DOF equilibrium residual: r_free = f_c - K_c @ u_free
+        r_free = f_c - K_c @ u_free
+        r_free_norm = float(np.linalg.norm(r_free))
+        f_free_norm = float(np.linalg.norm(f_c))
+        res_free_rel = float(r_free_norm / max(f_free_norm, 1e-14))
+
+        # 2. Constrained-DOF reaction forces: R = K @ u - f
+        reactions = K_mat @ u_full - f_vec
+        R_clamped = reactions[dofs_clamped]
+        reaction_norm = float(np.linalg.norm(R_clamped))
+
+        # Equilibrium check: total reaction force components at x = 0
+        dofs_clamped_y = ib.get_dofs(lambda x: np.isclose(x[0], 0.0)).nodal['u^2']
+        dofs_clamped_x = ib.get_dofs(lambda x: np.isclose(x[0], 0.0)).nodal['u^1']
+        total_Ry = float(np.sum(reactions[dofs_clamped_y]))
+        total_Rx = float(np.sum(reactions[dofs_clamped_x]))
+        vert_equil_err = float(abs(total_Ry - P_load) / max(P_load, 1e-14))
 
         # Vertical tip displacement (downward, reported as positive magnitude)
         tip_deflection = abs(float(u_full[dof_tip_uy]))
         # Compliance energy C = f^T u
-        compliance = float(f_vec @ u_full)
+        compliance = abs(float(f_vec @ u_full))
 
-        return tip_deflection, compliance, res_norm
+        return {
+            "tip_deflection": tip_deflection,
+            "compliance": compliance,
+            "r_free_norm": r_free_norm,
+            "res_free_rel": res_free_rel,
+            "f_free_norm": f_free_norm,
+            "reaction_norm": reaction_norm,
+            "total_Rx": total_Rx,
+            "total_Ry": total_Ry,
+            "vert_equil_err": vert_equil_err,
+            "n_free_dofs": len(I_dofs),
+        }
 
     # 2. Baseline Problem Configuration
     E_0 = 210e3  # 210 GPa (in MPa)
     P_0 = 1000.0 # 1000 N shear load
 
     print(f"\n[Baseline Solve] Assembling independent FEM: E_0 = {E_0:,} MPa, P_0 = {P_0:,} N...")
-    J_0_fem, C_0_fem, res_0 = solve_independent_fem(E_0, P_0)
+    base_res = solve_independent_fem(E_0, P_0)
+    J_0_fem = base_res["tip_deflection"]
+    C_0_fem = base_res["compliance"]
     print(f"  Baseline Tip Deflection J_0: {J_0_fem:.8f} mm")
     print(f"  Baseline Compliance C_0:     {C_0_fem:.8f} N*mm")
-    print(f"  Residual Relative Norm:      {res_0:.2e}")
+    print(f"  Free-DOF Rel Residual:       {base_res['res_free_rel']:.2e} (tolerance < 1e-10)")
+    print(f"  Reaction Norm (Wall):        {base_res['reaction_norm']:.2e} N")
+    print(f"  Vertical Equilibrium Balance: Ry = {base_res['total_Ry']:.4f} N (Load = {P_0} N, err = {base_res['vert_equil_err']:.2e})")
 
     # 3. Setup GDEC Analytical Scaler
     baseline_record = ReferenceBaseline(
@@ -129,7 +159,10 @@ def run_independent_validation(output_csv: str) -> None:
 
     for case_id, E_val, P_val, desc in test_cases:
         # Full independent FEM re-assembly and solve
-        J_fem, C_fem, res_norm = solve_independent_fem(E_val, P_val)
+        fem_res = solve_independent_fem(E_val, P_val)
+        J_fem = fem_res["tip_deflection"]
+        C_fem = fem_res["compliance"]
+
         # GDEC analytical scaling prediction
         J_pred = gdec_scaler.evaluate_scalar(E_val, P_val)
 
@@ -146,24 +179,36 @@ def run_independent_validation(output_csv: str) -> None:
         print(f"  GDEC Analytical QoI:  {J_pred:.10f} mm")
         print(f"  Absolute Discrepancy:  {abs_err:.2e} mm")
         print(f"  Relative Discrepancy:  {rel_err:.2e}")
+        print(f"  Free-DOF Rel Residual: {fem_res['res_free_rel']:.2e} (PASS)")
+        print(f"  Total Reaction Ry:     {fem_res['total_Ry']:.4f} N (Load = {P_val:.1f} N, err = {fem_res['vert_equil_err']:.2e})")
         print(f"  Compliance C_FEM:      {C_fem:.6f} N*mm | Quadratic Formula Diff: {C_err:.2e}")
 
         assert rel_err < 1e-9, f"Analytical scaling failed to match independent FEM in {case_id}: rel_err={rel_err}"
+        assert fem_res["res_free_rel"] < 1e-10, f"Free-DOF equilibrium residual too large in {case_id}: {fem_res['res_free_rel']}"
+        assert fem_res["vert_equil_err"] < 1e-7, f"Vertical equilibrium balance failed in {case_id}: {fem_res['vert_equil_err']}"
 
         csv_rows.append({
             "case_id": case_id,
             "description": desc,
             "engine": f"scikit-fem-{fem.__version__}",
             "elements": mesh.nelements,
-            "dofs": n_dofs,
+            "total_dofs": n_dofs,
+            "free_dofs": fem_res["n_free_dofs"],
+            "clamped_dofs": len(dofs_clamped),
             "youngs_modulus_mpa": E_val,
             "load_factor_n": P_val,
             "independent_fem_qoi_mm": f"{J_fem:.12e}",
             "gdec_analytical_qoi_mm": f"{J_pred:.12e}",
             "abs_error_mm": f"{abs_err:.12e}",
             "rel_error": f"{rel_err:.12e}",
-            "fem_residual_rel_norm": f"{res_norm:.12e}",
+            "free_dof_rel_residual": f"{fem_res['res_free_rel']:.12e}",
+            "free_dof_residual_norm_n": f"{fem_res['r_free_norm']:.12e}",
+            "reaction_norm_n": f"{fem_res['reaction_norm']:.12e}",
+            "total_reaction_rx_n": f"{fem_res['total_Rx']:.12e}",
+            "total_reaction_ry_n": f"{fem_res['total_Ry']:.12e}",
+            "vertical_equilibrium_rel_error": f"{fem_res['vert_equil_err']:.12e}",
             "compliance_n_mm": f"{C_fem:.12e}",
+            "compliance_quadratic_rel_error": f"{C_err:.12e}",
         })
 
     # Save CSV

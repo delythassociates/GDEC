@@ -20,12 +20,12 @@ from gdec.dse.scaling import (
 
 @pytest.fixture(scope="module")
 def independent_reference_fem():
-    """Construct and solve baseline cantilever elasticity problem in scikit-fem."""
+    """Construct and solve authoritative baseline cantilever elasticity problem in scikit-fem."""
     L, H = 5.0, 1.0
-    nx, ny = 31, 13
+    nx, ny = 41, 17
     nu = 0.3
-    E_0 = 200e3
-    P_0 = 1000.0
+    E_0 = 210e3  # 210,000 MPa (210 GPa)
+    P_0 = 1000.0 # 1,000 N shear load
 
     mesh = fem.MeshTri.init_tensor(np.linspace(0, L, nx), np.linspace(0, H, ny))
     element = fem.ElementVector(fem.ElementTriP1())
@@ -39,6 +39,7 @@ def independent_reference_fem():
     dof_tip_uy = ib.nodal_dofs[1, nodes_tip[0]]
 
     def solve_fn(E_val, P_val):
+        """Fresh independent assembly and solve from scratch."""
         @fem.LinearForm
         def traction(v, w):
             return - (P_val / H) * v[1]
@@ -52,11 +53,29 @@ def independent_reference_fem():
         u_full = u_init.copy()
         u_full[I_dofs] = u_free
 
-        tip_u = abs(float(u_full[dof_tip_uy]))
-        compliance = float(f @ u_full)
-        return tip_u, compliance
+        # Free-DOF equilibrium residual
+        r_free = f_c - K_c @ u_free
+        r_free_norm = float(np.linalg.norm(r_free))
+        res_free_rel = float(r_free_norm / max(np.linalg.norm(f_c), 1e-14))
 
-    J_0, C_0 = solve_fn(E_0, P_0)
+        # Constrained-DOF reaction forces
+        reactions = K @ u_full - f
+        dofs_clamped_y = ib.get_dofs(lambda x: np.isclose(x[0], 0.0)).nodal['u^2']
+        total_Ry = float(np.sum(reactions[dofs_clamped_y]))
+        vert_equil_err = abs(total_Ry - P_val) / max(P_val, 1e-14)
+
+        tip_u = abs(float(u_full[dof_tip_uy]))
+        compliance = abs(float(f @ u_full))
+        return {
+            "tip_u": tip_u,
+            "compliance": compliance,
+            "res_free_rel": res_free_rel,
+            "vert_equil_err": vert_equil_err,
+        }
+
+    base_res = solve_fn(E_0, P_0)
+    J_0 = base_res["tip_u"]
+    C_0 = base_res["compliance"]
 
     baseline = ReferenceBaseline(
         E_0=E_0,
@@ -86,6 +105,9 @@ def independent_reference_fem():
         "J_0": J_0,
         "C_0": C_0,
         "baseline": baseline,
+        "n_elements": mesh.nelements,
+        "n_nodes": mesh.p.shape[1],
+        "n_dofs": ib.N,
     }
 
 
@@ -105,10 +127,14 @@ def test_independent_fem_scaling_agreement(independent_reference_fem):
     ]
 
     for E_var, P_var in variations:
-        J_fem, C_fem = solve_fn(E_var, P_var)
+        res = solve_fn(E_var, P_var)
+        J_fem = res["tip_u"]
         J_pred = scaler.evaluate_scalar(E_var, P_var)
         rel_diff = abs(J_fem - J_pred) / J_fem
         assert rel_diff < 1e-10
+        # Assert free-DOF equilibrium residual and vertical reaction balance
+        assert res["res_free_rel"] < 1e-10
+        assert res["vert_equil_err"] < 1e-7
 
 
 def test_independent_fem_compliance_quadratic_law(independent_reference_fem):
@@ -121,7 +147,8 @@ def test_independent_fem_compliance_quadratic_law(independent_reference_fem):
     E_0, P_0, C_0 = ctx["E_0"], ctx["P_0"], ctx["C_0"]
 
     # When load doubles (P = 2 P_0), compliance quadruples (4x)
-    _, C_2P = solve_fn(E_0, 2.0 * P_0)
+    res_2P = solve_fn(E_0, 2.0 * P_0)
+    C_2P = res_2P["compliance"]
     quad_ratio = C_2P / C_0
     assert pytest.approx(quad_ratio, abs=1e-8) == 4.0
 

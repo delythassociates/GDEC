@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, "audit/**"]
+    branches: [main, "audit/**", "research/**"]
   workflow_dispatch:
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
           python -m pip install -e ".[test,amg]"
 
       - name: Compile Python sources
-        run: python -m compileall -q src tests
+        run: python -m compileall -q src tests benchmarks
 
       - name: Run test suite
         run: python -m pytest -q
