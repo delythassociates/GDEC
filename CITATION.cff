@@ -1,8 +1,7 @@
 cff-version: 1.2.0
 message: "If you use GDEC in your research or engineering computation, please cite it as below."
 authors:
-  - family-names: "GDEC Research & Development Team"
-    affiliation: "Delyth Associates"
+  - name: "GDEC Research & Development Team"
 title: "GDEC: Goal-Driven Engineering Computation"
 version: 0.3.0-alpha
 date-released: 2026-11-22
