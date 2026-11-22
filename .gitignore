@@ -50,3 +50,7 @@ scratch/
 !results/v01_baseline/*
 !results/v021/*
 !results/v022/*
+
+# Generated runtime evidence registers (CI artifacts, not committed)
+results/status_register.json
+results/mutation_campaign_report.json

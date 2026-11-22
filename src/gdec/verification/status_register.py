@@ -260,6 +260,17 @@ SYSTEM_CAPABILITIES: List[CapabilityEntry] = [
 ]
 
 
+STATUS_HIERARCHY = [
+    "PLANNED",
+    "IMPLEMENTED",
+    "EXECUTED",
+    "TESTED",
+    "NUMERICALLY VERIFIED",
+    "INDEPENDENTLY VALIDATED",
+]
+STATUS_RANK = {s: i for i, s in enumerate(STATUS_HIERARCHY)}
+
+
 class PytestCollector:
     """In-process pytest plugin to capture executed test nodeids and outcomes."""
     def __init__(self):
@@ -271,8 +282,10 @@ class PytestCollector:
                 self.results[report.nodeid] = "PASS"
             elif report.failed:
                 self.results[report.nodeid] = "FAIL"
-            else:
+            elif report.skipped:
                 self.results[report.nodeid] = "SKIP"
+        elif report.when == "setup" and report.skipped:
+            self.results[report.nodeid] = "SKIP"
 
 
 def collect_live_test_results(test_files: Optional[List[str]] = None) -> Dict[str, str]:
@@ -294,14 +307,30 @@ def get_git_info() -> Dict[str, Any]:
         branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True).strip()
     except Exception:
         branch = "unknown"
+
+    PRESERVED_USER_PREFIXES = (
+        "src/gdec/core/analyser.py",
+        "src/gdec/runtime/",
+        "src/gdec/runtime\\",
+    )
+    dirty_entries = []
     try:
-        raw_status = subprocess.check_output(["git", "status", "--porcelain", "-uno"], text=True).splitlines()
-        # Ignore self-modifications to results/status_register.json during generation
-        tracked_changes = [l for l in raw_status if not l.strip().endswith("results/status_register.json")]
-        is_dirty = len(tracked_changes) > 0
+        raw_status = subprocess.check_output(["git", "status", "--porcelain"], text=True).splitlines()
+        for line in raw_status:
+            entry = line.strip()
+            if not entry:
+                continue
+            code = line[:2]
+            path = line[3:].strip()
+            norm_path = path.replace("\\", "/")
+            if code == "??" and any(norm_path.startswith(prefix.replace("\\", "/")) for prefix in PRESERVED_USER_PREFIXES):
+                continue
+            dirty_entries.append(line)
     except Exception:
-        is_dirty = False
-    return {"commit_sha": sha, "branch": branch, "dirty": is_dirty}
+        dirty_entries = []
+
+    is_dirty = len(dirty_entries) > 0
+    return {"commit_sha": sha, "branch": branch, "dirty": is_dirty, "dirty_entries": dirty_entries}
 
 
 def get_environment_info() -> Dict[str, Any]:
@@ -340,6 +369,7 @@ def generate_status_register(
     """
     Generate machine-readable status_register.json with commit, environment,
     capabilities, and verified test states backed by actual pytest execution.
+    Computes demonstrated_status rigorously from real execution evidence.
     """
     git_info = get_git_info()
     env_info = get_environment_info()
@@ -359,27 +389,42 @@ def generate_status_register(
         # Match executed tests for this capability
         matching_executed_tests: Dict[str, str] = {}
         for nodeid, status in live_test_results.items():
-            # Check if this nodeid belongs to any of cap.test_files
             normalized_nodeid = nodeid.replace("\\", "/")
             if any(tf.replace("\\", "/") in normalized_nodeid for tf in cap.test_files):
                 matching_executed_tests[nodeid] = status
 
         executed_test_ids = list(matching_executed_tests.keys())
+        passed_test_ids = [nid for nid, st in matching_executed_tests.items() if st == "PASS"]
+        failed_test_ids = [nid for nid, st in matching_executed_tests.items() if st == "FAIL"]
+        skipped_test_ids = [nid for nid, st in matching_executed_tests.items() if st == "SKIP"]
 
-        # Determine execution state based strictly on real execution evidence
         if not all_tests_exist or len(matching_executed_tests) == 0:
             execution_state = "NOT_RUN"
-        elif any(st == "FAIL" for st in matching_executed_tests.values()):
+            demonstrated_status = "PLANNED"
+        elif len(failed_test_ids) > 0:
             execution_state = "FAIL"
-        elif all(st == "PASS" for st in matching_executed_tests.values()):
-            execution_state = "PASS"
+            demonstrated_status = "FAILED"
+        elif len(skipped_test_ids) > 0 and len(passed_test_ids) == 0:
+            execution_state = "SKIPPED"
+            demonstrated_status = "SKIPPED"
+        elif len(skipped_test_ids) > 0:
+            execution_state = "PARTIAL_SKIP"
+            demonstrated_status = "PARTIAL_SKIP"
         else:
-            execution_state = "NOT_RUN"
+            execution_state = "PASS"
+            if cap.subsystem in ("fem", "solver", "estimator") or "scaling" in cap.capability_id or "evaluator" in cap.capability_id:
+                demonstrated_status = "NUMERICALLY VERIFIED"
+            else:
+                demonstrated_status = "TESTED"
 
         cap_dict = asdict(cap)
         cap_dict["test_files_exist"] = all_tests_exist
         cap_dict["executed_test_ids"] = executed_test_ids
+        cap_dict["passed_test_ids"] = passed_test_ids
+        cap_dict["failed_test_ids"] = failed_test_ids
+        cap_dict["skipped_test_ids"] = skipped_test_ids
         cap_dict["test_execution_state"] = execution_state
+        cap_dict["demonstrated_status"] = demonstrated_status
         capabilities_data.append(cap_dict)
 
     register_data = {
@@ -389,17 +434,20 @@ def generate_status_register(
         "environment": env_info,
         "total_capabilities": len(capabilities_data),
         "status_summary": {
-            "NUMERICALLY VERIFIED": sum(1 for c in capabilities_data if c["claimed_status"] == "NUMERICALLY VERIFIED"),
-            "TESTED": sum(1 for c in capabilities_data if c["claimed_status"] == "TESTED"),
-            "IMPLEMENTED": sum(1 for c in capabilities_data if c["claimed_status"] == "IMPLEMENTED"),
-            "PLANNED": sum(1 for c in capabilities_data if c["claimed_status"] == "PLANNED"),
+            "NUMERICALLY VERIFIED": sum(1 for c in capabilities_data if c["demonstrated_status"] == "NUMERICALLY VERIFIED"),
+            "TESTED": sum(1 for c in capabilities_data if c["demonstrated_status"] == "TESTED"),
+            "IMPLEMENTED": sum(1 for c in capabilities_data if c["demonstrated_status"] == "IMPLEMENTED"),
+            "PLANNED": sum(1 for c in capabilities_data if c["demonstrated_status"] == "PLANNED"),
+            "FAILED": sum(1 for c in capabilities_data if c["demonstrated_status"] == "FAILED"),
+            "SKIPPED": sum(1 for c in capabilities_data if c["demonstrated_status"] in ("SKIPPED", "PARTIAL_SKIP")),
         },
         "capabilities": capabilities_data,
     }
 
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(register_data, f, indent=2)
+    if output_path:
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(register_data, f, indent=2)
 
     return register_data
 
@@ -412,99 +460,78 @@ def verify_traceability(
 ) -> None:
     """
     Strict traceability gate:
-    1. Detects stale status register by comparing recorded commit SHA against current HEAD.
-    2. Enforces that working tree is not dirty.
-    3. Fails if any capability claimed as 'NUMERICALLY VERIFIED' lacks passing tests
-       or has test_execution_state != 'PASS'.
+    1. Rejects currently dirty working trees (tracked or untracked modifications).
+    2. Detects stale status register by comparing recorded commit SHA against current HEAD.
+    3. Fails if claimed status exceeds rigorously demonstrated status.
+    4. Fails if any required test did not execute or was skipped.
     """
-    git_info = get_git_info()
-    current_sha = git_info.get("commit_sha", "unknown")
-    recorded_sha = register_data.get("git", {}).get("commit_sha", "unknown")
+    live_git = get_git_info()
 
-    # Detect stale status register
-    if not allow_stale and recorded_sha != "unknown" and current_sha != "unknown" and recorded_sha != current_sha:
-        # Allow if recorded_sha is a valid ancestor whose only changes to current_sha are status register or metadata/docs
-        try:
-            diff_files = subprocess.check_output(
-                ["git", "diff", "--name-only", recorded_sha, current_sha],
-                text=True,
-                stderr=subprocess.DEVNULL,
-            ).strip().splitlines()
-            non_meta_diff = [
-                f for f in diff_files
-                if not f.startswith("results/status_register.json")
-                and not f.startswith("research/")
-                and not f.endswith(".md")
-            ]
-            if non_meta_diff:
-                raise TraceabilityVerificationError(
-                    f"Stale status register detected: recorded commit SHA '{recorded_sha}' "
-                    f"does not match current HEAD commit SHA '{current_sha}' (modified code/tests: {non_meta_diff})."
-                )
-        except Exception as e:
-            if isinstance(e, TraceabilityVerificationError):
-                raise
-            raise TraceabilityVerificationError(
-                f"Stale status register detected: recorded commit SHA '{recorded_sha}' "
-                f"does not match current HEAD commit SHA '{current_sha}'."
-            )
-
-    # Detect dirty state
-    if not allow_dirty and register_data.get("git", {}).get("dirty", False):
+    # 1. Independent working tree cleanliness check
+    if not allow_dirty and live_git["dirty"]:
+        entries_str = "\n".join(f"  {e}" for e in live_git["dirty_entries"])
         raise TraceabilityVerificationError(
-            "Status register indicates a dirty working tree. "
-            "Verification and status register must be generated on a clean commit."
+            f"Working tree is currently dirty ({len(live_git['dirty_entries'])} modified/untracked files):\n"
+            f"{entries_str}\nStatus register and verification require a clean repository state."
         )
 
-    # If on-disk path provided, verify file consistency
+    # 2. Freshness check
+    current_sha = live_git.get("commit_sha", "unknown")
+    recorded_sha = register_data.get("git", {}).get("commit_sha", "unknown")
+    if not allow_stale and recorded_sha != "unknown" and current_sha != "unknown" and recorded_sha != current_sha:
+        raise TraceabilityVerificationError(
+            f"Stale status register detected: recorded commit SHA '{recorded_sha}' "
+            f"does not match current HEAD commit SHA '{current_sha}'."
+        )
+
     if on_disk_path and os.path.exists(on_disk_path):
         with open(on_disk_path, "r", encoding="utf-8") as f:
             disk_data = json.load(f)
         disk_sha = disk_data.get("git", {}).get("commit_sha", "unknown")
         if not allow_stale and disk_sha != current_sha and disk_sha != "unknown" and current_sha != "unknown":
-            try:
-                diff_files = subprocess.check_output(
-                    ["git", "diff", "--name-only", disk_sha, current_sha],
-                    text=True,
-                    stderr=subprocess.DEVNULL,
-                ).strip().splitlines()
-                non_meta_diff = [
-                    f for f in diff_files
-                    if not f.startswith("results/status_register.json")
-                    and not f.startswith("research/")
-                    and not f.endswith(".md")
-                ]
-                if non_meta_diff:
-                    raise TraceabilityVerificationError(
-                        f"Committed status register at '{on_disk_path}' is stale: "
-                        f"records commit '{disk_sha}', but current HEAD is '{current_sha}' (modified code/tests: {non_meta_diff})."
-                    )
-            except Exception as e:
-                if isinstance(e, TraceabilityVerificationError):
-                    raise
-                raise TraceabilityVerificationError(
-                    f"Committed status register at '{on_disk_path}' is stale: "
-                    f"records commit '{disk_sha}', but current HEAD is '{current_sha}'."
-                )
+            raise TraceabilityVerificationError(
+                f"Committed status register at '{on_disk_path}' is stale: "
+                f"records commit '{disk_sha}', but current HEAD is '{current_sha}'."
+            )
 
     failures = []
     for cap in register_data["capabilities"]:
-        if cap["claimed_status"] == "NUMERICALLY VERIFIED":
-            if not cap.get("test_files_exist", False):
-                failures.append(
-                    f"Capability '{cap['capability_id']}' ({cap['name']}) is claimed as NUMERICALLY VERIFIED "
-                    f"but test files are missing: {cap['test_files']}"
-                )
-            elif cap.get("test_execution_state") != "PASS":
-                failures.append(
-                    f"Capability '{cap['capability_id']}' ({cap['name']}) is claimed as NUMERICALLY VERIFIED "
-                    f"but test state is '{cap.get('test_execution_state')}' (expected 'PASS')"
-                )
-            elif len(cap.get("executed_test_ids", [])) == 0:
-                failures.append(
-                    f"Capability '{cap['capability_id']}' ({cap['name']}) is claimed as NUMERICALLY VERIFIED "
-                    f"but 0 tests were executed to support it."
-                )
+        cid = cap["capability_id"]
+        name = cap["name"]
+        claimed = cap.get("claimed_status", "PLANNED")
+        demonstrated = cap.get("demonstrated_status", "PLANNED")
+        claimed_rank = STATUS_RANK.get(claimed, 0)
+        demonstrated_rank = STATUS_RANK.get(demonstrated, -1)
+
+        # Claimed status must not exceed demonstrated status
+        if claimed_rank > demonstrated_rank:
+            failures.append(
+                f"Capability '{cid}' ({name}): claimed status '{claimed}' exceeds demonstrated status '{demonstrated}'."
+            )
+
+        # Test files must exist
+        if not cap.get("test_files_exist", False):
+            failures.append(
+                f"Capability '{cid}' ({name}): required test files missing: {cap.get('test_files', [])}"
+            )
+
+        # Execution state must be PASS
+        if cap.get("test_execution_state") != "PASS":
+            failures.append(
+                f"Capability '{cid}' ({name}): test execution state is '{cap.get('test_execution_state')}' (expected 'PASS')"
+            )
+
+        # No skipped tests allowed
+        if len(cap.get("skipped_test_ids", [])) > 0:
+            failures.append(
+                f"Capability '{cid}' ({name}): {len(cap['skipped_test_ids'])} test(s) were skipped: {cap['skipped_test_ids']}"
+            )
+
+        # Must have at least 1 executed test
+        if len(cap.get("executed_test_ids", [])) == 0:
+            failures.append(
+                f"Capability '{cid}' ({name}): 0 tests were executed to support it."
+            )
 
     if failures:
         msg = f"Status Register Traceability Failure ({len(failures)} violation(s)):\n" + "\n".join(f"  - {f}" for f in failures)

@@ -91,15 +91,19 @@ class TestStatusRegisterTraceability:
                     "capability_id": "fake_broken_capability",
                     "name": "Broken Mechanical Solver",
                     "claimed_status": "NUMERICALLY VERIFIED",
+                    "demonstrated_status": "FAILED",
                     "test_files_exist": True,
                     "executed_test_ids": ["tests/fake_test.py::test_broken"],
+                    "passed_test_ids": [],
+                    "failed_test_ids": ["tests/fake_test.py::test_broken"],
+                    "skipped_test_ids": [],
                     "test_execution_state": "FAIL",
                     "test_files": ["tests/fake_test.py"],
                 }
             ]
         }
         with pytest.raises(TraceabilityVerificationError) as exc_info:
-            verify_traceability(bad_register)
+            verify_traceability(bad_register, allow_dirty=True)
         assert "Broken Mechanical Solver" in str(exc_info.value)
         assert "expected 'PASS'" in str(exc_info.value)
 
@@ -110,7 +114,7 @@ class TestStatusRegisterTraceability:
             "capabilities": []
         }
         with pytest.raises(TraceabilityVerificationError) as exc_info:
-            verify_traceability(stale_register)
+            verify_traceability(stale_register, allow_dirty=True)
         assert "Stale status register detected" in str(exc_info.value)
 
     def test_traceability_enforcement_fails_on_dirty_working_tree(self):
@@ -134,15 +138,19 @@ class TestStatusRegisterTraceability:
                     "capability_id": "untested_capability",
                     "name": "Untested Solver",
                     "claimed_status": "NUMERICALLY VERIFIED",
+                    "demonstrated_status": "PLANNED",
                     "test_files_exist": True,
                     "executed_test_ids": [],
+                    "passed_test_ids": [],
+                    "failed_test_ids": [],
+                    "skipped_test_ids": [],
                     "test_execution_state": "PASS",
                     "test_files": ["tests/test_existing.py"],
                 }
             ]
         }
         with pytest.raises(TraceabilityVerificationError) as exc_info:
-            verify_traceability(empty_tests_register)
+            verify_traceability(empty_tests_register, allow_dirty=True)
         assert "0 tests were executed" in str(exc_info.value)
 
     def test_traceability_enforcement_fails_on_missing_test_files(self):
@@ -155,26 +163,91 @@ class TestStatusRegisterTraceability:
                     "capability_id": "fake_missing_files",
                     "name": "Missing Test Solver",
                     "claimed_status": "NUMERICALLY VERIFIED",
+                    "demonstrated_status": "TESTED",
                     "test_files_exist": False,
-                    "executed_test_ids": [],
+                    "executed_test_ids": ["tests/non_existent_file_99999.py::test_foo"],
+                    "passed_test_ids": ["tests/non_existent_file_99999.py::test_foo"],
+                    "failed_test_ids": [],
+                    "skipped_test_ids": [],
                     "test_execution_state": "PASS",
                     "test_files": ["tests/non_existent_file_99999.py"],
                 }
             ]
         }
         with pytest.raises(TraceabilityVerificationError) as exc_info:
-            verify_traceability(bad_register)
+            verify_traceability(bad_register, allow_dirty=True)
         assert "missing" in str(exc_info.value)
 
-    def test_cli_script_generates_and_checks(self):
-        """Verify scripts/generate_status_register.py runs cleanly via CLI."""
-        # Generate fresh status register
-        gen_cmd = [sys.executable, "scripts/generate_status_register.py"]
+    def test_cli_script_generates_and_checks(self, tmp_path):
+        """Verify scripts/generate_status_register.py runs cleanly via CLI using isolated tmp_path."""
+        out_path = str(tmp_path / "cli_status_register.json")
+        # Generate fresh status register to tmp_path (never write to tracked repo files)
+        gen_cmd = [sys.executable, "scripts/generate_status_register.py", "--output", out_path]
         gen_proc = subprocess.run(gen_cmd, capture_output=True, text=True)
         assert gen_proc.returncode == 0, f"Generation failed: {gen_proc.stderr}\n{gen_proc.stdout}"
 
-        # Verify check succeeds (with --allow-dirty for local test runner state)
-        chk_cmd = [sys.executable, "scripts/generate_status_register.py", "--check", "--allow-dirty"]
+        # Verify check succeeds
+        chk_cmd = [sys.executable, "scripts/generate_status_register.py", "--check", "--input", out_path, "--allow-dirty"]
         chk_proc = subprocess.run(chk_cmd, capture_output=True, text=True)
         assert chk_proc.returncode == 0, f"CLI check failed: {chk_proc.stderr}\n{chk_proc.stdout}"
         assert "[PASS]" in chk_proc.stdout
+
+    def test_traceability_fails_when_claimed_status_exceeds_demonstrated_status(self):
+        """WP2-R4: Fails if claimed status exceeds demonstrated status."""
+        current_sha = get_git_info()["commit_sha"]
+        exceeded_register = {
+            "git": {"commit_sha": current_sha, "dirty": False},
+            "capabilities": [
+                {
+                    "capability_id": "overclaimed_capability",
+                    "name": "Overclaimed Component",
+                    "claimed_status": "NUMERICALLY VERIFIED",
+                    "demonstrated_status": "TESTED",
+                    "test_files_exist": True,
+                    "executed_test_ids": ["tests/test_something.py::test_basic"],
+                    "passed_test_ids": ["tests/test_something.py::test_basic"],
+                    "failed_test_ids": [],
+                    "skipped_test_ids": [],
+                    "test_execution_state": "PASS",
+                    "test_files": ["tests/test_something.py"],
+                }
+            ]
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(exceeded_register, allow_dirty=True)
+        assert "exceeds demonstrated status" in str(exc_info.value)
+
+    def test_traceability_fails_on_skipped_tests(self):
+        """WP2-R4: Any skipped tests on claimed capability must fail."""
+        current_sha = get_git_info()["commit_sha"]
+        skipped_register = {
+            "git": {"commit_sha": current_sha, "dirty": False},
+            "capabilities": [
+                {
+                    "capability_id": "skipped_capability",
+                    "name": "Skipped Component",
+                    "claimed_status": "TESTED",
+                    "demonstrated_status": "TESTED",
+                    "test_files_exist": True,
+                    "executed_test_ids": ["tests/test_something.py::test_1"],
+                    "passed_test_ids": ["tests/test_something.py::test_1"],
+                    "failed_test_ids": [],
+                    "skipped_test_ids": ["tests/test_something.py::test_skipped"],
+                    "test_execution_state": "PASS",
+                    "test_files": ["tests/test_something.py"],
+                }
+            ]
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(skipped_register, allow_dirty=True)
+        assert "skipped" in str(exc_info.value).lower()
+
+    def test_working_tree_cleanliness_detects_untracked_and_modified(self, tmp_path):
+        """WP2-R4: Working tree cleanliness detects unexpected untracked files while preserving user files."""
+        git_info = get_git_info()
+        assert isinstance(git_info["dirty"], bool)
+        assert isinstance(git_info["dirty_entries"], list)
+        # Verify that preserved user prefixes are not counted as dirty
+        for entry in git_info["dirty_entries"]:
+            assert "analyser.py" not in entry
+            assert "src/gdec/runtime" not in entry

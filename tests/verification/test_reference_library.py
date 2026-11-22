@@ -12,10 +12,16 @@ import scipy.sparse.linalg as spla
 from scipy.spatial import Delaunay
 import pytest
 import skfem
-from skfem.models.elasticity import linear_elasticity, plane_stress
+from skfem.models.elasticity import linear_elasticity, plane_stress, lame_parameters
 from skfem.helpers import dot
 
-from gdec.verification.reference_problems import get_reference_problem, list_reference_problems
+from gdec.verification.reference_problems import (
+    get_reference_problem,
+    list_reference_problems,
+    lame_cylinder_analytical_plane_stress,
+    lame_cylinder_analytical_plane_strain,
+    kirsch_plate_hole_analytical,
+)
 
 
 class TestReferenceProblemLibrary:
@@ -203,150 +209,247 @@ class TestReferenceProblemLibrary:
         max_err = max(np.max(np.abs(diff_u)), np.max(np.abs(diff_v)))
         assert max_err < 1e-10, f"REF-04 max error: {max_err}"
 
-    def test_ref_05_lame_thick_cylinder(self):
-        """REF-05: Lame pressurized thick cylinder quadrant under internal pressure."""
+    def test_ref_05_lame_cylinder_plane_stress(self):
+        """REF-05: Lame thick cylinder quadrant under plane stress with full radial profiles."""
         spec = get_reference_problem("REF-05-LAME-CYLINDER")
         a, b = 1.0, 2.0
         P_int = 10.0e6
         E, nu = 200.0e9, 0.3
 
-        # Analytical Lame formula for radial displacement at outer radius r = b in plane stress:
-        # u_r(b) = (2 * P_int * a^2 * b) / (E * (b^2 - a^2))
-        expected_ur_b = (2.0 * P_int * a**2 * b) / (E * (b**2 - a**2))
+        errors = []
+        hs = []
+        for nr, ntheta in [(8, 12), (16, 24), (32, 48)]:
+            h = (b - a) / nr
+            r_vals = np.linspace(a, b, nr + 1)
+            th_vals = np.linspace(0, np.pi / 2.0, ntheta + 1)
+            grid_mesh = skfem.MeshTri.init_tensor(r_vals, th_vals)
+            x_coords = grid_mesh.p[0] * np.cos(grid_mesh.p[1])
+            y_coords = grid_mesh.p[0] * np.sin(grid_mesh.p[1])
+            cyl_mesh = skfem.MeshTri(np.vstack([x_coords, y_coords]), grid_mesh.t)
 
-        # Discretize quadrant in polar coordinates (r, theta) mapped to (x, y)
-        nr, ntheta = 16, 24
-        r_vals = np.linspace(a, b, nr + 1)
-        theta_vals = np.linspace(0, np.pi / 2.0, ntheta + 1)
-        grid_mesh = skfem.MeshTri.init_tensor(r_vals, theta_vals)
+            basis = skfem.Basis(cyl_mesh, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
+            K = skfem.asm(linear_elasticity(*plane_stress(E, nu)), basis)
 
-        # Map to Cartesian coordinates
-        r_coords = grid_mesh.p[0]
-        th_coords = grid_mesh.p[1]
-        x_coords = r_coords * np.cos(th_coords)
-        y_coords = r_coords * np.sin(th_coords)
-        cyl_mesh = skfem.MeshTri(np.vstack([x_coords, y_coords]), grid_mesh.t)
+            bottom_nodes = np.where(np.isclose(cyl_mesh.p[1], 0.0))[0]
+            left_nodes = np.where(np.isclose(cyl_mesh.p[0], 0.0))[0]
+            D = np.unique(np.concatenate([basis.nodal_dofs[1, bottom_nodes], basis.nodal_dofs[0, left_nodes]]))
 
-        basis = skfem.Basis(cyl_mesh, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
-        K = skfem.asm(linear_elasticity(*plane_stress(E, nu)), basis)
+            inner_facets = cyl_mesh.facets_satisfying(lambda x: np.isclose(np.sqrt(x[0]**2 + x[1]**2), a, atol=0.01))
+            fb_inner = skfem.FacetBasis(cyl_mesh, skfem.ElementVector(skfem.ElementTriP1()), facets=inner_facets)
 
-        # Symmetry boundaries: bottom (y=0 -> v=0), left (x=0 -> u=0)
-        bottom_nodes = np.where(np.isclose(cyl_mesh.p[1], 0.0))[0]
-        left_nodes = np.where(np.isclose(cyl_mesh.p[0], 0.0))[0]
-        D_bottom = basis.nodal_dofs[1, bottom_nodes]
-        D_left = basis.nodal_dofs[0, left_nodes]
-        D = np.unique(np.concatenate([D_bottom, D_left]))
+            @skfem.LinearForm
+            def pressure_form(v, w):
+                return -P_int * (v[0] * w.n[0] + v[1] * w.n[1])
 
-        # Internal pressure on inner radius r = a: normal force P_int directed outward from cavity
-        inner_facets = cyl_mesh.facets_satisfying(lambda x: np.isclose(np.sqrt(x[0]**2 + x[1]**2), a, atol=0.01))
-        fb_inner = skfem.FacetBasis(cyl_mesh, skfem.ElementVector(skfem.ElementTriP1()), facets=inner_facets)
+            f = skfem.asm(pressure_form, fb_inner)
+            u_sol = skfem.solve(*skfem.condense(K, f, D=D))
 
-        @skfem.LinearForm
-        def pressure_form(v, w):
-            # w.n is unit outward normal to the domain (points toward origin)
-            # Internal pressure acts outward from cavity into domain (-w.n)
-            return -P_int * dot(v, w.n)
+            r_nodes = np.sqrt(cyl_mesh.p[0]**2 + cyl_mesh.p[1]**2)
+            ur_nodes = np.sqrt(u_sol[basis.nodal_dofs[0]]**2 + u_sol[basis.nodal_dofs[1]]**2)
 
-        f = skfem.asm(pressure_form, fb_inner)
-        u_sol = skfem.solve(*skfem.condense(K, f, D=D))
+            # Full radial profile comparison against authoritative closed form
+            exact = lame_cylinder_analytical_plane_stress(r_nodes, a, b, P_int, E, nu)
+            ur_exact = exact["u_r"]
 
-        # Check radial displacement at outer radius
-        outer_nodes = np.where(np.isclose(np.sqrt(cyl_mesh.p[0]**2 + cyl_mesh.p[1]**2), b, atol=0.01))[0]
-        ur_outer = np.sqrt(u_sol[basis.nodal_dofs[0, outer_nodes]]**2 + u_sol[basis.nodal_dofs[1, outer_nodes]]**2)
-        mean_ur_outer = np.mean(ur_outer)
+            rel_l2 = float(np.linalg.norm(ur_nodes - ur_exact) / np.linalg.norm(ur_exact))
+            errors.append(rel_l2)
+            hs.append(h)
 
-        # Relative agreement within 1.5% on moderate mesh (as documented in spec)
-        rel_err = abs(mean_ur_outer - expected_ur_b) / expected_ur_b
-        assert rel_err < 0.015, f"REF-05 outer radial displacement discrepancy: {rel_err:.2%}"
+        # 1. Monotonic error reduction under uniform refinement
+        assert errors[1] < errors[0] and errors[2] < errors[1], f"Errors not monotonically decreasing: {errors}"
+
+        # 2. Asymptotic convergence order p_obs ~ 2.0
+        p_obs = float(np.polyfit(np.log(hs), np.log(errors), 1)[0])
+        assert 1.85 <= p_obs <= 2.15, f"Observed order {p_obs:.3f} outside [1.85, 2.15]"
+
+        # 3. Fine mesh accuracy within 0.10% L2 and 0.35% max relative nodal error
+        max_rel_err = float(np.max(np.abs(ur_nodes - ur_exact) / ur_exact))
+        assert errors[-1] < 0.0010, f"Fine mesh L2 error {errors[-1]:.4%} exceeds 0.10%"
+        assert max_rel_err < 0.0035, f"Max nodal error {max_rel_err:.4%} exceeds 0.35%"
+
+    def test_ref_05_lame_cylinder_plane_strain(self):
+        """REF-05: Lame thick cylinder quadrant under plane strain with full radial profiles."""
+        spec = get_reference_problem("REF-05-LAME-CYLINDER")
+        a, b = 1.0, 2.0
+        P_int = 10.0e6
+        E, nu = 200.0e9, 0.3
+
+        errors = []
+        hs = []
+        for nr, ntheta in [(8, 12), (16, 24), (32, 48)]:
+            h = (b - a) / nr
+            r_vals = np.linspace(a, b, nr + 1)
+            th_vals = np.linspace(0, np.pi / 2.0, ntheta + 1)
+            grid_mesh = skfem.MeshTri.init_tensor(r_vals, th_vals)
+            x_coords = grid_mesh.p[0] * np.cos(grid_mesh.p[1])
+            y_coords = grid_mesh.p[0] * np.sin(grid_mesh.p[1])
+            cyl_mesh = skfem.MeshTri(np.vstack([x_coords, y_coords]), grid_mesh.t)
+
+            basis = skfem.Basis(cyl_mesh, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
+            # In plane strain, use standard lame_parameters(E, nu)
+            K = skfem.asm(linear_elasticity(*lame_parameters(E, nu)), basis)
+
+            bottom_nodes = np.where(np.isclose(cyl_mesh.p[1], 0.0))[0]
+            left_nodes = np.where(np.isclose(cyl_mesh.p[0], 0.0))[0]
+            D = np.unique(np.concatenate([basis.nodal_dofs[1, bottom_nodes], basis.nodal_dofs[0, left_nodes]]))
+
+            inner_facets = cyl_mesh.facets_satisfying(lambda x: np.isclose(np.sqrt(x[0]**2 + x[1]**2), a, atol=0.01))
+            fb_inner = skfem.FacetBasis(cyl_mesh, skfem.ElementVector(skfem.ElementTriP1()), facets=inner_facets)
+
+            @skfem.LinearForm
+            def pressure_form(v, w):
+                return -P_int * (v[0] * w.n[0] + v[1] * w.n[1])
+
+            f = skfem.asm(pressure_form, fb_inner)
+            u_sol = skfem.solve(*skfem.condense(K, f, D=D))
+
+            r_nodes = np.sqrt(cyl_mesh.p[0]**2 + cyl_mesh.p[1]**2)
+            ur_nodes = np.sqrt(u_sol[basis.nodal_dofs[0]]**2 + u_sol[basis.nodal_dofs[1]]**2)
+
+            # Full radial profile comparison against authoritative plane strain closed form
+            exact = lame_cylinder_analytical_plane_strain(r_nodes, a, b, P_int, E, nu)
+            ur_exact = exact["u_r"]
+
+            rel_l2 = float(np.linalg.norm(ur_nodes - ur_exact) / np.linalg.norm(ur_exact))
+            errors.append(rel_l2)
+            hs.append(h)
+
+        assert errors[1] < errors[0] and errors[2] < errors[1], f"Errors not monotonically decreasing: {errors}"
+        p_obs = float(np.polyfit(np.log(hs), np.log(errors), 1)[0])
+        assert 1.85 <= p_obs <= 2.15, f"Observed order {p_obs:.3f} outside [1.85, 2.15]"
+
+        max_rel_err = float(np.max(np.abs(ur_nodes - ur_exact) / ur_exact))
+        assert errors[-1] < 0.0010, f"Fine mesh L2 error {errors[-1]:.4%} exceeds 0.10%"
+        assert max_rel_err < 0.0035, f"Max nodal error {max_rel_err:.4%} exceeds 0.35%"
 
     def test_ref_06_plate_with_hole_stress_concentration(self):
-        """REF-06: Numerical Kirsch plate-with-hole stress concentration benchmark (Kt ~ 3.0)."""
+        """REF-06: Numerical Kirsch plate-with-hole stress concentration benchmark (Kt -> 3.000)."""
         spec = get_reference_problem("REF-06-PLATE-HOLE-KIRSCH")
-        assert "3.0" in spec.expected_qoi_formula
-        assert spec.category == "physical_validation"
-
-        # Solve 2D elasticity on quarter-annulus with circular hole
         a = 1.0  # hole radius
-        b = 5.0  # far-field boundary radius (b >> a)
-        nr, ntheta = 24, 32
+        b = 5.0  # far-field boundary radius
         E, nu = 200.0e9, 0.3
         sigma_inf = 10.0e6
+
+        mesh_levels = [(12, 16), (24, 32), (48, 64)]
+        kt_values = []
+        rel_errors = []
+
+        for nr, ntheta in mesh_levels:
+            r_vals = np.geomspace(a, b, nr + 1)
+            th_vals = np.linspace(0, np.pi / 2.0, ntheta + 1)
+            grid = skfem.MeshTri.init_tensor(r_vals, th_vals)
+            x = grid.p[0] * np.cos(grid.p[1])
+            y = grid.p[0] * np.sin(grid.p[1])
+            mesh = skfem.MeshTri(np.vstack([x, y]), grid.t)
+
+            basis = skfem.Basis(mesh, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
+            K = skfem.asm(linear_elasticity(*plane_stress(E, nu)), basis)
+
+            bottom_nodes = np.where(np.isclose(mesh.p[1], 0.0))[0]
+            left_nodes = np.where(np.isclose(mesh.p[0], 0.0))[0]
+            D = np.unique(np.concatenate([basis.nodal_dofs[1, bottom_nodes], basis.nodal_dofs[0, left_nodes]]))
+
+            outer_facets = mesh.facets_satisfying(lambda p: np.isclose(np.sqrt(p[0]**2 + p[1]**2), b, atol=0.05))
+            fb_outer = skfem.FacetBasis(mesh, skfem.ElementVector(skfem.ElementTriP1()), facets=outer_facets)
+
+            @skfem.LinearForm
+            def outer_traction(v, w):
+                th = np.arctan2(w.x[1], w.x[0])
+                tr_data = kirsch_plate_hole_analytical(b, th, a, sigma_inf)
+                s_r = tr_data["sigma_rr"]
+                t_rth = tr_data["sigma_rth"]
+                T_x = s_r * np.cos(th) - t_rth * np.sin(th)
+                T_y = s_r * np.sin(th) + t_rth * np.cos(th)
+                return T_x * v[0] + T_y * v[1]
+
+            f = skfem.asm(outer_traction, fb_outer)
+            u_sol = skfem.solve(*skfem.condense(K, f, D=D))
+
+            # Stress recovery at hole boundary (0, a)
+            top_hole_node = left_nodes[np.argmin(np.abs(mesh.p[1, left_nodes] - a))]
+            elem_idx = np.where(np.any(mesh.t == top_hole_node, axis=0))[0]
+            scalar_basis = skfem.Basis(mesh, skfem.ElementTriP1())
+            dofs_u = u_sol[basis.nodal_dofs[0]]
+            dofs_v = u_sol[basis.nodal_dofs[1]]
+            grad_u = scalar_basis.interpolate(dofs_u).grad
+            grad_v = scalar_basis.interpolate(dofs_v).grad
+
+            eps_xx = grad_u[0, elem_idx, :]
+            eps_yy = grad_v[1, elem_idx, :]
+            sigma_xx = (E / (1.0 - nu**2)) * (eps_xx + nu * eps_yy)
+            peak_sigma = float(np.mean(sigma_xx))
+            kt = peak_sigma / sigma_inf
+            kt_values.append(kt)
+            rel_errors.append(abs(kt - 3.0) / 3.0)
+
+        # 1. Monotonic error reduction across refinement series
+        assert rel_errors[1] < rel_errors[0] and rel_errors[2] < rel_errors[1], f"Refinement series not monotonically reducing error: {rel_errors}"
+
+        # 2. Fine mesh achieves tight agreement with analytical Kt = 3.000 (relative error <= 0.10%)
+        assert rel_errors[-1] <= 0.0010, f"Fine mesh relative error {rel_errors[-1]:.4%} exceeds 0.10% (Kt={kt_values[-1]:.4f})"
+        assert 2.98 <= kt_values[-1] <= 3.02, f"Fine mesh Kt {kt_values[-1]:.4f} outside [2.98, 3.02]"
+
+    def test_ref_06_kirsch_perturbation_sensitivity(self):
+        """REF-06: Deliberate boundary condition / traction perturbation fails the benchmark."""
+        a, b = 1.0, 5.0
+        E, nu = 200.0e9, 0.3
+        sigma_inf = 10.0e6
+        nr, ntheta = 24, 32
 
         r_vals = np.geomspace(a, b, nr + 1)
         th_vals = np.linspace(0, np.pi / 2.0, ntheta + 1)
         grid = skfem.MeshTri.init_tensor(r_vals, th_vals)
-        x = grid.p[0] * np.cos(grid.p[1])
-        y = grid.p[0] * np.sin(grid.p[1])
-        mesh = skfem.MeshTri(np.vstack([x, y]), grid.t)
+        mesh = skfem.MeshTri(np.vstack([grid.p[0] * np.cos(grid.p[1]), grid.p[0] * np.sin(grid.p[1])]), grid.t)
 
         basis = skfem.Basis(mesh, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
         K = skfem.asm(linear_elasticity(*plane_stress(E, nu)), basis)
-
-        # Symmetry: bottom y=0 (v=0), left x=0 (u=0)
         bottom_nodes = np.where(np.isclose(mesh.p[1], 0.0))[0]
         left_nodes = np.where(np.isclose(mesh.p[0], 0.0))[0]
-        D_bottom = basis.nodal_dofs[1, bottom_nodes]
-        D_left = basis.nodal_dofs[0, left_nodes]
-        D = np.unique(np.concatenate([D_bottom, D_left]))
+        D = np.unique(np.concatenate([basis.nodal_dofs[1, bottom_nodes], basis.nodal_dofs[0, left_nodes]]))
 
-        # Far-field boundary r = b: apply Kirsch analytical tractions
         outer_facets = mesh.facets_satisfying(lambda p: np.isclose(np.sqrt(p[0]**2 + p[1]**2), b, atol=0.05))
         fb_outer = skfem.FacetBasis(mesh, skfem.ElementVector(skfem.ElementTriP1()), facets=outer_facets)
 
+        # Perturb traction by +15%
         @skfem.LinearForm
-        def outer_traction(v, w):
-            x_c, y_c = w.x[0], w.x[1]
-            th = np.arctan2(y_c, x_c)
-            r = b
-            s_r = (sigma_inf / 2.0) * (1.0 - a**2 / r**2) + (sigma_inf / 2.0) * (1.0 - 4.0 * a**2 / r**2 + 3.0 * a**4 / r**4) * np.cos(2.0 * th)
-            t_rth = -(sigma_inf / 2.0) * (1.0 + 2.0 * a**2 / r**2 - 3.0 * a**4 / r**4) * np.sin(2.0 * th)
+        def perturbed_traction(v, w):
+            th = np.arctan2(w.x[1], w.x[0])
+            tr_data = kirsch_plate_hole_analytical(b, th, a, sigma_inf)
+            s_r = 1.15 * tr_data["sigma_rr"]
+            t_rth = 1.15 * tr_data["sigma_rth"]
             T_x = s_r * np.cos(th) - t_rth * np.sin(th)
             T_y = s_r * np.sin(th) + t_rth * np.cos(th)
             return T_x * v[0] + T_y * v[1]
 
-        f = skfem.asm(outer_traction, fb_outer)
-        u_sol = skfem.solve(*skfem.condense(K, f, D=D))
+        f_pert = skfem.asm(perturbed_traction, fb_outer)
+        u_sol = skfem.solve(*skfem.condense(K, f_pert, D=D))
 
-        # Evaluate peak hoop stress at top of hole (0, a) where theta = pi/2:
         top_hole_node = left_nodes[np.argmin(np.abs(mesh.p[1, left_nodes] - a))]
-        dofs_u = u_sol[basis.nodal_dofs[0]]
-        dofs_v = u_sol[basis.nodal_dofs[1]]
-
         elem_idx = np.where(np.any(mesh.t == top_hole_node, axis=0))[0]
         scalar_basis = skfem.Basis(mesh, skfem.ElementTriP1())
-        grad_u = scalar_basis.interpolate(dofs_u).grad
-        grad_v = scalar_basis.interpolate(dofs_v).grad
+        grad_u = scalar_basis.interpolate(u_sol[basis.nodal_dofs[0]]).grad
+        grad_v = scalar_basis.interpolate(u_sol[basis.nodal_dofs[1]]).grad
+        sigma_xx = (E / (1.0 - nu**2)) * (grad_u[0, elem_idx, :] + nu * grad_v[1, elem_idx, :])
+        kt_pert = float(np.mean(sigma_xx)) / sigma_inf
 
-        eps_xx = grad_u[0]
-        eps_yy = grad_v[1]
-        sigma_xx = (E / (1.0 - nu**2)) * (eps_xx + nu * eps_yy)
-        peak_sigma = float(np.mean(sigma_xx[elem_idx, :]))
-        kt_num = peak_sigma / sigma_inf
-
-        # Stress concentration factor must be in [2.85, 3.15] (within 5% of theoretical 3.0)
-        assert 2.85 <= kt_num <= 3.15, f"REF-06 calculated Kt {kt_num:.3f} outside [2.85, 3.15] (expected ~3.0)"
+        # Perturbed solve MUST fall outside valid acceptance interval [2.95, 3.05]
+        assert not (2.95 <= kt_pert <= 3.05), f"Benchmark failed to detect perturbation: Kt={kt_pert:.4f}"
 
     def test_ref_07_l_shaped_domain_singular(self):
         """REF-07: Linear elasticity re-entrant corner singularity benchmark on L-shaped domain."""
         spec = get_reference_problem("REF-07-L-SHAPED-DOMAIN-SINGULAR")
-        assert spec.expected_order_h == pytest.approx(0.544, abs=0.01)
-        assert spec.category == "numerical_verification"
-
-        # Solve 2D linear elasticity on sequence of uniform L-shaped meshes
-        E, nu = 100.0e9, 0.3
-        P_traction = 1000.0
+        E, nu = 200.0e9, 0.3
+        P_traction = 1.0e6
 
         energies = []
-        for k in [1, 2, 3]:
+        for k in [1, 2, 3, 4]:
             m = skfem.MeshTri.init_lshaped().refined(k)
             basis = skfem.Basis(m, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
             K = skfem.asm(linear_elasticity(*plane_stress(E, nu)), basis)
 
-            # Clamped on top boundary y = 1: x in [-1, 0]
             top_nodes = np.where(np.isclose(m.p[1], 1.0))[0]
             D = np.concatenate([basis.nodal_dofs[0, top_nodes], basis.nodal_dofs[1, top_nodes]])
 
-            # Shear traction on right boundary x = 1: y in [-1, 0]
             right_facets = m.facets_satisfying(lambda p: np.isclose(p[0], 1.0))
             fb = skfem.FacetBasis(m, skfem.ElementVector(skfem.ElementTriP1()), facets=right_facets)
 
@@ -356,19 +459,25 @@ class TestReferenceProblemLibrary:
 
             f = skfem.asm(tr, fb)
             u = skfem.solve(*skfem.condense(K, f, D=D))
-            # Conforming strain energy U_h = 1/2 * u^T * K * u
             strain_energy = float(0.5 * np.dot(u, K @ u))
             energies.append(strain_energy)
 
         # 1. Monotonic strain energy convergence from below (Rayleigh-Ritz minimum potential energy)
-        assert energies[1] > energies[0], f"Energy level 1 {energies[1]} <= level 0 {energies[0]}"
-        assert energies[2] > energies[1], f"Energy level 2 {energies[2]} <= level 1 {energies[1]}"
+        for i in range(len(energies) - 1):
+            assert energies[i+1] > energies[i], f"Level {i+1} energy ({energies[i+1]}) <= Level {i} energy ({energies[i]})"
 
-        # 2. Ratio of energy increments reflects corner singularity convergence exponent 2*lambda ~ 1.089
-        delta_01 = energies[1] - energies[0]
-        delta_12 = energies[2] - energies[1]
-        ratio = delta_01 / delta_12
-        assert 1.50 <= ratio <= 2.50, f"Singular energy increment ratio {ratio:.3f} outside [1.50, 2.50]"
+        # 2. Monotonic energy increment reduction: Delta U_k decreases as mesh refines
+        deltas = [energies[i+1] - energies[i] for i in range(len(energies) - 1)]
+        for i in range(len(deltas) - 1):
+            assert deltas[i+1] < deltas[i], f"Energy increment not decreasing: Delta_{i+1}={deltas[i+1]} >= Delta_{i}={deltas[i]}"
+
+        # 3. Observed singularity convergence exponent lambda_obs = log2(ratio) / 2
+        # For re-entrant corner (3*pi/2), theoretical Mode I root is lambda ~ 0.54448.
+        # Observed uniform pre-asymptotic rate is bounded in [0.45, 0.75], strictly < 1.0 (smooth rate).
+        ratios = [deltas[i] / deltas[i+1] for i in range(len(deltas) - 1)]
+        for r in ratios:
+            lam_obs = float(np.log2(r) / 2.0)
+            assert 0.45 <= lam_obs <= 0.75, f"Observed lambda {lam_obs:.4f} outside expected range [0.45, 0.75]"
 
     def test_ref_08_rigid_body_nullspace(self):
         """REF-08: Exactly 3 rigid-body zero modes in unconstrained 2D elasticity stiffness."""

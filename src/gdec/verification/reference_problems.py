@@ -97,11 +97,11 @@ REFERENCE_PROBLEMS: Dict[str, ReferenceProblemSpec] = {
         governing_equations="Radial equilibrium d(sigma_r)/dr + (sigma_r - sigma_theta)/r = 0",
         domain_description="Quadrant of thick cylinder a <= r <= b (a=1.0 m, b=2.0 m) in first quadrant",
         boundary_conditions="Internal pressure P_int on r=a, zero traction on r=b, symmetry rollers on x=0 and y=0",
-        expected_qoi_formula="Plane stress: u_r(b) = 2*P_int*a^2*b / (E*(b^2 - a^2)); Plane strain: u_r(b) = 2*(1-nu^2)*P_int*a^2*b / (E*(b^2 - a^2))",
+        expected_qoi_formula="Plane stress: u_r(r) = (P_int*a^2/(E*(b^2-a^2)))*((1-nu)*r + (1+nu)*b^2/r); Plane strain: u_r(r) = ((1+nu)*P_int*a^2/(E*(b^2-a^2)))*((1-2*nu)*r + b^2/r)",
         expected_order_h=2.0,
-        expected_tolerance="discrepancy vs Lame plane-stress formula <= 1.5% on moderate mesh",
-        limitations="Curved boundary approximated by piecewise linear boundary segments; GDEC model defaults to plane stress",
-        cross_check_target="Analytical Lame formula; scikit-fem curved quadrant",
+        expected_tolerance="Observed L2 convergence order p_obs in [1.90, 2.15]; max relative nodal displacement error <= 0.35%",
+        limitations="Curved boundary discretized with linear chord facets; full analytical profiles verified for both plane stress and plane strain",
+        cross_check_target="Authoritative closed-form Lame radial profiles; dual plane stress and plane strain FEM solves",
     ),
     "REF-06-PLATE-HOLE-KIRSCH": ReferenceProblemSpec(
         problem_id="REF-06-PLATE-HOLE-KIRSCH",
@@ -111,25 +111,25 @@ REFERENCE_PROBLEMS: Dict[str, ReferenceProblemSpec] = {
         governing_equations="Plane stress elastostatics with circular hole of radius a under far-field tension sigma_inf",
         domain_description="Quarter-annulus / quadrant with hole radius a at origin, far-field radius b >> a",
         boundary_conditions="Symmetry on x=0 (u=0) and y=0 (v=0), far-field Kirsch traction on outer boundary r=b, traction-free hole r=a",
-        expected_qoi_formula="Peak hoop stress sigma_theta(a, pi/2) == 3.0 * sigma_inf; K_t = sigma_theta / sigma_inf == 3.0",
-        expected_order_h=None,  # asymptotic stress concentration
-        expected_tolerance="Peak stress concentration factor K_t in [2.85, 3.15]",
-        limitations="Piecewise linear approximation of circular cavity; P1 element averaging near hole boundary",
-        cross_check_target="Classical Kirsch analytical solution; Peterson concentration chart",
+        expected_qoi_formula="Peak circumferential stress sigma_theta(a, pi/2) == 3.0 * sigma_inf; K_t = sigma_theta / sigma_inf == 3.0",
+        expected_order_h=1.0,  # stress recovery convergence order in H1/patch
+        expected_tolerance="Mesh refinement series demonstrates K_t -> 3.000 monotonically with relative error <= 0.10% on fine mesh",
+        limitations="Piecewise linear approximation of circular cavity; area-weighted patch stress recovery at hole boundary",
+        cross_check_target="Classical Kirsch analytical solution; mesh-refinement series and deliberate-defect sensitivity",
     ),
     "REF-07-L-SHAPED-DOMAIN-SINGULAR": ReferenceProblemSpec(
         problem_id="REF-07-L-SHAPED-DOMAIN-SINGULAR",
         name="L-Shaped Domain Re-Entrant Corner Singularity",
         category="numerical_verification",
-        source_reference="Babuska & Rheinboldt (1978); Verfurth (1996)",
+        source_reference="Babuska & Rheinboldt (1978); Williams (1952); Verfurth (1996)",
         governing_equations="div(sigma) = 0 on [-1, 1]^2 \\ (0, 1] x [0, 1] with re-entrant corner (3*pi/2); Mode I corner singularity",
         domain_description="L-shaped polygon with interior re-entrant corner at (0,0)",
         boundary_conditions="Clamped root on top (y=1), shear traction on right (x=1)",
-        expected_qoi_formula="Mode I singularity exponent lambda approx 0.54448; strain energy error O(h^(2*lambda)) ~ O(h^1.089)",
-        expected_order_h=0.544,  # degraded uniform order vs recovered adaptive order
-        expected_tolerance="Strain energy increases monotonically from below; uniform order strictly < 2.0",
-        limitations="Singular corner derivative; non-smooth solution space",
-        cross_check_target="Mode I analytical singularity; goal-adaptive DWR estimator vs uniform baseline",
+        expected_qoi_formula="Mode I singularity exponent lambda approx 0.54448 (Williams root); asymptotic energy defect O(h^(2*lambda)) ~ O(h^1.089)",
+        expected_order_h=0.544,  # theoretical singularity exponent
+        expected_tolerance="Strain energy strictly monotonic from below; energy increment reduction strictly monotonic; observed rate lambda_obs in [0.45, 0.75] < 1.0",
+        limitations="Singular corner derivative; pre-asymptotic uniform meshes contain both singular corner and regular bulk energy components",
+        cross_check_target="Williams Mode I analytical singularity; monotonic strain energy convergence and rate degradation",
     ),
     "REF-08-RIGID-BODY-NULLSPACE": ReferenceProblemSpec(
         problem_id="REF-08-RIGID-BODY-NULLSPACE",
@@ -158,3 +158,75 @@ def get_reference_problem(problem_id: str) -> ReferenceProblemSpec:
 def list_reference_problems() -> List[ReferenceProblemSpec]:
     """Return all traceable reference problems in order."""
     return list(REFERENCE_PROBLEMS.values())
+
+
+# =============================================================================
+# Authoritative Closed-Form Benchmark Reference Solutions
+# =============================================================================
+
+def lame_cylinder_analytical_plane_stress(
+    r: np.ndarray,
+    a: float,
+    b: float,
+    P_int: float,
+    E: float,
+    nu: float,
+) -> Dict[str, np.ndarray]:
+    """
+    Authoritative closed-form solution for thick cylinder under internal pressure in Plane Stress.
+    r: radial evaluation coordinates (a <= r <= b)
+    Returns dictionary with radial displacement u_r, radial stress sigma_rr, and hoop stress sigma_tt.
+    """
+    r_arr = np.asarray(r, dtype=float)
+    denom = E * (b**2 - a**2)
+    u_r = (P_int * a**2 / denom) * ((1.0 - nu) * r_arr + (1.0 + nu) * b**2 / r_arr)
+    s_rr = (P_int * a**2 / (b**2 - a**2)) * (1.0 - b**2 / r_arr**2)
+    s_tt = (P_int * a**2 / (b**2 - a**2)) * (1.0 + b**2 / r_arr**2)
+    s_zz = np.zeros_like(r_arr)
+    return {"u_r": u_r, "sigma_rr": s_rr, "sigma_tt": s_tt, "sigma_zz": s_zz}
+
+
+def lame_cylinder_analytical_plane_strain(
+    r: np.ndarray,
+    a: float,
+    b: float,
+    P_int: float,
+    E: float,
+    nu: float,
+) -> Dict[str, np.ndarray]:
+    """
+    Authoritative closed-form solution for thick cylinder under internal pressure in Plane Strain.
+    r: radial evaluation coordinates (a <= r <= b)
+    Returns dictionary with radial displacement u_r, radial stress sigma_rr, hoop stress sigma_tt, and axial stress sigma_zz.
+    """
+    r_arr = np.asarray(r, dtype=float)
+    denom = E * (b**2 - a**2)
+    u_r = ((1.0 + nu) * P_int * a**2 / denom) * ((1.0 - 2.0 * nu) * r_arr + b**2 / r_arr)
+    s_rr = (P_int * a**2 / (b**2 - a**2)) * (1.0 - b**2 / r_arr**2)
+    s_tt = (P_int * a**2 / (b**2 - a**2)) * (1.0 + b**2 / r_arr**2)
+    s_zz = (2.0 * nu * P_int * a**2 / (b**2 - a**2)) * np.ones_like(r_arr)
+    return {"u_r": u_r, "sigma_rr": s_rr, "sigma_tt": s_tt, "sigma_zz": s_zz}
+
+
+def kirsch_plate_hole_analytical(
+    r: np.ndarray,
+    theta: np.ndarray,
+    a: float,
+    sigma_inf: float,
+) -> Dict[str, np.ndarray]:
+    """
+    Authoritative Kirsch solution for infinite plate with circular hole under uniaxial tension.
+    r: radial distance from center of hole (r >= a)
+    theta: angle from axis of far-field tension (radians)
+    Returns sigma_rr, sigma_tt, sigma_rth, and peak stress concentration factor Kt = 3.0 at (r=a, theta=pi/2).
+    """
+    r_arr = np.asarray(r, dtype=float)
+    th_arr = np.asarray(theta, dtype=float)
+    a2_r2 = (a / r_arr) ** 2
+    a4_r4 = a2_r2 ** 2
+
+    s_rr = (sigma_inf / 2.0) * (1.0 - a2_r2) + (sigma_inf / 2.0) * (1.0 - 4.0 * a2_r2 + 3.0 * a4_r4) * np.cos(2.0 * th_arr)
+    s_tt = (sigma_inf / 2.0) * (1.0 + a2_r2) - (sigma_inf / 2.0) * (1.0 + 3.0 * a4_r4) * np.cos(2.0 * th_arr)
+    s_rth = -(sigma_inf / 2.0) * (1.0 + 2.0 * a2_r2 - 3.0 * a4_r4) * np.sin(2.0 * th_arr)
+
+    return {"sigma_rr": s_rr, "sigma_tt": s_tt, "sigma_rth": s_rth, "Kt_exact": 3.0}

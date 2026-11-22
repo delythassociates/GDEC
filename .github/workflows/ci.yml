@@ -24,8 +24,10 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (full history)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -48,8 +50,10 @@ jobs:
     name: Status Register & Traceability Gate
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (full history)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -62,15 +66,31 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[test,amg]"
 
+      - name: Generate authoritative status register
+        run: python scripts/generate_status_register.py --output results/status_register.json
+
       - name: Verify status register and enforce traceability
-        run: python scripts/generate_status_register.py --check
+        run: python scripts/generate_status_register.py --check --input results/status_register.json
+
+      - name: Post-test clean working tree check
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+
+      - name: Upload Status Register Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: status-register-${{ github.sha }}
+          path: results/status_register.json
 
   upstream-dependency-drift:
     name: Upstream Dependency Drift Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (full history)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -91,8 +111,10 @@ jobs:
     name: Mutation Resilience & Coverage Gate
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (full history)
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -109,5 +131,14 @@ jobs:
       - name: Run test suite with coverage report
         run: python -m pytest --cov=src/gdec --cov-report=term --cov-report=xml tests/
 
-      - name: Run mutation resilience suite
+      - name: Run targeted mutation sensitivity suite
         run: python -m pytest -v tests/verification/test_mutation_resilience.py
+
+      - name: Run bounded source mutation campaign
+        run: python scripts/run_mutation_campaign.py --output results/mutation_campaign_report.json
+
+      - name: Upload Mutation Campaign Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-campaign-${{ github.sha }}
+          path: results/mutation_campaign_report.json

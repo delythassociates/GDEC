@@ -24,24 +24,27 @@ def main():
     parser = argparse.ArgumentParser(description="Generate and verify GDEC machine-readable status register.")
     parser.add_argument("--check", action="store_true", help="Fail with non-zero exit code if traceability checks fail or file is stale.")
     parser.add_argument("--output", default="results/status_register.json", help="Path to output JSON file.")
+    parser.add_argument("--input", default=None, help="Path to input JSON file for --check (defaults to --output if omitted).")
     parser.add_argument("--skip-tests", action="store_true", help="Skip running pytest during generation (for dry runs only).")
     parser.add_argument("--allow-dirty", action="store_true", help="Allow dirty working tree (for local testing only; forbidden in CI).")
     parser.add_argument("--allow-stale", action="store_true", help="Allow stale commit SHA (for local testing only; forbidden in CI).")
     args = parser.parse_args()
 
+    target_file = args.input if args.input is not None else args.output
+
     if args.check:
-        print(f"Checking GDEC Status Register -> {args.output}")
-        if not os.path.exists(args.output):
-            print(f"[FAIL] Status register file does not exist at {args.output}", file=sys.stderr)
+        print(f"Checking GDEC Status Register -> {target_file}")
+        if not os.path.exists(target_file):
+            print(f"[FAIL] Status register file does not exist at {target_file}", file=sys.stderr)
             sys.exit(1)
 
-        with open(args.output, "r", encoding="utf-8") as f:
+        with open(target_file, "r", encoding="utf-8") as f:
             register = json.load(f)
 
         try:
             verify_traceability(
                 register,
-                on_disk_path=args.output,
+                on_disk_path=target_file,
                 allow_dirty=args.allow_dirty,
                 allow_stale=args.allow_stale,
             )

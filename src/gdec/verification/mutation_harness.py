@@ -77,21 +77,28 @@ def run_mutation_trial_1_stiffness_constitutive() -> MutationResult:
 
 
 def run_mutation_trial_2_symmetry_defect() -> MutationResult:
-    """Mutant 2: Bypass symmetry defect check by returning 0.0 unconditionally."""
+    """Mutant 2: Bypass symmetry defect check by returning 0.0 unconditionally in production module."""
+    import gdec.fem.matrix_diagnostics as pmd
     import tests.test_matrix_diagnostics as tmd
     from unittest.mock import patch
     target_test = "tests/test_matrix_diagnostics.py::test_symmetry_defect_exact_and_perturbed"
 
     unmutated_pass, _, _ = _run_single_test(target_test)
 
-    with patch.object(tmd, "compute_symmetry_defect", return_value=0.0):
-        mutated_pass, killer, diag = _run_single_test(target_test)
-        killed = not mutated_pass
+    # Mutate the actual production module function directly
+    orig_func = pmd.compute_symmetry_defect
+    try:
+        pmd.compute_symmetry_defect = lambda matrix: 0.0
+        with patch.object(tmd, "compute_symmetry_defect", return_value=0.0):
+            mutated_pass, killer, diag = _run_single_test(target_test)
+            killed = not mutated_pass
+    finally:
+        pmd.compute_symmetry_defect = orig_func
 
     return MutationResult(
         mutant_id="MUTANT-2-SYMMETRY-DEFECT",
         target_function="gdec.fem.matrix_diagnostics.compute_symmetry_defect",
-        description="Bypass matrix symmetry defect check to return 0.0 unconditionally",
+        description="Bypass matrix symmetry defect check to return 0.0 unconditionally in production module",
         target_test=target_test,
         unmutated_passed=unmutated_pass,
         killed=killed,
