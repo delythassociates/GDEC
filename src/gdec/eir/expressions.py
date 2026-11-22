@@ -6,8 +6,10 @@ unsupported so ambiguous engineering semantics fail closed.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping as ABCMapping
 from dataclasses import dataclass, field
 from fractions import Fraction
+from types import MappingProxyType
 from typing import Mapping
 
 from gdec.types.dimensions import DIMENSIONLESS, Dimension
@@ -36,7 +38,9 @@ class ValueType:
             raise QuantityKindError(f"Unsupported quantity kind: {self.kind!r}.")
         if self.kind != "linear" and self.dimension != SI_UNITS.get("K").dimension:
             raise QuantityKindError("Temperature quantity kinds require temperature dimension.")
-        if not isinstance(self.shape, tuple):
+        if not isinstance(self.shape, (tuple, list)):
+            raise ShapeError("Expression shape must be a tuple or list of positive integer extents.")
+        if isinstance(self.shape, list):
             object.__setattr__(self, "shape", tuple(self.shape))
         if any(isinstance(n, bool) or not isinstance(n, int) or n <= 0 for n in self.shape):
             raise ShapeError("Expression shape extents must be positive integers.")
@@ -55,20 +59,43 @@ class Literal(Expr):
     value: float
     value_type: ValueType
 
+    def __post_init__(self) -> None:
+        import math
+        if isinstance(self.value, bool) or not isinstance(self.value, (int, float)):
+            raise ExpressionTypeError("Expression literals must be real numeric scalars.")
+        if not math.isfinite(float(self.value)):
+            raise ExpressionTypeError("Expression literals must be finite.")
+        if not isinstance(self.value_type, ValueType):
+            raise ExpressionTypeError("Literal requires a ValueType.")
+
+
+def _validate_reference_id(value: str, label: str) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise ExpressionTypeError(f"{label} must be a non-empty string.")
+
 
 @dataclass(frozen=True, slots=True)
 class ParameterRef(Expr):
     parameter_id: str
+
+    def __post_init__(self) -> None:
+        _validate_reference_id(self.parameter_id, "Parameter reference ID")
 
 
 @dataclass(frozen=True, slots=True)
 class FieldRef(Expr):
     field_id: str
 
+    def __post_init__(self) -> None:
+        _validate_reference_id(self.field_id, "Field reference ID")
+
 
 @dataclass(frozen=True, slots=True)
 class ExpressionRef(Expr):
     expression_id: str
+
+    def __post_init__(self) -> None:
+        _validate_reference_id(self.expression_id, "Expression reference ID")
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +131,23 @@ class ExpressionEnvironment:
     parameters: Mapping[str, ValueType] = field(default_factory=dict)
     fields: Mapping[str, ValueType] = field(default_factory=dict)
     expressions: Mapping[str, Expr] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        # Snapshot caller-owned mappings so inference cannot change midway
+        # because another part of the program mutates a dictionary.
+        for name in ("parameters", "fields", "expressions"):
+            supplied = getattr(self, name)
+            if not isinstance(supplied, ABCMapping):
+                raise ExpressionTypeError(f"Environment {name} must be a mapping.")
+            snapshot = dict(supplied)
+            for key in snapshot:
+                _validate_reference_id(key, f"{name} key")
+            expected = Expr if name == "expressions" else ValueType
+            if any(not isinstance(value, expected) for value in snapshot.values()):
+                raise ExpressionTypeError(
+                    f"Environment {name} values must be {expected.__name__} instances."
+                )
+            object.__setattr__(self, name, MappingProxyType(snapshot))
 
 
 def environment_from_eir(problem) -> ExpressionEnvironment:

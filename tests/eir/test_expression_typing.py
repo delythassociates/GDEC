@@ -185,9 +185,8 @@ def test_unknown_expression_reference_is_rejected():
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf"), True])
 def test_literal_rejects_nonfinite_and_boolean_values(value):
-    expr = Literal(value, scalar(DIMENSIONLESS))
     with pytest.raises(ExpressionTypeError):
-        infer_expression_type(expr, ExpressionEnvironment())
+        Literal(value, scalar(DIMENSIONLESS))
 
 
 def test_unsupported_operator_is_rejected():
@@ -229,3 +228,44 @@ def test_power_normalizes_integer_exponent_to_fraction():
     expr = Power(Literal(4, scalar(LENGTH)), 2)
     assert expr.exponent == Fraction(2, 1)
     assert infer_expression_type(expr, ExpressionEnvironment()) == scalar(LENGTH ** 2)
+
+
+
+@pytest.mark.parametrize("reference_type", [ParameterRef, FieldRef, ExpressionRef])
+@pytest.mark.parametrize("reference_id", ["", "   ", None, 1])
+def test_reference_nodes_reject_empty_or_non_string_ids(reference_type, reference_id):
+    with pytest.raises(ExpressionTypeError, match="non-empty string"):
+        reference_type(reference_id)
+
+
+def test_value_type_rejects_non_sequence_shape_metadata():
+    with pytest.raises(ShapeError, match="tuple or list"):
+        ValueType(LENGTH, shape="3")
+    with pytest.raises(ShapeError, match="tuple or list"):
+        ValueType(LENGTH, shape=3)
+
+
+def test_expression_environment_snapshots_and_freezes_mappings():
+    parameters = {"length": scalar(LENGTH)}
+    env = ExpressionEnvironment(parameters=parameters)
+    parameters["length"] = scalar(TIME)
+    parameters["time"] = scalar(TIME)
+    assert infer_expression_type(ParameterRef("length"), env) == scalar(LENGTH)
+    with pytest.raises(ExpressionTypeError, match="Unknown parameter"):
+        infer_expression_type(ParameterRef("time"), env)
+    with pytest.raises(TypeError):
+        env.parameters["other"] = scalar(TIME)
+
+
+def test_expression_environment_rejects_invalid_mapping_contents():
+    with pytest.raises(ExpressionTypeError, match="non-empty string"):
+        ExpressionEnvironment(parameters={" ": scalar(LENGTH)})
+    with pytest.raises(ExpressionTypeError, match="ValueType"):
+        ExpressionEnvironment(parameters={"length": "not a ValueType"})
+    with pytest.raises(ExpressionTypeError, match="mapping"):
+        ExpressionEnvironment(parameters=[("length", scalar(LENGTH))])
+
+
+def test_literal_rejects_invalid_type_metadata_at_construction():
+    with pytest.raises(ExpressionTypeError, match="ValueType"):
+        Literal(1.0, "length")

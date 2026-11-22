@@ -25,6 +25,8 @@ The initial expression vocabulary is intentionally small:
 - `ParameterRef`: reference to a declared scalar parameter.
 - `FieldRef`: reference to a declared field.
 - `ExpressionRef`: reference to a named expression in the supplied environment.
+
+Expression construction rejects non-finite/boolean literals, missing or malformed literal types, and blank/non-string reference IDs. `ValueType` rejects malformed shape containers instead of coercing arbitrary iterables. `ExpressionEnvironment` validates its mapping contents and takes immutable snapshots, so later caller mutation cannot alter an in-progress or repeated inference result.
 - `Negate`: unary negation.
 - `Binary`: add, subtract, multiply, or divide.
 - `Power`: exact integer or `fractions.Fraction` exponent. Floating-point exponents are rejected because silently rationalizing a binary float can change the intended physical dimension.
@@ -78,7 +80,8 @@ The new suite covers:
 - Shape and frame mismatches.
 - Rejection of implicit broadcasting and tensor products.
 - Expression-reference memoization and cycle detection.
-- Non-finite and boolean literal rejection.
+- Non-finite and boolean literal rejection at node construction.
+- Invalid reference IDs, malformed shape metadata, invalid environment mappings, and environment mutation isolation.
 - Environment derivation from a validated EIR document.
 
 ## Explicit limitations
