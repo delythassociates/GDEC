@@ -18,8 +18,8 @@ class Unit:
     def __post_init__(self) -> None:
         if not self.symbol:
             raise UnitError("Unit symbol cannot be empty.")
-        if self.scale == 0:
-            raise UnitError("Unit scale cannot be zero.")
+        if self.scale <= 0:
+            raise UnitError("Unit scale must be strictly positive.")
         if self.kind not in {"linear", "absolute_temperature", "temperature_interval"}:
             raise UnitError(f"Unsupported unit kind: {self.kind}")
         if self.kind != "absolute_temperature" and self.offset != 0:
@@ -38,9 +38,13 @@ class UnitRegistry:
         self._units: dict[str, Unit] = dict(units or {})
 
     def register(self, unit: Unit, *, aliases: tuple[str, ...] = ()) -> None:
-        for key in (unit.symbol, *aliases):
-            if key in self._units:
-                raise UnitError(f"Unit symbol or alias already registered: {key}")
+        keys = (unit.symbol, *aliases)
+        if len(set(keys)) != len(keys):
+            raise UnitError("A unit symbol and its aliases must be unique.")
+        duplicate = next((key for key in keys if key in self._units), None)
+        if duplicate is not None:
+            raise UnitError(f"Unit symbol or alias already registered: {duplicate}")
+        for key in keys:
             self._units[key] = unit
 
     def get(self, symbol: str) -> Unit:
