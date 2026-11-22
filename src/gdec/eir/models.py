@@ -26,6 +26,21 @@ EIR_UNIT_REGISTRY_ID = "gdec-si-engineering-0.1"
 # the general-purpose SI_UNITS registry cannot silently change EIR semantics.
 _EIR_UNITS = dict(SI_UNITS.units)
 _EIR_KINDS = {"linear", "absolute_temperature", "temperature_interval"}
+_BASE_UNIT_SYMBOLS = ("1", "kg", "m", "s", "A", "K", "delta_K", "mol", "cd", "N", "Pa", "J", "W")
+_BASE_UNITS = {
+    (candidate.dimension, candidate.kind): candidate
+    for symbol in _BASE_UNIT_SYMBOLS
+    for candidate in (_EIR_UNITS[symbol],)
+}
+
+
+def _canonical_unit(unit):
+    try:
+        return _BASE_UNITS[(unit.dimension, unit.kind)]
+    except KeyError as exc:
+        raise ValueError(
+            f"No coherent base unit is defined for dimension {unit.dimension} and kind {unit.kind!r}."
+        ) from exc
 
 
 def _fraction_text(value: Fraction) -> str:
@@ -359,6 +374,19 @@ class EngineeringProblemIR(EIRModel):
         payload["quantities_of_interest"] = sorted(
             payload["quantities_of_interest"], key=lambda item: item["id"]
         )
+
+        # Normalize value-bearing parameters to coherent SI base values and
+        # normalize all declared/output units to the corresponding base unit.
+        for parameter in physical["parameters"]:
+            source_unit = _unit(parameter["unit"])
+            base_unit = _canonical_unit(source_unit)
+            parameter["value"] = source_unit.to_base(parameter["value"])
+            parameter["unit"] = base_unit.symbol
+        for field in physical["fields"]:
+            field["unit"] = _canonical_unit(_unit(field["unit"])).symbol
+        for qoi in payload["quantities_of_interest"]:
+            qoi["unit"] = _canonical_unit(_unit(qoi["unit"])).symbol
+
         return json.dumps(
             payload,
             sort_keys=True,
