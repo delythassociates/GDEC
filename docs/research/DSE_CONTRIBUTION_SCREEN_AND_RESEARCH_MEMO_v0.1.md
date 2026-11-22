@@ -7,11 +7,11 @@
 
 ## Executive result
 
-A useful GDEC research direction is not a new mesh estimator, DWR variant, reduced-order model, or floating-point error tracker in isolation. Those areas already have substantial prior art.
+A useful GDEC research direction is not a new mesh estimator, DWR variant, reduced-order model, floating-point error tracker, or generic value-of-information planner in isolation. Those areas already have substantial prior art—including work directly on deciding how much to refine a simulation model and optimally allocating computation among discretisation, uncertainty quantification and model reduction.
 
-The strongest candidate is a **Decision-Sufficiency Engine (DSE)**: a sequential planner that selects the next engineering computation or evidence action—where to refine, which solver tolerance to tighten, which model fidelity to use, whether to run an independent check, and when to stop—according to the expected reduction in *engineering decision risk per unit cost*, subject to explicit evidence and assurance constraints.
+The **Decision-Sufficiency Engine (DSE)** remains a working research hypothesis, but its broad form is not novel. The possible gap is narrower: a planner that treats engineering assurance obligations and heterogeneous evidence types as hard constraints on computation selection, tracks dependence between evidence sources, distinguishes certified bounds from empirical/probabilistic estimates, and refuses a decision when no admissible computation can close the assurance gap. This is a research question, not a demonstrated contribution.
 
-This is a **novelty hypothesis**, not a verified original contribution. Existing work covers important components: guaranteed goal-error bounds with inexact algebraic solves; goal-oriented adaptivity; online DWR-controlled reduced-order enrichment; per-operation finite-element-kernel rounding-error analysis; formal compiler-correctness proofs; and value-of-information stopping theory. GDEC's potential contribution is the explicit integration of heterogeneous numerical and verification actions around a declared engineering decision, with honest separation of certified, probabilistic, and heuristic evidence.
+The novelty burden is therefore high. A combination of existing VOI, goal-oriented adaptivity, resource allocation and evidence tracking is not automatically publishable novelty. A defensible contribution would need a precise algorithm, a nontrivial property or guarantee, and benchmark evidence showing an advantage over the closest existing engineering model-refinement and resource-allocation methods.
 
 ## 1. Prior-art reading notes
 
@@ -81,9 +81,9 @@ Scores are preliminary research-priority scores (1–10), not novelty probabilit
 
 | # | Candidate | Preliminary score | Prior-art overlap / initial disposition |
 |---:|---|---:|---|
-| 1 | Decision-sufficiency planner over heterogeneous computation/evidence actions | 9.0 | Components exist; integrated engineering decision-level planner is the leading hypothesis. |
+| 1 | Assurance-constrained decision-sufficiency planner over heterogeneous computation/evidence actions | 6.0 | Strong direct overlap with VOI model refinement and optimal compute-budget allocation; only assurance/dependency constraints remain a possible gap. |
 | 2 | Cross-layer error/evidence ledger with dependency-aware aggregation | 8.0 | Error decomposition exists; general dependency and assurance ledger needs focused search. |
-| 3 | Joint allocation of mesh, algebraic-solve, and arithmetic effort by decision-risk reduction | 8.0 | Each axis has prior art separately; integrated action allocation is promising. |
+| 3 | Joint allocation of mesh, algebraic-solve, and arithmetic effort by decision-risk reduction | 5.5 | Direct overlap with optimal allocation across discretisation/UQ/model reduction; narrower cross-assurance extension required. |
 | 4 | Robust decision-margin stopping using certified QoI intervals | 8.0 | Interval methods and guaranteed QoI bounds exist; decision-specific orchestration may be useful. |
 | 5 | Model-fidelity escalation selected by expected decision-risk reduction | 7.5 | Multifidelity optimisation is broad prior art; engineering verification coupling needs screening. |
 | 6 | Adaptive experiment acquisition when simulation uncertainty dominates | 7.5 | Value-of-information and optimal experimental design are mature; domain integration needed. |
@@ -104,7 +104,7 @@ Scores are preliminary research-priority scores (1–10), not novelty probabilit
 
 ### First-pass ranking
 
-**Advance to focused research:** candidates 1, 2, 3, 4, 5, 7, 8 and 19.  
+**Advance to focused research (with novelty risk):** candidates 1, 2, 4, 7, 8 and 19. Candidates 1 and 3 are downgraded after finding direct resource-allocation prior art.  
 **Use as enabling mechanisms, not headline claims:** 10, 12, 16 and 17.  
 **Do not claim as novel without a substantially different theorem or scope:** 11, 13, 14 and 15.
 
@@ -230,3 +230,53 @@ The current evidence does **not** justify a claim that DSE is the first, optimal
 4. Fischer, H., Roth, J., Wick, T., Chamoin, L., & Fau, A. (2024). *MORe DWR: Space-time goal-oriented error control for incremental POD-based ROM for time-averaged goal functionals*. Journal of Computational Physics, 504, 112863. https://doi.org/10.1016/j.jcp.2024.112863
 5. Herklotz, Y., Pollard, J. D., Ramanathan, N., & Wickerson, J. (2021). *Formal Verification of High-Level Synthesis*. Proceedings of the ACM on Programming Languages, 5(OOPSLA), Article 117. https://doi.org/10.1145/3485494
 6. Lehrer, E., & Wang, T. (2024). *The value of information in stopping problems*. Economic Theory, 78(2), 619–648. https://doi.org/10.1007/s00199-023-01543-8
+
+
+## 6. Novelty-threat addendum — direct engineering decision/resource-allocation prior art
+
+A second literature search found three works that materially narrow the DSE novelty hypothesis. These are not peripheral analogies; they address the same high-level question of deciding whether/how to refine a simulation model or allocate limited computation to improve an engineering decision.
+
+### 6.1 Panchal et al. (2008): value of information for simulation-model refinement
+
+Panchal, Paredis, Allen and Mistree, *A value-of-information based approach to simulation model refinement*, Engineering Optimization 40(3) (2008), 223–251, https://doi.org/10.1080/03052150701690764.
+
+**Read:** full abstract and detailed publication record.
+
+This work explicitly asks how much a simulation model should be refined for a particular engineering design problem. It accounts for both variability (probabilistic) and imprecision (interval) in simplified models, introduces an “improvement potential” metric for the value of information gained by model refinement, and gradually refines models until further improvement in design decisions becomes small. The examples include pressure-vessel design and refinement of a complex finite-element model.
+
+**Consequence:** the broad DSE proposition “decide how much computation/model refinement is needed to make a trustworthy engineering decision” is already directly anticipated. GDEC cannot present that as its novel claim.
+
+### 6.2 Zinkhahn, Leube, Nowak and de Barros (2013): optimal allocation across computation dimensions
+
+*Towards optimal allocation of computer resources: Trade-offs between uncertainty quantification, discretization and model reduction*, Environmental Modelling & Software 50 (2013), 97–107, https://doi.org/10.1016/j.envsoft.2013.08.008.
+
+**Read:** abstract, highlights, introduction and methodology description available from the article record.
+
+This work explicitly allocates a finite CPU budget among physical-space, temporal and parameter-space/stochastic resolutions, jointly considering discretisation error and statistical uncertainty. It constructs a cost-to-error surface, recommends cost-efficient pre-investigations to fit error/complexity models, and selects a task-dependent resource allocation to maximise prediction accuracy for a given budget. It reports 5–100× speedups in its application examples.
+
+**Consequence:** joint allocation across mesh/discretisation and uncertainty-quantification effort is not novel. Any GDEC algorithm must compare against this class of cost-to-error resource allocation, not just fixed mesh refinement.
+
+### 6.3 Shallcross et al. (2021): multiobjective VOI for set-based engineering design
+
+Shallcross, Parnell, Pohl and Goerger, *A value of information methodology for multiobjective decisions in quantitative set-based design*, Systems Engineering 24 (2021), 409–424, https://doi.org/10.1002/sys.21593.
+
+**Read:** full accessible article page, abstract and references.
+
+The work integrates Bayesian decision models and value of information into multiobjective set-based design, evaluates whether higher-resolution models can reduce uncertainty, and compares high-resolution model choices by usage cost and information value. The article explicitly cites Panchal et al. (2008) as a prior simulation-refinement VOI method.
+
+**Consequence:** VOI-driven selection among model fidelities for multiobjective engineering decisions is also prior art.
+
+### 6.4 Updated novelty verdict
+
+The broad DSE formulation in Sections 3.1–3.2 is **not sufficiently differentiated** from existing work. In particular, the objective “minimise computation cost while reducing decision risk” and the action “refine the simulation model only while the value of further refinement is material” are already established ideas.
+
+The only plausible gap worth investigating is the **assurance-constrained orchestration of heterogeneous evidence**:
+- each action is typed by what it can establish (e.g. discretisation estimate, guaranteed QoI bound, algebraic residual, floating-point bound, independent code comparison, parameter uncertainty reduction, experimental validation);
+- evidence items carry assurance level, assumptions, scope and provenance;
+- dependence between evidence items is represented explicitly so correlated checks cannot be counted as independent;
+- decision sufficiency is constrained by mandatory verification obligations, not only expected decision utility;
+- a planner can choose a computation that closes a specific assurance gap, or return INCONCLUSIVE if no available action can do so.
+
+This proposed gap may itself have prior art in assurance cases, safety verification, uncertainty management and value-of-information research. It is **not yet established as novel**. The next research gate is a targeted review of evidence theory/dependence, assurance-case reasoning, certified numerical computation and decision-theoretic metareasoning applied to engineering simulations.
+
+**Revised recommendation:** do not proceed to implementation. First define the evidence/action ontology and identify a formal property that existing model-refinement and resource-allocation frameworks do not provide. If no such property survives prior-art review, retain DSE as a useful product architecture but do not claim it as a novel algorithm.
