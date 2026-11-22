@@ -1,7 +1,7 @@
 """
 Post-processing and field evaluation for GDEC FEM simulations.
 Calculates engineering quantities: QoI, displacement magnitudes, Cauchy stresses,
-and plane stress Von Mises stress.
+and Von Mises stress for plane stress and plane strain.
 """
 
 from __future__ import annotations
@@ -32,6 +32,20 @@ class PostProcessor:
     def __init__(self, constitutive: ConstitutiveTensor):
         self.c = constitutive
 
+    def _von_mises(self, sigma_xx: np.ndarray, sigma_yy: np.ndarray, tau_xy: np.ndarray) -> np.ndarray:
+        """Compute the 3D von Mises invariant for plane-stress or plane-strain fields."""
+        if self.c.assumption == "plane_strain":
+            sigma_zz = self.c.nu * (sigma_xx + sigma_yy)
+        else:
+            sigma_zz = np.zeros_like(sigma_xx)
+
+        vm_sq = 0.5 * (
+            (sigma_xx - sigma_yy) ** 2
+            + (sigma_yy - sigma_zz) ** 2
+            + (sigma_zz - sigma_xx) ** 2
+        ) + 3.0 * (tau_xy ** 2)
+        return np.sqrt(np.maximum(vm_sq, 0.0))
+
     def process(self, gdec_mesh: GDECMesh, sol: FEMSolution) -> PostprocessResult:
         nnodes = gdec_mesh.nnodes
         nelements = gdec_mesh.nelements
@@ -56,10 +70,7 @@ class PostProcessor:
         s_yy = c12 * eps_11 + c11 * eps_22
         s_xy = c33 * gamma_12
 
-        # Von Mises stress for plane stress:
-        # sigma_vM = sqrt(s_xx^2 - s_xx*s_yy + s_yy^2 + 3*s_xy^2)
-        vm_sq = s_xx**2 - s_xx * s_yy + s_yy**2 + 3.0 * (s_xy**2)
-        von_mises = np.sqrt(np.maximum(vm_sq, 0.0))
+        von_mises = self._von_mises(s_xx, s_yy, s_xy)
 
         # Recover nodal von Mises stress for smooth rendering
         areas = gdec_mesh.element_areas

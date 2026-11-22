@@ -29,9 +29,25 @@ def test_estimator_indicators():
     assert np.all(zz_res.indicators >= 0.0)
     assert np.max(zz_res.indicators) > 0.0
 
-    # 3. Goal-Aware
+    # 3. Goal-Aware Heuristic
     goal_res = estimator.compute_goal_aware_indicator(mesh, sol, cost_aware=True)
     assert len(goal_res.indicators) == mesh.nelements
     assert np.all(goal_res.indicators >= 0.0)
     assert np.max(goal_res.indicators) > 0.0
     assert np.all(goal_res.priorities > 0.0)
+
+    # 4. Goal-Oriented DWR
+    dwr_res = estimator.compute_dwr_indicator(mesh, sol, loads=loads, cost_aware=True)
+    assert len(dwr_res.indicators) == mesh.nelements
+    assert np.all(dwr_res.indicators >= 0.0)
+    assert np.max(dwr_res.indicators) > 0.0
+    # Tip deflection under downward load is negative, so error is negative
+    assert dwr_res.details["signed_qoi_error_estimate"] < 0.0
+    assert dwr_res.details["classification"] == "goal_oriented_dwr_estimator"
+    assert dwr_res.details["is_certified_dwr_bound"] is False
+
+    # 5. Residual Energy Norm
+    res_energy = estimator.compute_residual_energy_indicator(mesh, sol, loads=loads)
+    assert len(res_energy.indicators) == mesh.nelements
+    assert np.all(res_energy.indicators >= 0.0)
+    assert np.max(res_energy.indicators) > 0.0

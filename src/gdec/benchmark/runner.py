@@ -97,7 +97,9 @@ class BenchmarkRunner:
             cum_time = 0.0
 
             for it in trace.iterations:
-                cum_time += it.total_iteration_time_sec
+                # Refinement is performed between QoI observations and is measured
+                # separately from the next iteration's solve/postprocess interval.
+                cum_time += it.total_iteration_time_sec + it.refinement_time_sec
                 ref_err = (
                     abs(it.qoi_meters - ref.qoi_meters) / max(abs(ref.qoi_meters), 1e-12)
                 ) * 100.0
@@ -182,6 +184,8 @@ class BenchmarkRunner:
         reasons = []
         dof_advantages = []
         time_advantages = []
+        dof_advantages_recovery = []
+        time_advantages_recovery = []
 
         for comp in equal_acc:
             th = comp.threshold_pct
@@ -200,25 +204,44 @@ class BenchmarkRunner:
                 if t_ratio is not None:
                     time_advantages.append(t_ratio)
 
-        # Determine if hypothesis is supported
-        mean_dof_adv = float(np.mean(dof_advantages)) if dof_advantages else 1.0
-        mean_time_adv = float(np.mean(time_advantages)) if time_advantages else 1.0
+            if goal and rec and goal.achieved and rec.achieved:
+                d_ratio_rec = comp.dof_ratio_rec_over_goal
+                t_ratio_rec = comp.time_ratio_rec_over_goal
+                if d_ratio_rec is not None:
+                    dof_advantages_recovery.append(d_ratio_rec)
+                if t_ratio_rec is not None:
+                    time_advantages_recovery.append(t_ratio_rec)
 
-        supported = mean_dof_adv > 1.05
-        if supported:
-            reasons.insert(
-                0,
-                f"Hypothesis SUPPORTED on equal-accuracy basis: Goal-Aware achieved specified QoI accuracy with an average of {mean_dof_adv:.2f}x fewer DOFs than Uniform."
-            )
-        else:
-            reasons.insert(
-                0,
-                "Hypothesis NOT FULLY SUPPORTED: Goal-Aware did not demonstrate a consistent DOF or wall-clock advantage over baselines at matched accuracy."
-            )
+        # Evaluate DOF and wall-clock efficiency as separate hypotheses.
+        # A DOF-only win must not be reported as an end-to-end computational-cost win.
+        mean_dof_adv = float(np.mean(dof_advantages)) if dof_advantages else None
+        mean_time_adv = float(np.mean(time_advantages)) if time_advantages else None
+        mean_dof_adv_rec = float(np.mean(dof_advantages_recovery)) if dof_advantages_recovery else None
+        mean_time_adv_rec = float(np.mean(time_advantages_recovery)) if time_advantages_recovery else None
+        dof_supported = (
+            mean_dof_adv is not None and mean_dof_adv > 1.05
+            and mean_dof_adv_rec is not None and mean_dof_adv_rec > 1.05
+        )
+        time_supported = (
+            mean_time_adv is not None and mean_time_adv > 1.05
+            and mean_time_adv_rec is not None and mean_time_adv_rec > 1.05
+        )
+        supported = dof_supported and time_supported
+
+        reasons.insert(
+            0,
+            "Combined efficiency hypothesis SUPPORTED: goal-aware refinement demonstrated both DOF and wall-clock advantages at matched reference-relative accuracy."
+            if supported
+            else "Combined efficiency hypothesis NOT SUPPORTED: both DOF and wall-clock advantages at matched reference-relative accuracy were not demonstrated."
+        )
 
         eval_data["hypothesis_supported"] = supported
+        eval_data["dof_efficiency_supported"] = dof_supported
+        eval_data["wall_clock_efficiency_supported"] = time_supported
         eval_data["reasons"] = reasons
         eval_data["mean_dof_advantage_vs_uniform"] = mean_dof_adv
         eval_data["mean_time_advantage_vs_uniform"] = mean_time_adv
+        eval_data["mean_dof_advantage_vs_recovery"] = mean_dof_adv_rec
+        eval_data["mean_time_advantage_vs_recovery"] = mean_time_adv_rec
 
         return eval_data

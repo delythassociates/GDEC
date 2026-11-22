@@ -8,6 +8,7 @@ Pipeline:
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
+from pydantic import ValidationError
 from typing import List, Optional
 
 from gdec.language.parser import GDECParser, GDECParseError
@@ -74,6 +75,19 @@ class GDECCompiler:
                     line=line,
                     column=col,
                     source_context=ctx,
+                )
+            )
+            return CompilationResult(success=False, ast=ast, diagnostics=diagnostics)
+        except ValidationError as e:
+            # Pydantic remains the final IR invariant gate, but invalid user input
+            # must surface as a compiler diagnostic rather than an uncaught exception.
+            diagnostics.append(
+                CompilerDiagnostic(
+                    severity="error",
+                    message=f"IR validation error: {e.errors(include_url=False)}",
+                    line=0,
+                    column=0,
+                    source_context="",
                 )
             )
             return CompilationResult(success=False, ast=ast, diagnostics=diagnostics)

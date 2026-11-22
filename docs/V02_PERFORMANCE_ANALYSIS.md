@@ -4,7 +4,7 @@
 
 This report documents the performance engineering, computational profiling, and algorithmic scalability of the GDEC v0.2 finite-element runtime. Key findings include:
 
-1. **Factorization Reuse Speedup**: By caching the sparse LU/Cholesky factorization of the condensed stiffness matrix $\mathbf{K}_{FF}$, the combined primal-dual linear solve executes **$2.05\times$ faster** than independent dual solves, with zero loss in machine precision.
+1. **Factorization Reuse Speedup**: By caching the sparse SuperLU LU factorization of the condensed stiffness matrix $\mathbf{K}_{FF}$, the combined primal-dual linear solve executes **$2.05\times$ faster** than independent dual solves, with zero loss in machine precision.
 2. **Runtime Stage Distribution**: In adaptive iterations on moderate meshes ($< 10,000$ DOFs), mesh refinement and conforming closure account for the majority of execution time ($\sim 55\%$). As mesh size exceeds $50,000$ DOFs, sparse matrix factorization emerges as the dominant computational bottleneck ($\sim 65\%$).
 3. **Scalability from 10k to 200k DOFs**: Empirical scaling follows theoretical 2D sparse direct solver bounds ($O(N^{1.5})$ factorization time, $O(N \log N)$ backsolve time, $O(N)$ assembly time).
 4. **Topological Cost Model**: Replacing naive local-only element estimation with a density-dependent topological closure model reduced refinement DOF prediction errors from $> 35\%$ down to $< 8\%$.

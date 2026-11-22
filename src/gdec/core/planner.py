@@ -74,7 +74,13 @@ class ExecutionPlanner:
         )
 
         # Strategy rationale
-        if strategy == "goal_aware":
+        if strategy in ["dwr", "goal_oriented_dwr"]:
+            strat_desc = "Goal-Oriented Dual-Weighted Residual (DWR) Refinement"
+            strat_exp = (
+                f"Evaluates primal traction jumps and enriched dual weighting to directly target QoI error "
+                f"for objective '{ir.objective.kind}' on boundary '{ir.objective.boundary}'."
+            )
+        elif strategy == "goal_aware":
             strat_desc = "Adjoint-informed Goal-Aware Sensitivity Refinement"
             strat_exp = (
                 f"Dual adjoint problem K^T z = g will be solved to compute element sensitivity for objective "

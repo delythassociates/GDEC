@@ -88,7 +88,7 @@ class GDECRuntime:
             mem_start = self.telemetry.get_current_memory_mb()
 
             # Step 2: Solve FEM system (exact stage timings measured inside solver)
-            need_adjoint = self.plan.refinement_strategy == "goal_aware"
+            need_adjoint = self.plan.refinement_strategy in ["goal_aware", "dwr", "goal_oriented_dwr"]
 
             sol = self.solver.solve(
                 gdec_mesh=current_mesh,
@@ -122,6 +122,14 @@ class GDECRuntime:
             elif self.plan.refinement_strategy == "goal_aware":
                 ind_res = self.estimator.compute_goal_aware_indicator(
                     current_mesh, sol, cost_aware=self.ir.adaptivity.cost_aware
+                )
+            elif self.plan.refinement_strategy in ["dwr", "goal_oriented_dwr"]:
+                ind_res = self.estimator.compute_dwr_indicator(
+                    current_mesh,
+                    sol,
+                    loads=self.loads,
+                    fixed_boundaries=self.fixed_boundaries,
+                    cost_aware=self.ir.adaptivity.cost_aware,
                 )
             else:
                 raise ValueError(f"Unknown strategy: {self.plan.refinement_strategy}")
