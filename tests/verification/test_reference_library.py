@@ -260,17 +260,115 @@ class TestReferenceProblemLibrary:
         assert rel_err < 0.015, f"REF-05 outer radial displacement discrepancy: {rel_err:.2%}"
 
     def test_ref_06_plate_with_hole_stress_concentration(self):
-        """REF-06: Kirsch stress concentration around a circular hole (K_t ~ 3.0)."""
+        """REF-06: Numerical Kirsch plate-with-hole stress concentration benchmark (Kt ~ 3.0)."""
         spec = get_reference_problem("REF-06-PLATE-HOLE-KIRSCH")
         assert "3.0" in spec.expected_qoi_formula
         assert spec.category == "physical_validation"
-        assert "Kirsch" in spec.source_reference
+
+        # Solve 2D elasticity on quarter-annulus with circular hole
+        a = 1.0  # hole radius
+        b = 5.0  # far-field boundary radius (b >> a)
+        nr, ntheta = 24, 32
+        E, nu = 200.0e9, 0.3
+        sigma_inf = 10.0e6
+
+        r_vals = np.geomspace(a, b, nr + 1)
+        th_vals = np.linspace(0, np.pi / 2.0, ntheta + 1)
+        grid = skfem.MeshTri.init_tensor(r_vals, th_vals)
+        x = grid.p[0] * np.cos(grid.p[1])
+        y = grid.p[0] * np.sin(grid.p[1])
+        mesh = skfem.MeshTri(np.vstack([x, y]), grid.t)
+
+        basis = skfem.Basis(mesh, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
+        K = skfem.asm(linear_elasticity(*plane_stress(E, nu)), basis)
+
+        # Symmetry: bottom y=0 (v=0), left x=0 (u=0)
+        bottom_nodes = np.where(np.isclose(mesh.p[1], 0.0))[0]
+        left_nodes = np.where(np.isclose(mesh.p[0], 0.0))[0]
+        D_bottom = basis.nodal_dofs[1, bottom_nodes]
+        D_left = basis.nodal_dofs[0, left_nodes]
+        D = np.unique(np.concatenate([D_bottom, D_left]))
+
+        # Far-field boundary r = b: apply Kirsch analytical tractions
+        outer_facets = mesh.facets_satisfying(lambda p: np.isclose(np.sqrt(p[0]**2 + p[1]**2), b, atol=0.05))
+        fb_outer = skfem.FacetBasis(mesh, skfem.ElementVector(skfem.ElementTriP1()), facets=outer_facets)
+
+        @skfem.LinearForm
+        def outer_traction(v, w):
+            x_c, y_c = w.x[0], w.x[1]
+            th = np.arctan2(y_c, x_c)
+            r = b
+            s_r = (sigma_inf / 2.0) * (1.0 - a**2 / r**2) + (sigma_inf / 2.0) * (1.0 - 4.0 * a**2 / r**2 + 3.0 * a**4 / r**4) * np.cos(2.0 * th)
+            t_rth = -(sigma_inf / 2.0) * (1.0 + 2.0 * a**2 / r**2 - 3.0 * a**4 / r**4) * np.sin(2.0 * th)
+            T_x = s_r * np.cos(th) - t_rth * np.sin(th)
+            T_y = s_r * np.sin(th) + t_rth * np.cos(th)
+            return T_x * v[0] + T_y * v[1]
+
+        f = skfem.asm(outer_traction, fb_outer)
+        u_sol = skfem.solve(*skfem.condense(K, f, D=D))
+
+        # Evaluate peak hoop stress at top of hole (0, a) where theta = pi/2:
+        top_hole_node = left_nodes[np.argmin(np.abs(mesh.p[1, left_nodes] - a))]
+        dofs_u = u_sol[basis.nodal_dofs[0]]
+        dofs_v = u_sol[basis.nodal_dofs[1]]
+
+        elem_idx = np.where(np.any(mesh.t == top_hole_node, axis=0))[0]
+        scalar_basis = skfem.Basis(mesh, skfem.ElementTriP1())
+        grad_u = scalar_basis.interpolate(dofs_u).grad
+        grad_v = scalar_basis.interpolate(dofs_v).grad
+
+        eps_xx = grad_u[0]
+        eps_yy = grad_v[1]
+        sigma_xx = (E / (1.0 - nu**2)) * (eps_xx + nu * eps_yy)
+        peak_sigma = float(np.mean(sigma_xx[elem_idx, :]))
+        kt_num = peak_sigma / sigma_inf
+
+        # Stress concentration factor must be in [2.85, 3.15] (within 5% of theoretical 3.0)
+        assert 2.85 <= kt_num <= 3.15, f"REF-06 calculated Kt {kt_num:.3f} outside [2.85, 3.15] (expected ~3.0)"
 
     def test_ref_07_l_shaped_domain_singular(self):
-        """REF-07: L-shaped domain corner singularity specification and rate bounds."""
+        """REF-07: Linear elasticity re-entrant corner singularity benchmark on L-shaped domain."""
         spec = get_reference_problem("REF-07-L-SHAPED-DOMAIN-SINGULAR")
         assert spec.expected_order_h == pytest.approx(0.544, abs=0.01)
         assert spec.category == "numerical_verification"
+
+        # Solve 2D linear elasticity on sequence of uniform L-shaped meshes
+        E, nu = 100.0e9, 0.3
+        P_traction = 1000.0
+
+        energies = []
+        for k in [1, 2, 3]:
+            m = skfem.MeshTri.init_lshaped().refined(k)
+            basis = skfem.Basis(m, skfem.ElementVector(skfem.ElementTriP1()), intorder=2)
+            K = skfem.asm(linear_elasticity(*plane_stress(E, nu)), basis)
+
+            # Clamped on top boundary y = 1: x in [-1, 0]
+            top_nodes = np.where(np.isclose(m.p[1], 1.0))[0]
+            D = np.concatenate([basis.nodal_dofs[0, top_nodes], basis.nodal_dofs[1, top_nodes]])
+
+            # Shear traction on right boundary x = 1: y in [-1, 0]
+            right_facets = m.facets_satisfying(lambda p: np.isclose(p[0], 1.0))
+            fb = skfem.FacetBasis(m, skfem.ElementVector(skfem.ElementTriP1()), facets=right_facets)
+
+            @skfem.LinearForm
+            def tr(v, w):
+                return P_traction * v[1]
+
+            f = skfem.asm(tr, fb)
+            u = skfem.solve(*skfem.condense(K, f, D=D))
+            # Conforming strain energy U_h = 1/2 * u^T * K * u
+            strain_energy = float(0.5 * np.dot(u, K @ u))
+            energies.append(strain_energy)
+
+        # 1. Monotonic strain energy convergence from below (Rayleigh-Ritz minimum potential energy)
+        assert energies[1] > energies[0], f"Energy level 1 {energies[1]} <= level 0 {energies[0]}"
+        assert energies[2] > energies[1], f"Energy level 2 {energies[2]} <= level 1 {energies[1]}"
+
+        # 2. Ratio of energy increments reflects corner singularity convergence exponent 2*lambda ~ 1.089
+        delta_01 = energies[1] - energies[0]
+        delta_12 = energies[2] - energies[1]
+        ratio = delta_01 / delta_12
+        assert 1.50 <= ratio <= 2.50, f"Singular energy increment ratio {ratio:.3f} outside [1.50, 2.50]"
 
     def test_ref_08_rigid_body_nullspace(self):
         """REF-08: Exactly 3 rigid-body zero modes in unconstrained 2D elasticity stiffness."""

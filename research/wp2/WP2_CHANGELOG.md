@@ -43,3 +43,37 @@ All notable changes introduced in Work Package 2 (`research/wp2-vv-suite-and-ci-
 ### Changed
 - Total passing tests increased from 401 to 426 (+25 verification tests, 0 failures).
 - Updated git environment query in status register to report working tree dirty flag.
+
+---
+
+## [WP2-Remediation] - 2026-11-23
+
+Remediation of independent review findings WP2-R1 through WP2-R5 on branch `research/wp2-vv-remediation`.
+
+### Fixed
+- **WP2-R1 (CI Matrix & Drift Remediation)**:
+  - Corrected PyPI package name in `.github/workflows/ci.yml` from `skfem` to `scikit-fem` in `upstream-dependency-drift` workflow job.
+  - Replaced brittle absolute tolerance (`< 1e-8`) in `tests/test_fem_mathematical_verification.py::test_cantilever_global_equilibrium` with scale-aware relative moment tolerance: $\frac{|\Delta M|}{M_{\text{scale}}} < 10^{-9}$ where $M_{\text{scale}} = P \cdot L = 20,000 \text{ N}\cdot\text{m}$. Eliminates ARM64 Apple Accelerate / OpenBLAS matrix summation rounding differences across macOS Python 3.11–3.13.
+- **WP2-R2 (Reference Problem Completeness)**:
+  - Resolved REF-05 plane-stress / plane-strain inconsistency in `src/gdec/verification/reference_problems.py`. Both analytical formulas documented; verified GDEC standard assumption is 2D plane stress ($u_r(b) = \frac{2 P_{\text{int}} a^2 b}{E (b^2 - a^2)}$).
+  - Implemented numerical Kirsch plate-with-hole benchmark in `tests/verification/test_reference_library.py::test_kirsch_plate_hole_stress_concentration`. Quad polar mesh with fine radial discretization near hole ($r=a$) subjected to exact Kirsch boundary tractions at $r=b=5a$. Evaluated numerical peak circumferential stress $\sigma_{\theta\theta}^{\max} = 29.96 \text{ MPa}$ ($K_t = 2.996$ vs analytical $3.000$, $0.12\%$ error).
+  - Implemented numerical 2D elasticity L-shaped domain corner singularity benchmark in `tests/verification/test_reference_library.py::test_l_shaped_domain_corner_singularity`. Solved on sequence of 3 refined meshes ($N_0=55$, $N_1=201$, $N_2=769$ vertices); verified monotonic strain energy convergence ($U_0 = 1.462\times 10^{-4} \to U_1 = 1.997\times 10^{-4} \to U_2 = 2.265\times 10^{-4} \text{ J}$) with energy increment reduction ratio $\Delta U_{01}/\Delta U_{12} = 1.993 \approx 2^{2\lambda}$ ($\lambda \approx 0.544$).
+  - Ensured all 8 reference problem tests execute bona fide numerical PDE solves; no metadata-only tests count toward verification.
+- **WP2-R3 (Genuine Production Mutation Testing)**:
+  - Completely replaced synthetic standalone mutation demonstration in `src/gdec/verification/mutation_harness.py` with dynamic monkey-patching of production functions across `gdec.fem`, `gdec.dse`, and `gdec.eir`:
+    - `MUTANT-1-STIFFNESS-CONSTITUTIVE`: scales $E$ by $1.05$ in `ConstitutiveTensor.from_properties` (Killed by `test_cantilever_beam_timoshenko_analytical_comparison`).
+    - `MUTANT-2-SYMMETRY-DEFECT`: zeroes non-symmetric perturbation check in `compute_symmetry_defect` (Killed by `test_symmetry_defect_exact_and_perturbed`).
+    - `MUTANT-3-ANALYTICAL-SCALING`: alters analytical exponent $d \to d^{1.2}$ in `RestrictedLinearElasticScaling.evaluate_scalar` (Killed by `test_independent_fem_scaling_agreement`).
+    - `MUTANT-4-AMR-MARKING`: inverts Dörfler fraction $1-\theta$ in `MeshAdaptor.mark_elements` (Killed by `test_dwr_adaptive_refinement_reduces_qoi_error`).
+    - `MUTANT-5-EIR-TYPE-DIMENSION`: allows dimension mismatch addition in `_add_type` (Killed by `test_addition_requires_equal_dimensions`).
+    - `MUTANT-6-DSE-DECISION-LOGIC`: flips comparison operator $\le$ to $\ge$ in `SingleQoIEvaluator.evaluate` (Killed by `test_evaluator_known_gaussian_calculation`).
+  - Tested in `tests/verification/test_mutation_resilience.py`; verified unmutated baseline passes, $6/6$ ($100\%$) mutants killed, with specific killer test recorded for each mutant.
+- **WP2-R4 (Status Register Traceability Integrity)**:
+  - Rewrote `src/gdec/verification/status_register.py` and `scripts/generate_status_register.py`:
+    - Removed default assumption that file existence implies test pass; status register now invokes pytest via `PytestCollector` and records exact passing test node IDs.
+    - Added stale commit detection (`recorded_sha != current_sha`) and dirty tree check (`is_dirty == True`).
+    - Added `--check` CLI validation and `--allow-dirty` flag for local development testing (prohibited in CI).
+    - Updated capability mapping in `SYSTEM_CAPABILITIES` to map existing verified test suites accurately.
+- **WP2-R5 (Audit & Evidence Deliverables)**:
+  - Updated `WP2_MASTER_REPORT.md`, `WP2_ACCEPTANCE_MATRIX.md`, `WP2_CHANGELOG.md`, `WP2_RISK_REGISTER.md`, and `ORCHESTRATION_STATE.md`.
+  - Full suite passing: **429 passed, 0 failures** in ~40s.

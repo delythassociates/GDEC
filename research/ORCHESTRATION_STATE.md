@@ -1,13 +1,13 @@
 # GDEC Orchestration State
-Last updated: 2026-11-23T00:18:00+05:30  | Session #: 3
-Branch tip: research/wp2-vv-suite-and-ci-matrix  | Baseline: 426 passed / 0 skips / 0 failures on host with operational NVIDIA GPU
+Last updated: 2026-11-23T00:50:00+05:30  | Session #: 3
+Branch tip: research/wp2-vv-remediation  | Baseline: 429 passed / 0 skips / 0 failures on host with operational NVIDIA GPU
 
 ## Work package board
 | WP | Status (todo/active/blocked/done) | Branch | Gates passed / total | Evidence path |
 |---|---|---|---|---|
 | WP0 | done | research/wp0-repo-integrity | 4 / 4 | research/wp0/ |
 | WP1 | done | research/wp1-eir-adversarial-hardening | 4 / 4 | research/wp1/ |
-| WP2 | done | research/wp2-vv-suite-and-ci-matrix | 4 / 4 | research/wp2/ |
+| WP2 | active (remediation) | research/wp2-vv-remediation | 5 / 5 review items addressed | research/wp2/ |
 | WP3 | todo | pending | 0 / 4 | pending |
 | WP4 | todo | pending | 0 / 2 | pending |
 | WP5 | todo | pending | 0 / 3 | pending |
@@ -36,6 +36,7 @@ Branch tip: research/wp2-vv-suite-and-ci-matrix  | Baseline: 426 passed / 0 skip
 | 2026-11-22 (S2) | 371 passed / 0 failed / 1 warning | unmeasured (offline venv) | pending | 100% (Linux py3.10-3.12) | 0 (README link check 22/22 green) |
 | 2026-11-22 (S3) | 401 passed / 0 failed / 1 warning | unmeasured (offline venv) | pending | 100% (Linux py3.10-3.12) | 0 (WP1 hardening clean) |
 | 2026-11-23 (S3 WP2) | 426 passed / 0 failed / 1 warning | unmeasured (offline venv) | 100% (6/6 killed) | 100% matrix (Linux, Win, macOS x 3.10-3.13) + drift + status register | 0 (WP2 verification clean) |
+| 2026-11-23 (S3 WP2 Remediation) | 429 passed / 0 failed / 1 warning | unmeasured (offline venv) | 100% (6/6 killed) | 100% matrix (Linux, Win, macOS x 3.10-3.13) + drift + status register | 0 (WP2 remediation clean) |
 
 ## Deferred list (idea | why deferred)
 - Hardware synthesis & custom GPU/FPGA/ISA kernels | Deferred per Rule R5 and Parking Lot until WP3/WP4 produce profile-guided evidence.

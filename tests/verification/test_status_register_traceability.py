@@ -25,9 +25,9 @@ class TestStatusRegisterTraceability:
     """Verifies schema validity and CI traceability enforcement for GDEC capabilities."""
 
     def test_status_register_schema_and_generation(self, tmp_path):
-        """Verify status register generates valid JSON matching schema specification."""
+        """Verify status register generates valid JSON matching schema specification with executed tests."""
         out_file = str(tmp_path / "status_register.json")
-        data = generate_status_register(output_path=out_file)
+        data = generate_status_register(output_path=out_file, run_tests=True)
 
         assert os.path.exists(out_file)
         with open(out_file, "r", encoding="utf-8") as f:
@@ -50,6 +50,13 @@ class TestStatusRegisterTraceability:
         assert loaded["total_capabilities"] == len(SYSTEM_CAPABILITIES)
         assert len(loaded["capabilities"]) == len(SYSTEM_CAPABILITIES)
 
+        # Check that executed test IDs are captured
+        for cap in loaded["capabilities"]:
+            assert "executed_test_ids" in cap
+            if cap["claimed_status"] == "NUMERICALLY VERIFIED":
+                assert cap["test_execution_state"] == "PASS"
+                assert len(cap["executed_test_ids"]) > 0
+
         # Check summary counts
         summary = loaded["status_summary"]
         assert summary["NUMERICALLY VERIFIED"] > 0
@@ -70,20 +77,22 @@ class TestStatusRegisterTraceability:
     def test_traceability_enforcement_passes_healthy_register(self, tmp_path):
         """Gate 2: Traceability verification must pass when all tests pass."""
         out_file = str(tmp_path / "status_register.json")
-        data = generate_status_register(output_path=out_file)
-        # Should not raise
-        verify_traceability(data)
+        data = generate_status_register(output_path=out_file, run_tests=True)
+        # Should not raise (allow_dirty and allow_stale permit unit test execution on unstaged working tree)
+        verify_traceability(data, on_disk_path=out_file, allow_dirty=True, allow_stale=True)
 
     def test_traceability_enforcement_fails_on_unverified_capability(self):
         """Gate 2: Any NUMERICALLY VERIFIED capability with FAIL or missing tests must fail."""
-        # Simulated register with a failed test for a numerically verified capability
+        current_sha = get_git_info()["commit_sha"]
         bad_register = {
+            "git": {"commit_sha": current_sha, "dirty": False},
             "capabilities": [
                 {
                     "capability_id": "fake_broken_capability",
                     "name": "Broken Mechanical Solver",
                     "claimed_status": "NUMERICALLY VERIFIED",
                     "test_files_exist": True,
+                    "executed_test_ids": ["tests/fake_test.py::test_broken"],
                     "test_execution_state": "FAIL",
                     "test_files": ["tests/fake_test.py"],
                 }
@@ -94,15 +103,60 @@ class TestStatusRegisterTraceability:
         assert "Broken Mechanical Solver" in str(exc_info.value)
         assert "expected 'PASS'" in str(exc_info.value)
 
+    def test_traceability_enforcement_fails_on_stale_commit_sha(self):
+        """WP2-R4: Status register with a stale commit SHA must fail --check."""
+        stale_register = {
+            "git": {"commit_sha": "deadbeef00000000000000000000000000000000", "dirty": False},
+            "capabilities": []
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(stale_register)
+        assert "Stale status register detected" in str(exc_info.value)
+
+    def test_traceability_enforcement_fails_on_dirty_working_tree(self):
+        """WP2-R4: Status register indicating dirty tree must fail."""
+        current_sha = get_git_info()["commit_sha"]
+        dirty_register = {
+            "git": {"commit_sha": current_sha, "dirty": True},
+            "capabilities": []
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(dirty_register)
+        assert "dirty" in str(exc_info.value).lower()
+
+    def test_traceability_enforcement_fails_on_zero_executed_tests(self):
+        """WP2-R4: NUMERICALLY VERIFIED capability with 0 executed tests must fail."""
+        current_sha = get_git_info()["commit_sha"]
+        empty_tests_register = {
+            "git": {"commit_sha": current_sha, "dirty": False},
+            "capabilities": [
+                {
+                    "capability_id": "untested_capability",
+                    "name": "Untested Solver",
+                    "claimed_status": "NUMERICALLY VERIFIED",
+                    "test_files_exist": True,
+                    "executed_test_ids": [],
+                    "test_execution_state": "PASS",
+                    "test_files": ["tests/test_existing.py"],
+                }
+            ]
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(empty_tests_register)
+        assert "0 tests were executed" in str(exc_info.value)
+
     def test_traceability_enforcement_fails_on_missing_test_files(self):
         """Gate 2: Any NUMERICALLY VERIFIED capability with missing test files must fail."""
+        current_sha = get_git_info()["commit_sha"]
         bad_register = {
+            "git": {"commit_sha": current_sha, "dirty": False},
             "capabilities": [
                 {
                     "capability_id": "fake_missing_files",
                     "name": "Missing Test Solver",
                     "claimed_status": "NUMERICALLY VERIFIED",
                     "test_files_exist": False,
+                    "executed_test_ids": [],
                     "test_execution_state": "PASS",
                     "test_files": ["tests/non_existent_file_99999.py"],
                 }
@@ -114,7 +168,13 @@ class TestStatusRegisterTraceability:
 
     def test_cli_script_generates_and_checks(self):
         """Verify scripts/generate_status_register.py runs cleanly via CLI."""
-        cmd = [sys.executable, "scripts/generate_status_register.py", "--check"]
-        proc = subprocess.run(cmd, capture_output=True, text=True)
-        assert proc.returncode == 0, f"CLI check failed: {proc.stderr}\n{proc.stdout}"
-        assert "[PASS]" in proc.stdout
+        # Generate fresh status register
+        gen_cmd = [sys.executable, "scripts/generate_status_register.py"]
+        gen_proc = subprocess.run(gen_cmd, capture_output=True, text=True)
+        assert gen_proc.returncode == 0, f"Generation failed: {gen_proc.stderr}\n{gen_proc.stdout}"
+
+        # Verify check succeeds (with --allow-dirty for local test runner state)
+        chk_cmd = [sys.executable, "scripts/generate_status_register.py", "--check", "--allow-dirty"]
+        chk_proc = subprocess.run(chk_cmd, capture_output=True, text=True)
+        assert chk_proc.returncode == 0, f"CLI check failed: {chk_proc.stderr}\n{chk_proc.stdout}"
+        assert "[PASS]" in chk_proc.stdout

@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 
 
 class TraceabilityVerificationError(RuntimeError):
-    """Raised when a claimed status in the register lacks passing test evidence."""
+    """Raised when a claimed status in the register lacks passing test evidence or is stale."""
 
 
 @dataclass(frozen=True)
@@ -132,7 +132,7 @@ SYSTEM_CAPABILITIES: List[CapabilityEntry] = [
         claimed_status="NUMERICALLY VERIFIED",
         evidence_path="tests/test_fem_mathematical_verification.py",
         test_files=["tests/test_fem_mathematical_verification.py"],
-        notes="Linear force balance < 1e-9 N; moment balance < 1e-8 N*m.",
+        notes="Linear force balance < 1e-7 N; scale-aware moment balance < 1e-9 relative.",
     ),
     CapabilityEntry(
         capability_id="fem_analytical_beam_convergence",
@@ -199,8 +199,17 @@ SYSTEM_CAPABILITIES: List[CapabilityEntry] = [
         test_files=["tests/test_dwr_verification.py"],
         notes="Dual-weighted residual estimator with interior jumps, bubble recovery, effectivity convergence (0.51 -> 0.91).",
     ),
+    CapabilityEntry(
+        capability_id="estimator_amr_marking_cycle",
+        name="Adaptive Refinement Marking Cycle",
+        subsystem="estimator",
+        claimed_status="NUMERICALLY VERIFIED",
+        evidence_path="tests/test_dwr_verification.py",
+        test_files=["tests/test_dwr_verification.py", "tests/test_estimators.py"],
+        notes="Monotonic error reduction over 4 AMR iterations under budget.",
+    ),
 
-    # 2.5 Solvers & Diagnostics
+    # 2.4 Linear Solvers & Numerical Diagnostics
     CapabilityEntry(
         capability_id="solver_matrix_diagnostics",
         name="Stiffness Matrix Diagnostics & Scale Invariance",
@@ -211,42 +220,33 @@ SYSTEM_CAPABILITIES: List[CapabilityEntry] = [
         notes="Scale-invariant condition number and symmetry metric across 1e-14 <= c <= 1e14.",
     ),
     CapabilityEntry(
-        capability_id="solver_pcg_spd_eligibility_gate",
-        name="Conjugate Gradient SPD Eligibility Gate",
+        capability_id="solver_cg_direct_residual_recalculation",
+        name="CG Direct Residual Recalculation",
         subsystem="solver",
         claimed_status="NUMERICALLY VERIFIED",
         evidence_path="tests/test_iterative_solvers.py",
         test_files=["tests/test_iterative_solvers.py"],
-        notes="Strict default certification, indefinite matrix rejection, preconditioner SPD validation.",
-    ),
-    CapabilityEntry(
-        capability_id="solver_jacobi_preconditioner",
-        name="Jacobi Preconditioner",
-        subsystem="solver",
-        claimed_status="NUMERICALLY VERIFIED",
-        evidence_path="tests/test_iterative_solvers.py",
-        test_files=["tests/test_iterative_solvers.py"],
-        notes="Strict diagonal positivity validation, verified SPD.",
-    ),
-    CapabilityEntry(
-        capability_id="solver_incomplete_cholesky",
-        name="Incomplete Cholesky Preconditioner IC(0)",
-        subsystem="solver",
-        claimed_status="NUMERICALLY VERIFIED",
-        evidence_path="tests/test_iterative_solvers.py",
-        test_files=["tests/test_iterative_solvers.py"],
-        notes="Symmetric IC(0) sparse factorization with breakdown detection, verified SPD.",
+        notes="Direct recalculation r = b - A*x ensures true residual within tolerance.",
     ),
 
-    # Phase 5.1/5.2 Features
+    # 2.5 DSE & EIR Hardening
     CapabilityEntry(
-        capability_id="dse_zero_solve_scaling",
-        name="Zero-Solve Analytical Parameter Scaling",
+        capability_id="dse_linear_elastic_scaling_monte_carlo",
+        name="Linear Elastic Analytical Scaling Agreement",
         subsystem="dse",
         claimed_status="NUMERICALLY VERIFIED",
-        evidence_path="tests/test_v02_scaling.py",
-        test_files=["tests/test_v02_scaling.py", "tests/test_cuda_backend.py"],
-        notes="Vectorized exact scaling across E and P for linear elasticity QoIs.",
+        evidence_path="tests/test_independent_fem_validation.py",
+        test_files=["tests/test_independent_fem_validation.py"],
+        notes="Analytical scaling agrees with independent scikit-fem elasticity within machine precision.",
+    ),
+    CapabilityEntry(
+        capability_id="dse_single_qoi_evaluator",
+        name="Single-QoI Decision Sufficiency Evaluator",
+        subsystem="dse",
+        claimed_status="NUMERICALLY VERIFIED",
+        evidence_path="tests/test_dse.py",
+        test_files=["tests/test_dse.py"],
+        notes="Strict Bayesian loss evaluation, refusing when evidence is absent or insufficient.",
     ),
     CapabilityEntry(
         capability_id="eir_canonical_hash_determinism",
@@ -258,6 +258,30 @@ SYSTEM_CAPABILITIES: List[CapabilityEntry] = [
         notes="SHA-256 hash invariant across dict order, line endings, and equivalent units.",
     ),
 ]
+
+
+class PytestCollector:
+    """In-process pytest plugin to capture executed test nodeids and outcomes."""
+    def __init__(self):
+        self.results: Dict[str, str] = {}  # nodeid -> "PASS" | "FAIL" | "SKIP"
+
+    def pytest_runtest_logreport(self, report):
+        if report.when == "call":
+            if report.passed:
+                self.results[report.nodeid] = "PASS"
+            elif report.failed:
+                self.results[report.nodeid] = "FAIL"
+            else:
+                self.results[report.nodeid] = "SKIP"
+
+
+def collect_live_test_results(test_files: Optional[List[str]] = None) -> Dict[str, str]:
+    """Execute pytest on target files and collect live outcomes for every individual test."""
+    import pytest
+    collector = PytestCollector()
+    args = test_files if test_files else ["tests/"]
+    pytest.main(args + ["-q"], plugins=[collector])
+    return collector.results
 
 
 def get_git_info() -> Dict[str, Any]:
@@ -310,30 +334,51 @@ def get_environment_info() -> Dict[str, Any]:
 
 def generate_status_register(
     output_path: str = "results/status_register.json",
+    run_tests: bool = True,
     test_results: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
     Generate machine-readable status_register.json with commit, environment,
-    capabilities, and verified test states.
+    capabilities, and verified test states backed by actual pytest execution.
     """
     git_info = get_git_info()
     env_info = get_environment_info()
     now_iso = datetime.now(timezone.utc).isoformat()
 
+    # Collect live test execution results across test files if requested
+    if test_results is None and run_tests:
+        all_test_files = sorted(list(set(tf for cap in SYSTEM_CAPABILITIES for tf in cap.test_files if os.path.exists(tf))))
+        live_test_results = collect_live_test_results(all_test_files)
+    else:
+        live_test_results = test_results or {}
+
     capabilities_data = []
     for cap in SYSTEM_CAPABILITIES:
-        # Check test file presence on disk
         all_tests_exist = all(os.path.exists(tf) for tf in cap.test_files)
-        # Determine test execution status
-        if test_results and cap.capability_id in test_results:
-            execution_state = test_results[cap.capability_id]
-        elif all_tests_exist:
-            execution_state = "PASS"  # Default when test file verified present & passing
+
+        # Match executed tests for this capability
+        matching_executed_tests: Dict[str, str] = {}
+        for nodeid, status in live_test_results.items():
+            # Check if this nodeid belongs to any of cap.test_files
+            normalized_nodeid = nodeid.replace("\\", "/")
+            if any(tf.replace("\\", "/") in normalized_nodeid for tf in cap.test_files):
+                matching_executed_tests[nodeid] = status
+
+        executed_test_ids = list(matching_executed_tests.keys())
+
+        # Determine execution state based strictly on real execution evidence
+        if not all_tests_exist or len(matching_executed_tests) == 0:
+            execution_state = "NOT_RUN"
+        elif any(st == "FAIL" for st in matching_executed_tests.values()):
+            execution_state = "FAIL"
+        elif all(st == "PASS" for st in matching_executed_tests.values()):
+            execution_state = "PASS"
         else:
             execution_state = "NOT_RUN"
 
         cap_dict = asdict(cap)
         cap_dict["test_files_exist"] = all_tests_exist
+        cap_dict["executed_test_ids"] = executed_test_ids
         cap_dict["test_execution_state"] = execution_state
         capabilities_data.append(cap_dict)
 
@@ -359,11 +404,89 @@ def generate_status_register(
     return register_data
 
 
-def verify_traceability(register_data: Dict[str, Any]) -> None:
+def verify_traceability(
+    register_data: Dict[str, Any],
+    on_disk_path: Optional[str] = None,
+    allow_dirty: bool = False,
+    allow_stale: bool = False,
+) -> None:
     """
-    Strict traceability gate: Fails if any capability claimed as
-    'NUMERICALLY VERIFIED' has test_execution_state != 'PASS' or missing test files.
+    Strict traceability gate:
+    1. Detects stale status register by comparing recorded commit SHA against current HEAD.
+    2. Enforces that working tree is not dirty.
+    3. Fails if any capability claimed as 'NUMERICALLY VERIFIED' lacks passing tests
+       or has test_execution_state != 'PASS'.
     """
+    git_info = get_git_info()
+    current_sha = git_info.get("commit_sha", "unknown")
+    recorded_sha = register_data.get("git", {}).get("commit_sha", "unknown")
+
+    # Detect stale status register
+    if not allow_stale and recorded_sha != "unknown" and current_sha != "unknown" and recorded_sha != current_sha:
+        # Allow if recorded_sha is a valid ancestor whose only changes to current_sha are status register or metadata/docs
+        try:
+            diff_files = subprocess.check_output(
+                ["git", "diff", "--name-only", recorded_sha, current_sha],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            ).strip().splitlines()
+            non_meta_diff = [
+                f for f in diff_files
+                if not f.startswith("results/status_register.json")
+                and not f.startswith("research/")
+                and not f.endswith(".md")
+            ]
+            if non_meta_diff:
+                raise TraceabilityVerificationError(
+                    f"Stale status register detected: recorded commit SHA '{recorded_sha}' "
+                    f"does not match current HEAD commit SHA '{current_sha}' (modified code/tests: {non_meta_diff})."
+                )
+        except Exception as e:
+            if isinstance(e, TraceabilityVerificationError):
+                raise
+            raise TraceabilityVerificationError(
+                f"Stale status register detected: recorded commit SHA '{recorded_sha}' "
+                f"does not match current HEAD commit SHA '{current_sha}'."
+            )
+
+    # Detect dirty state
+    if not allow_dirty and register_data.get("git", {}).get("dirty", False):
+        raise TraceabilityVerificationError(
+            "Status register indicates a dirty working tree. "
+            "Verification and status register must be generated on a clean commit."
+        )
+
+    # If on-disk path provided, verify file consistency
+    if on_disk_path and os.path.exists(on_disk_path):
+        with open(on_disk_path, "r", encoding="utf-8") as f:
+            disk_data = json.load(f)
+        disk_sha = disk_data.get("git", {}).get("commit_sha", "unknown")
+        if not allow_stale and disk_sha != current_sha and disk_sha != "unknown" and current_sha != "unknown":
+            try:
+                diff_files = subprocess.check_output(
+                    ["git", "diff", "--name-only", disk_sha, current_sha],
+                    text=True,
+                    stderr=subprocess.DEVNULL,
+                ).strip().splitlines()
+                non_meta_diff = [
+                    f for f in diff_files
+                    if not f.startswith("results/status_register.json")
+                    and not f.startswith("research/")
+                    and not f.endswith(".md")
+                ]
+                if non_meta_diff:
+                    raise TraceabilityVerificationError(
+                        f"Committed status register at '{on_disk_path}' is stale: "
+                        f"records commit '{disk_sha}', but current HEAD is '{current_sha}' (modified code/tests: {non_meta_diff})."
+                    )
+            except Exception as e:
+                if isinstance(e, TraceabilityVerificationError):
+                    raise
+                raise TraceabilityVerificationError(
+                    f"Committed status register at '{on_disk_path}' is stale: "
+                    f"records commit '{disk_sha}', but current HEAD is '{current_sha}'."
+                )
+
     failures = []
     for cap in register_data["capabilities"]:
         if cap["claimed_status"] == "NUMERICALLY VERIFIED":
@@ -376,6 +499,11 @@ def verify_traceability(register_data: Dict[str, Any]) -> None:
                 failures.append(
                     f"Capability '{cap['capability_id']}' ({cap['name']}) is claimed as NUMERICALLY VERIFIED "
                     f"but test state is '{cap.get('test_execution_state')}' (expected 'PASS')"
+                )
+            elif len(cap.get("executed_test_ids", [])) == 0:
+                failures.append(
+                    f"Capability '{cap['capability_id']}' ({cap['name']}) is claimed as NUMERICALLY VERIFIED "
+                    f"but 0 tests were executed to support it."
                 )
 
     if failures:

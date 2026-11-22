@@ -242,10 +242,13 @@ def test_global_force_and_moment_equilibrium():
     assert abs(bal_y) < 1e-7, f"Force balance y error {bal_y}"
 
     # Moment equilibrium about the origin
+    # Applied vertical load is 10,000 N at x=2.0 m -> characteristic moment M_scale = 20,000 N*m
     p = mesh.mesh.p
     Ku = sol.K @ sol.u
     moment_about_origin = np.sum(p[0] * Ku[1::2] - p[1] * Ku[0::2])
-    assert abs(moment_about_origin) < 1e-8, f"Moment equilibrium error {moment_about_origin}"
+    M_scale = 10000.0 * 2.0  # 20,000 N*m
+    rel_moment_err = abs(moment_about_origin) / M_scale
+    assert rel_moment_err < 1e-9, f"Moment equilibrium relative error {rel_moment_err:.3e} exceeds 1e-9 (absolute: {moment_about_origin} N*m)"
 
 
 # 6. Reaction-Force Verification
