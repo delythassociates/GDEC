@@ -1,0 +1,348 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-11-22T18:49:13.994314+00:00",
+  "git": {
+    "commit_sha": "a083df0df31d27b9bd42be4d72bb998fb46d5481",
+    "branch": "research/wp2-vv-suite-and-ci-matrix",
+    "dirty": false
+  },
+  "environment": {
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python_version": "3.13.14",
+    "python_implementation": "CPython",
+    "numpy_version": "2.5.5",
+    "scipy_version": "1.18.1",
+    "scikit_fem_version": "12.0.2",
+    "lark_version": "1.3.1",
+    "pydantic_version": "2.14.4",
+    "cupy_available": true,
+    "cupy_version": "14.2.0"
+  },
+  "total_capabilities": 24,
+  "status_summary": {
+    "NUMERICALLY VERIFIED": 16,
+    "TESTED": 8,
+    "IMPLEMENTED": 0,
+    "PLANNED": 0
+  },
+  "capabilities": [
+    {
+      "capability_id": "compiler_lark_parser",
+      "name": "Lark EBNF Lexer & Parser",
+      "subsystem": "compiler",
+      "claimed_status": "TESTED",
+      "evidence_path": "tests/test_language.py",
+      "test_files": [
+        "tests/test_language.py",
+        "tests/test_compiler_validation.py"
+      ],
+      "notes": "LALR grammar in grammar.lark. Duplicate named arguments rejected.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "compiler_strict_declarations",
+      "name": "Strict Top-Level Declarations",
+      "subsystem": "compiler",
+      "claimed_status": "TESTED",
+      "evidence_path": "tests/test_compiler_validation.py",
+      "test_files": [
+        "tests/test_compiler_validation.py"
+      ],
+      "notes": "Only known declarations accepted; unknown statements trigger source-located syntax errors.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "compiler_singleton_enforcement",
+      "name": "Singleton Declaration Enforcement",
+      "subsystem": "compiler",
+      "claimed_status": "TESTED",
+      "evidence_path": "tests/test_compiler_validation.py",
+      "test_files": [
+        "tests/test_compiler_validation.py"
+      ],
+      "notes": "Top-level blocks rejected if duplicated.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "compiler_scalar_validation",
+      "name": "Scalar & Type Validation",
+      "subsystem": "compiler",
+      "claimed_status": "TESTED",
+      "evidence_path": "tests/test_compiler_validation.py",
+      "test_files": [
+        "tests/test_compiler_validation.py"
+      ],
+      "notes": "Rejects NaN, inf, overflow, boolean-as-float, fractional budget.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "compiler_material_bounds",
+      "name": "Material Constant Bounds",
+      "subsystem": "compiler",
+      "claimed_status": "TESTED",
+      "evidence_path": "tests/test_compiler_validation.py",
+      "test_files": [
+        "tests/test_compiler_validation.py",
+        "tests/test_language.py"
+      ],
+      "notes": "Enforces E > 0 and -1.0 < nu < 0.5.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "compiler_typed_problem_ir",
+      "name": "Typed ProblemIR Contract",
+      "subsystem": "compiler",
+      "claimed_status": "TESTED",
+      "evidence_path": "tests/test_ir.py",
+      "test_files": [
+        "tests/test_ir.py",
+        "tests/test_compiler_validation.py"
+      ],
+      "notes": "Pydantic model enforcing cross-field engineering invariants.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_p1_triangles_patch_test",
+      "name": "2D Linear Elasticity (P1 Triangles) Patch Test",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "Constant-strain patch test on distorted mesh passes with error < 1e-11 m.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_stiffness_assembly_nullspace",
+      "name": "Bilinear Stiffness Assembly Nullspace",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "Unconstrained stiffness matrix has exactly 3 rigid-body null modes.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_dirichlet_condensation",
+      "name": "Dirichlet Elimination (Condensation)",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "Correct partition and elimination via boundary condensation.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_traction_boundary_assembly",
+      "name": "Traction Boundary Assembly & Force Balance",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "Total force balances to machine precision; reaction equals load.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_global_equilibrium_conservation",
+      "name": "Global Equilibrium Conservation",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "Linear force balance < 1e-9 N; moment balance < 1e-8 N*m.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_analytical_beam_convergence",
+      "name": "Analytical Timoshenko Beam Convergence",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "Tip deflection converges monotonically from below; within 1.29% on fine mesh.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_manufactured_pure_bending",
+      "name": "Manufactured Pure Bending Solution",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "Exact quadratic bending field reproduced to < 1e-11 m.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_energy_monotonicity",
+      "name": "Rayleigh-Ritz Energy Monotonicity",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "Strain energy strictly increases monotonically under conforming uniform refinement.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_plane_strain_out_of_plane_stress",
+      "name": "Plane Strain Out-of-Plane Stress",
+      "subsystem": "fem",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_fem_mathematical_verification.py",
+      "test_files": [
+        "tests/test_fem_mathematical_verification.py"
+      ],
+      "notes": "sigma_zz = nu*(sigma_xx + sigma_yy) accurately included in 3D von Mises invariant.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "fem_primal_adjoint_factorization_reuse",
+      "name": "Primal-Adjoint Factorization Reuse",
+      "subsystem": "fem",
+      "claimed_status": "TESTED",
+      "evidence_path": "tests/test_v02_profiling_and_reuse.py",
+      "test_files": [
+        "tests/test_elasticity.py",
+        "tests/test_v02_profiling_and_reuse.py"
+      ],
+      "notes": "Sparse LU factorization shared between primal solve Ku=f and dual solve Kz=g.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "estimator_residual_energy_norm",
+      "name": "Residual Energy-Norm Indicator",
+      "subsystem": "estimator",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_dwr_verification.py",
+      "test_files": [
+        "tests/test_estimators.py",
+        "tests/test_dwr_verification.py"
+      ],
+      "notes": "Ainsworth-Oden residual indicator based on interior facet traction jumps.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "estimator_goal_oriented_dwr",
+      "name": "Goal-Oriented DWR Estimator",
+      "subsystem": "estimator",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_dwr_verification.py",
+      "test_files": [
+        "tests/test_dwr_verification.py"
+      ],
+      "notes": "Dual-weighted residual estimator with interior jumps, bubble recovery, effectivity convergence (0.51 -> 0.91).",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "solver_matrix_diagnostics",
+      "name": "Stiffness Matrix Diagnostics & Scale Invariance",
+      "subsystem": "solver",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_matrix_diagnostics.py",
+      "test_files": [
+        "tests/test_matrix_diagnostics.py"
+      ],
+      "notes": "Scale-invariant condition number and symmetry metric across 1e-14 <= c <= 1e14.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "solver_pcg_spd_eligibility_gate",
+      "name": "Conjugate Gradient SPD Eligibility Gate",
+      "subsystem": "solver",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_iterative_solvers.py",
+      "test_files": [
+        "tests/test_iterative_solvers.py"
+      ],
+      "notes": "Strict default certification, indefinite matrix rejection, preconditioner SPD validation.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "solver_jacobi_preconditioner",
+      "name": "Jacobi Preconditioner",
+      "subsystem": "solver",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_iterative_solvers.py",
+      "test_files": [
+        "tests/test_iterative_solvers.py"
+      ],
+      "notes": "Strict diagonal positivity validation, verified SPD.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "solver_incomplete_cholesky",
+      "name": "Incomplete Cholesky Preconditioner IC(0)",
+      "subsystem": "solver",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_iterative_solvers.py",
+      "test_files": [
+        "tests/test_iterative_solvers.py"
+      ],
+      "notes": "Symmetric IC(0) sparse factorization with breakdown detection, verified SPD.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "dse_zero_solve_scaling",
+      "name": "Zero-Solve Analytical Parameter Scaling",
+      "subsystem": "dse",
+      "claimed_status": "NUMERICALLY VERIFIED",
+      "evidence_path": "tests/test_v02_scaling.py",
+      "test_files": [
+        "tests/test_v02_scaling.py",
+        "tests/test_cuda_backend.py"
+      ],
+      "notes": "Vectorized exact scaling across E and P for linear elasticity QoIs.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    },
+    {
+      "capability_id": "eir_canonical_hash_determinism",
+      "name": "Canonical EIR Hash Determinism",
+      "subsystem": "eir",
+      "claimed_status": "TESTED",
+      "evidence_path": "tests/eir/test_adversarial_hardening.py",
+      "test_files": [
+        "tests/eir/test_adversarial_hardening.py"
+      ],
+      "notes": "SHA-256 hash invariant across dict order, line endings, and equivalent units.",
+      "test_files_exist": true,
+      "test_execution_state": "PASS"
+    }
+  ]
+}
