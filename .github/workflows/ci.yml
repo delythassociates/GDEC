@@ -134,7 +134,7 @@ jobs:
       - name: Run targeted mutation sensitivity suite
         run: python -m pytest -v tests/verification/test_mutation_resilience.py
 
-      - name: Run bounded source mutation campaign
+      - name: Run targeted production-function runtime mutation campaign
         run: python scripts/run_mutation_campaign.py --output results/mutation_campaign_report.json
 
       - name: Upload Mutation Campaign Artifact

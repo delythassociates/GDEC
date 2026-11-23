@@ -389,25 +389,104 @@ class TestStatusRegisterTraceability:
         assert chk_proc.returncode == 0, f"CLI check failed: {chk_proc.stderr}\n{chk_proc.stdout}"
         assert "[PASS]" in chk_proc.stdout
 
-    def test_git_inspection_fail_closed_on_subprocess_error(self, monkeypatch):
-        """WP2-R4: Git inspection must fail closed with git_valid=False and dirty=True on command failure."""
+    def test_git_inspection_fails_closed_when_rev_parse_head_fails(self, monkeypatch):
+        """WP2-R4: git rev-parse HEAD failure must fail closed (git_valid=False, dirty=True, traceability fails)."""
+        real_check_output = subprocess.check_output
+
         def mock_check_output(cmd, *args, **kwargs):
-            if "status" in cmd:
-                raise subprocess.CalledProcessError(1, cmd, output="mock git status error")
-            return "mock_output\n"
+            if isinstance(cmd, list) and len(cmd) >= 3 and cmd[:3] == ["git", "rev-parse", "HEAD"]:
+                raise subprocess.CalledProcessError(128, cmd, output="fatal: ambiguous argument 'HEAD': unknown revision")
+            return real_check_output(cmd, *args, **kwargs)
 
         monkeypatch.setattr(subprocess, "check_output", mock_check_output)
-        
-        # When fail_fast is False, should not crash but report git_valid=False and dirty=True
+
+        info = get_git_info(fail_fast=False)
+        assert info["git_valid"] is False
+        assert info["dirty"] is True  # Cannot be reported clean
+        assert info["commit_sha"] == "unknown"
+        assert any("git rev-parse HEAD failed" in err for err in info["git_errors"])
+
+        # Traceability gate must fail closed
+        dummy_register = {
+            "git": {"commit_sha": "abc1234", "dirty": False, "git_valid": True},
+            "collection_errors": [],
+            "pytest_exit_code": 0,
+            "capabilities": [],
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(dummy_register, allow_dirty=True, allow_stale=True)
+        assert "git rev-parse HEAD failed" in str(exc_info.value)
+
+        # Freshness verification must fail when commit_sha is unknown
+        with pytest.raises(TraceabilityVerificationError) as exc_info_fresh:
+            verify_traceability(dummy_register, allow_dirty=True, allow_stale=False)
+        assert "commit SHA is unknown" in str(exc_info_fresh.value) or "git rev-parse HEAD failed" in str(exc_info_fresh.value)
+
+        # fail_fast=True must raise GitInspectionError with command name
+        with pytest.raises(GitInspectionError) as exc_fast:
+            get_git_info(fail_fast=True)
+        assert "git rev-parse HEAD failed" in str(exc_fast.value)
+
+    def test_git_inspection_fails_closed_when_rev_parse_branch_fails(self, monkeypatch):
+        """WP2-R4: git rev-parse --abbrev-ref HEAD failure must fail closed."""
+        real_check_output = subprocess.check_output
+
+        def mock_check_output(cmd, *args, **kwargs):
+            if isinstance(cmd, list) and "--abbrev-ref" in cmd:
+                raise subprocess.CalledProcessError(128, cmd, output="fatal: ref HEAD is not a symbolic ref")
+            return real_check_output(cmd, *args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "check_output", mock_check_output)
+
         info = get_git_info(fail_fast=False)
         assert info["git_valid"] is False
         assert info["dirty"] is True
-        assert any("status" in err for err in info["git_errors"])
+        assert info["branch"] == "unknown"
+        assert any("git rev-parse --abbrev-ref HEAD failed" in err for err in info["git_errors"])
 
-        # When fail_fast is True, must raise GitInspectionError
-        with pytest.raises(GitInspectionError) as exc_info:
+        dummy_register = {
+            "git": {"commit_sha": info.get("commit_sha", "unknown"), "dirty": False, "git_valid": True},
+            "collection_errors": [],
+            "pytest_exit_code": 0,
+            "capabilities": [],
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(dummy_register, allow_dirty=True, allow_stale=True)
+        assert "git rev-parse --abbrev-ref HEAD failed" in str(exc_info.value)
+
+        with pytest.raises(GitInspectionError) as exc_fast:
             get_git_info(fail_fast=True)
-        assert "Git inspection failed closed" in str(exc_info.value)
+        assert "git rev-parse --abbrev-ref HEAD failed" in str(exc_fast.value)
+
+    def test_git_inspection_fails_closed_when_git_status_fails(self, monkeypatch):
+        """WP2-R4: git status --porcelain -uall failure must fail closed."""
+        real_check_output = subprocess.check_output
+
+        def mock_check_output(cmd, *args, **kwargs):
+            if isinstance(cmd, list) and "status" in cmd:
+                raise subprocess.CalledProcessError(1, cmd, output="fatal: unable to read index")
+            return real_check_output(cmd, *args, **kwargs)
+
+        monkeypatch.setattr(subprocess, "check_output", mock_check_output)
+
+        info = get_git_info(fail_fast=False)
+        assert info["git_valid"] is False
+        assert info["dirty"] is True
+        assert any("git status --porcelain -uall failed" in err for err in info["git_errors"])
+
+        dummy_register = {
+            "git": {"commit_sha": info.get("commit_sha", "unknown"), "dirty": False, "git_valid": True},
+            "collection_errors": [],
+            "pytest_exit_code": 0,
+            "capabilities": [],
+        }
+        with pytest.raises(TraceabilityVerificationError) as exc_info:
+            verify_traceability(dummy_register, allow_dirty=True, allow_stale=True)
+        assert "git status --porcelain -uall failed" in str(exc_info.value)
+
+        with pytest.raises(GitInspectionError) as exc_fast:
+            get_git_info(fail_fast=True)
+        assert "git status --porcelain -uall failed" in str(exc_fast.value)
 
     def test_traceability_fails_closed_on_invalid_live_git(self, monkeypatch):
         """Traceability verification must reject if live git inspection failed."""

@@ -1,0 +1,13 @@
+# GDEC WP2 Final Mutation Classification and Test Coverage — Acceptance Matrix
+
+| Gate ID | Requirement Description | Success Criterion | Observed Result | Gate Status |
+|---|---|---|---|---|
+| **GATE-WP2-MC01** | Structured Pytest Outcome Capture | Exception class, failure phase, source location, and diagnostic captured directly from `pytest_runtest_makereport` hook and `call.excinfo` | Zero occurrences of `UnknownException`; actual exception types (`AssertionError`, `Failed`, etc.) captured in all 14 records | **PASS** |
+| **GATE-WP2-MC02** | Non-Assertion Crash Rejection | Test execution crashes (e.g. `RuntimeError`, `KeyError`) do not count as `KILLED`; classified as `ERROR` | Verified by `test_runner_unexpected_runtime_error_produces_error_not_killed` | **PASS** |
+| **GATE-WP2-MC03** | Explicit Teardown-Error Classification | Fixture teardown failure where call succeeds classified as `ERROR` / `TEARDOWN_ERROR`, not `KILLED` | Verified by `test_runner_teardown_error_produces_error` with `phase="teardown"` | **PASS** |
+| **GATE-WP2-MC04** | Invalid Baseline Fail-Fast | Unmutated baseline assertion failure, unexpected error, collection failure, setup error, teardown error, or missing test node produces `INVALID_BASELINE` and halts campaign | Verified by 6 tests in `TestBaselineValidation` and `test_failed_unmutated_baseline_aborts_campaign` | **PASS** |
+| **GATE-WP2-MC05** | Three Git Inspection Command Negative Tests | Separate negative tests for `git rev-parse HEAD`, `git rev-parse --abbrev-ref HEAD`, and `git status --porcelain -uall` verify `git_valid=False`, `dirty=True`, freshness rejection, and command diagnosis | Verified by 3 isolated tests in `test_status_register_traceability.py` | **PASS** |
+| **GATE-WP2-MC06** | CI Workflow Step Label Accuracy | Workflow step label accurately reflects production runtime mutation campaign | Step renamed to `Run targeted production-function runtime mutation campaign` in `.github/workflows/ci.yml` | **PASS** |
+| **GATE-WP2-MC07** | Mutation Artifact Schema Validation | All 12 required fields present and non-empty for every mutant record | Automated `validate_mutant_record` validates all 14 records in `results/mutation_campaign_report.json` | **PASS** |
+| **GATE-WP2-MC08** | Full Test Suite Integrity | Complete test suite passes with zero failures, zero regressions, and expected skips only | **459 passed, 0 failed, 1 warning** across 459 test items | **PASS** |
+| **GATE-WP2-MC09** | Preserved User Files Safeguard | `src/gdec/core/analyser.py` and `src/gdec/runtime/` strictly untouched and preserved | Confirmed untracked and unmodified in `git status` | **PASS** |

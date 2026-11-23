@@ -34,186 +34,402 @@ import pytest
 
 
 @dataclass
+class CapturedFailure:
+    nodeid: str
+    phase: str                  # "collection", "setup", "call", "teardown"
+    exception_class: str        # e.g. "AssertionError", "Failed", "AttributeError", "RuntimeError"
+    exception_message: str
+    source_location: str
+    diagnostic: str
+
+
+@dataclass
 class ExecutionResult:
-    status: str              # KILLED, SURVIVED, ERROR, INVALID_MUTANT, INVALID_BASELINE
-    classification: str      # KILLED, SURVIVED, SETUP_ERROR, TEARDOWN_ERROR, COLLECTION_ERROR, NO_TESTS_COLLECTED, INVALID_INJECTION, RUNNER_EXCEPTION, USAGE_ERROR
+    status: str              # KILLED, SURVIVED, ERROR, INVALID_MUTANT, INVALID_BASELINE, BASELINE_PASS
+    classification: str      # KILLED, SURVIVED, SETUP_ERROR, TEARDOWN_ERROR, COLLECTION_ERROR, NO_TESTS_COLLECTED, INVALID_INJECTION, RUNNER_EXCEPTION, UNEXPECTED_EXCEPTION, UNEXPECTED_ASSERTION, BASELINE_PASS, BASELINE_ASSERTION_FAILURE, BASELINE_EXCEPTION
     killer_test: Optional[str]
     failure_type: Optional[str]
     phase: Optional[str]
     exit_code: int
     diagnostic: str
+    exception_class: Optional[str] = None
+    exception_message: Optional[str] = None
+    source_location: Optional[str] = None
+    rationale: str = ""
 
 
 @dataclass
 class MutantRecord:
-    mutant_id: str
-    target_module: str
-    target_function: str
-    mutation_type: str  # arithmetic, relational, logical, boundary, return_value
-    description: str
-    target_test: str
-    unmutated_passed: bool
-    status: str  # KILLED, SURVIVED, ERROR, INVALID_MUTANT, INVALID_BASELINE
+    mutation_id: str
+    target_production_function: str
+    mutation_description: str
+    target_test_node_id: str
+    unmutated_baseline_result: str
+    mutation_injection_result: str
+    pytest_execution_result: str
+    captured_failure_phase: Optional[str]
+    exception_class: Optional[str]
+    exception_message: Optional[str]
+    final_classification: str
+    classification_rationale: str
+    source_location: Optional[str] = None
     killer_test: Optional[str] = None
-    failure_type: Optional[str] = None
-    phase: Optional[str] = None
     exit_code: Optional[int] = None
     diagnostic: Optional[str] = None
-    classification: str = "KILLED"  # KILLED, SURVIVED, ERROR, INVALID_MUTANT, INVALID_BASELINE
+    # Backwards compatibility fields
+    mutant_id: str = ""
+    target_module: str = ""
+    target_function: str = ""
+    mutation_type: str = ""
+    description: str = ""
+    target_test: str = ""
+    unmutated_passed: bool = True
+    status: str = ""
+    failure_type: Optional[str] = None
+    phase: Optional[str] = None
+    classification: str = ""
+
+    def __post_init__(self):
+        if not self.mutant_id:
+            self.mutant_id = self.mutation_id
+        if not self.description:
+            self.description = self.mutation_description
+        if not self.target_test:
+            self.target_test = self.target_test_node_id
+        if not self.status:
+            self.status = self.final_classification
+        if not self.classification:
+            self.classification = self.final_classification
+        if not self.failure_type:
+            self.failure_type = self.exception_class
+        if not self.phase:
+            self.phase = self.captured_failure_phase
+
+
+REQUIRED_RECORD_FIELDS = [
+    "mutation_id",
+    "target_production_function",
+    "mutation_description",
+    "target_test_node_id",
+    "unmutated_baseline_result",
+    "mutation_injection_result",
+    "pytest_execution_result",
+    "captured_failure_phase",
+    "exception_class",
+    "exception_message",
+    "final_classification",
+    "classification_rationale",
+]
+
+VALID_CLASSIFICATIONS = {"KILLED", "SURVIVED", "ERROR", "INVALID_MUTANT", "INVALID_BASELINE"}
+
+
+def validate_mutant_record(record: Dict[str, Any]) -> None:
+    """Validates that a mutant record conforms to the required audit schema."""
+    for field in REQUIRED_RECORD_FIELDS:
+        if field not in record:
+            raise ValueError(f"Missing required mutant record field: '{field}'")
+    if record["final_classification"] not in VALID_CLASSIFICATIONS:
+        raise ValueError(
+            f"Invalid classification: '{record['final_classification']}'. Must be one of {VALID_CLASSIFICATIONS}"
+        )
+    if not record["mutation_id"] or not str(record["mutation_id"]).strip():
+        raise ValueError("mutation_id cannot be empty")
+    if not record["target_production_function"] or not str(record["target_production_function"]).strip():
+        raise ValueError("target_production_function cannot be empty")
+    if record["final_classification"] == "KILLED":
+        if not record["exception_class"]:
+            raise ValueError("KILLED mutant must have non-empty exception_class")
+        if not record["captured_failure_phase"]:
+            raise ValueError("KILLED mutant must have non-empty captured_failure_phase")
+        if not record["classification_rationale"]:
+            raise ValueError("KILLED mutant must have non-empty classification_rationale")
 
 
 class MutationExecutionCapture:
     """In-process pytest plugin capturing collection, setup, call, teardown outcomes and exact failure diagnostics."""
     __test__ = False
+
     def __init__(self, target_nodeid: Optional[str] = None):
         self.target_nodeid = target_nodeid.replace("\\", "/") if target_nodeid else None
         self.collection_failed: bool = False
-        self.collection_error: str = ""
+        self.collection_error: Optional[CapturedFailure] = None
         self.items_collected: int = 0
-        self.setup_failed_node: Optional[str] = None
-        self.setup_error: str = ""
-        self.teardown_failed_node: Optional[str] = None
-        self.teardown_error: str = ""
-        self.call_failed_node: Optional[str] = None
-        self.call_error: str = ""
-        self.call_exception_type: Optional[str] = None
+        self.collected_nodeids: List[str] = []
+        self.setup_failures: List[CapturedFailure] = []
+        self.call_failures: List[CapturedFailure] = []
+        self.teardown_failures: List[CapturedFailure] = []
         self.passed_nodes: List[str] = []
-        self.failed_nodes: List[str] = []
         self.exit_code: Optional[int] = None
 
     def pytest_collectreport(self, report):
         if report.failed:
             self.collection_failed = True
-            self.collection_error = self._format_error(report)
+            loc = ""
+            msg = str(report.longrepr)
+            if hasattr(report.longrepr, "reprcrash") and report.longrepr.reprcrash:
+                loc = f"{report.longrepr.reprcrash.path}:{report.longrepr.reprcrash.lineno}"
+                msg = str(report.longrepr.reprcrash.message)
+            self.collection_error = CapturedFailure(
+                nodeid=report.nodeid.replace("\\", "/"),
+                phase="collection",
+                exception_class="CollectionError",
+                exception_message=msg,
+                source_location=loc,
+                diagnostic=f"{loc} - {msg}" if loc else msg,
+            )
 
     def pytest_collection_modifyitems(self, session, config, items):
         self.items_collected = len(items)
+        self.collected_nodeids = [item.nodeid.replace("\\", "/") for item in items]
+
+    def pytest_runtest_makereport(self, item, call):
+        norm_nodeid = item.nodeid.replace("\\", "/")
+        if call.excinfo is not None:
+            exc_class = call.excinfo.typename
+            exc_msg = str(call.excinfo.value)
+            loc = ""
+            try:
+                tb_entry = call.excinfo.traceback[-1]
+                loc = f"{tb_entry.path}:{tb_entry.lineno}"
+            except Exception:
+                loc = ""
+            diag = f"{loc} - {exc_class}: {exc_msg}" if loc else f"{exc_class}: {exc_msg}"
+
+            failure = CapturedFailure(
+                nodeid=norm_nodeid,
+                phase=call.when,
+                exception_class=exc_class,
+                exception_message=exc_msg,
+                source_location=loc,
+                diagnostic=diag,
+            )
+
+            if call.when == "setup":
+                self.setup_failures.append(failure)
+            elif call.when == "call":
+                self.call_failures.append(failure)
+            elif call.when == "teardown":
+                self.teardown_failures.append(failure)
 
     def pytest_runtest_logreport(self, report):
         norm_nodeid = report.nodeid.replace("\\", "/")
-        if report.when == "setup":
-            if report.failed:
-                self.setup_failed_node = norm_nodeid
-                self.setup_error = self._format_error(report)
-                self.failed_nodes.append(norm_nodeid)
-        elif report.when == "call":
-            if report.passed:
-                self.passed_nodes.append(norm_nodeid)
-            elif report.failed:
-                self.call_failed_node = norm_nodeid
-                self.call_error = self._format_error(report)
-                self.call_exception_type = self._extract_exception_type(report)
-                self.failed_nodes.append(norm_nodeid)
-        elif report.when == "teardown":
-            if report.failed:
-                self.teardown_failed_node = norm_nodeid
-                self.teardown_error = self._format_error(report)
+        if report.when == "call" and report.passed:
+            self.passed_nodes.append(norm_nodeid)
+        elif report.failed:
+            # Fallback if makereport didn't capture
+            target_list = None
+            if report.when == "setup" and not self.setup_failures:
+                target_list = self.setup_failures
+            elif report.when == "call" and not self.call_failures:
+                target_list = self.call_failures
+            elif report.when == "teardown" and not self.teardown_failures:
+                target_list = self.teardown_failures
+            if target_list is not None:
+                loc = ""
+                msg = str(report.longrepr)
+                if hasattr(report.longrepr, "reprcrash") and report.longrepr.reprcrash:
+                    loc = f"{report.longrepr.reprcrash.path}:{report.longrepr.reprcrash.lineno}"
+                    msg = str(report.longrepr.reprcrash.message)
+                exc_class = "AssertionError" if "assert" in msg.lower() else "Failed"
+                target_list.append(CapturedFailure(
+                    nodeid=norm_nodeid,
+                    phase=report.when,
+                    exception_class=exc_class,
+                    exception_message=msg,
+                    source_location=loc,
+                    diagnostic=f"{loc} - {exc_class}: {msg}" if loc else msg,
+                ))
 
     def pytest_sessionfinish(self, session, exitstatus):
         self.exit_code = int(exitstatus)
 
-    def _extract_exception_type(self, report) -> str:
-        if hasattr(report.longrepr, "reprcrash") and report.longrepr.reprcrash:
-            msg = report.longrepr.reprcrash.message or ""
-            if ":" in msg:
-                return msg.split(":", 1)[0].strip()
-            if msg.startswith("Failed"):
-                return "Failed"
-        text = str(report.longrepr)
-        for line in reversed(text.splitlines()):
-            line = line.strip()
-            if line and ("Error:" in line or "Exception:" in line or line.startswith("Failed")):
-                return line.split(":", 1)[0].strip()
-        return "UnknownException"
 
-    def _format_error(self, report) -> str:
-        if hasattr(report.longrepr, "reprcrash") and report.longrepr.reprcrash:
-            crash = report.longrepr.reprcrash
-            return f"{crash.path}:{crash.lineno} - {crash.message}"
-        lines = [l.strip() for l in str(report.longrepr).splitlines() if l.strip()]
-        return " | ".join(lines[-3:]) if lines else "Unknown error"
-
-
-def run_target_test(test_target: str, is_baseline: bool = False) -> ExecutionResult:
+def run_target_test(
+    test_target: str,
+    is_baseline: bool = False,
+    expected_failure_type: str = "AssertionError",
+    expected_failure_pattern: Optional[str] = None,
+) -> ExecutionResult:
     capture = MutationExecutionCapture(test_target)
     exit_code = pytest.main([test_target, "-q"], plugins=[capture])
 
     # 1. Collection errors
-    if capture.collection_failed:
+    if capture.collection_failed or capture.collection_error is not None:
+        err = capture.collection_error
+        diag = err.diagnostic if err else "Collection failed"
+        loc = err.source_location if err else None
+        msg = err.exception_message if err else "Collection error"
         return ExecutionResult(
-            status="ERROR",
+            status="INVALID_BASELINE" if is_baseline else "ERROR",
             classification="COLLECTION_ERROR",
             killer_test=None,
             failure_type="CollectionError",
             phase="collection",
             exit_code=exit_code,
-            diagnostic=f"Collection error: {capture.collection_error}",
+            diagnostic=f"Collection error: {diag}",
+            exception_class="CollectionError",
+            exception_message=msg,
+            source_location=loc,
+            rationale="Test collection failed before execution",
         )
 
     # 2. No tests collected or usage error
     if capture.items_collected == 0 or exit_code in (pytest.ExitCode.NO_TESTS_COLLECTED, pytest.ExitCode.USAGE_ERROR):
         return ExecutionResult(
-            status="ERROR",
+            status="INVALID_BASELINE" if is_baseline else "ERROR",
             classification="NO_TESTS_COLLECTED",
             killer_test=None,
-            failure_type="UsageError" if exit_code == pytest.ExitCode.USAGE_ERROR else "NoTestsCollected",
+            failure_type="NoTestsCollected",
             phase="collection",
             exit_code=exit_code,
             diagnostic=f"No tests collected for target: {test_target} (exit code: {exit_code})",
+            exception_class="NoTestsCollected",
+            exception_message=f"No tests collected for target: {test_target}",
+            source_location=None,
+            rationale="Pytest collected zero matching tests for target",
         )
 
     # 3. Setup errors
-    if capture.setup_failed_node:
+    if capture.setup_failures:
+        err = capture.setup_failures[0]
         return ExecutionResult(
-            status="ERROR",
+            status="INVALID_BASELINE" if is_baseline else "ERROR",
             classification="SETUP_ERROR",
-            killer_test=capture.setup_failed_node,
+            killer_test=err.nodeid,
             failure_type="SetupError",
             phase="setup",
             exit_code=exit_code,
-            diagnostic=f"Setup failure in {capture.setup_failed_node}: {capture.setup_error}",
+            diagnostic=f"Setup failure in {err.nodeid}: {err.diagnostic}",
+            exception_class=err.exception_class,
+            exception_message=err.exception_message,
+            source_location=err.source_location,
+            rationale=f"Fixture or harness setup failure: {err.exception_class}",
         )
 
     # 4. Teardown errors
-    if capture.teardown_failed_node:
+    if capture.teardown_failures:
+        err = capture.teardown_failures[0]
         return ExecutionResult(
-            status="ERROR",
+            status="INVALID_BASELINE" if is_baseline else "ERROR",
             classification="TEARDOWN_ERROR",
-            killer_test=capture.teardown_failed_node,
+            killer_test=err.nodeid,
             failure_type="TeardownError",
             phase="teardown",
             exit_code=exit_code,
-            diagnostic=f"Teardown failure in {capture.teardown_failed_node}: {capture.teardown_error}",
+            diagnostic=f"Teardown failure in {err.nodeid}: {err.diagnostic}",
+            exception_class=err.exception_class,
+            exception_message=err.exception_message,
+            source_location=err.source_location,
+            rationale=f"Fixture or harness teardown failure: {err.exception_class}",
         )
 
     # 5. Call phase failures
-    if capture.call_failed_node:
-        exc_type = capture.call_exception_type or "Unknown"
-        # Injection error types originating from invalid mutant code (not test assertions)
+    if capture.call_failures:
+        err = capture.call_failures[0]
+        exc_type = err.exception_class
+
+        if is_baseline:
+            cls = "BASELINE_ASSERTION_FAILURE" if exc_type == "AssertionError" else "BASELINE_EXCEPTION"
+            return ExecutionResult(
+                status="INVALID_BASELINE",
+                classification=cls,
+                killer_test=err.nodeid,
+                failure_type=exc_type,
+                phase="call",
+                exit_code=exit_code,
+                diagnostic=err.diagnostic,
+                exception_class=exc_type,
+                exception_message=err.exception_message,
+                source_location=err.source_location,
+                rationale=f"Unmutated baseline test failed in call phase with {exc_type}",
+            )
+
+        # In mutation mode:
         INJECTION_ERROR_TYPES = {"AttributeError", "NameError", "TypeError", "UnboundLocalError", "ImportError"}
-        if exc_type in INJECTION_ERROR_TYPES and not is_baseline:
+        if exc_type in INJECTION_ERROR_TYPES:
             return ExecutionResult(
                 status="INVALID_MUTANT",
                 classification="INVALID_INJECTION",
-                killer_test=capture.call_failed_node,
+                killer_test=err.nodeid,
                 failure_type=exc_type,
                 phase="call",
                 exit_code=exit_code,
-                diagnostic=f"Invalid mutant injection ({exc_type}): {capture.call_error}",
+                diagnostic=f"Invalid mutant injection ({exc_type}): {err.diagnostic}",
+                exception_class=exc_type,
+                exception_message=err.exception_message,
+                source_location=err.source_location,
+                rationale=f"Mutant injection caused {exc_type} rather than behavioral failure",
             )
-        else:
+
+        # Check if failure matches expected behavioral assertion / failure
+        is_expected_type = (exc_type == expected_failure_type)
+        pattern_matches = True
+        if expected_failure_pattern:
+            pattern_matches = (
+                expected_failure_pattern.lower() in err.diagnostic.lower()
+                or expected_failure_pattern.lower() in err.exception_message.lower()
+            )
+
+        if is_expected_type and pattern_matches:
             return ExecutionResult(
                 status="KILLED",
                 classification="KILLED",
-                killer_test=capture.call_failed_node,
+                killer_test=err.nodeid,
                 failure_type=exc_type,
                 phase="call",
                 exit_code=exit_code,
-                diagnostic=capture.call_error,
+                diagnostic=err.diagnostic,
+                exception_class=exc_type,
+                exception_message=err.exception_message,
+                source_location=err.source_location,
+                rationale=f"Designated behavioral assertion ({exc_type}) triggered in call phase as expected",
+            )
+        elif is_expected_type and not pattern_matches:
+            return ExecutionResult(
+                status="ERROR",
+                classification="UNEXPECTED_ASSERTION",
+                killer_test=err.nodeid,
+                failure_type=exc_type,
+                phase="call",
+                exit_code=exit_code,
+                diagnostic=f"Assertion failed but pattern '{expected_failure_pattern}' was not matched: {err.diagnostic}",
+                exception_class=exc_type,
+                exception_message=err.exception_message,
+                source_location=err.source_location,
+                rationale="Assertion failure occurred but did not match expected behavioral failure pattern",
+            )
+        else:
+            return ExecutionResult(
+                status="ERROR",
+                classification="UNEXPECTED_EXCEPTION",
+                killer_test=err.nodeid,
+                failure_type=exc_type,
+                phase="call",
+                exit_code=exit_code,
+                diagnostic=f"Unexpected exception during test execution ({exc_type}): {err.diagnostic}",
+                exception_class=exc_type,
+                exception_message=err.exception_message,
+                source_location=err.source_location,
+                rationale=f"Test crashed with unexpected {exc_type} (expected {expected_failure_type})",
             )
 
     # 6. Test passed
     if exit_code == 0 and len(capture.passed_nodes) > 0:
+        if is_baseline:
+            return ExecutionResult(
+                status="BASELINE_PASS",
+                classification="BASELINE_PASS",
+                killer_test=None,
+                failure_type=None,
+                phase="call",
+                exit_code=exit_code,
+                diagnostic="Unmutated baseline test passed successfully",
+                exception_class=None,
+                exception_message=None,
+                source_location=None,
+                rationale="Baseline test passed cleanly without mutations",
+            )
         return ExecutionResult(
             status="SURVIVED",
             classification="SURVIVED",
@@ -222,17 +438,25 @@ def run_target_test(test_target: str, is_baseline: bool = False) -> ExecutionRes
             phase="call",
             exit_code=exit_code,
             diagnostic="Test passed despite mutation (mutant survived)",
+            exception_class=None,
+            exception_message=None,
+            source_location=None,
+            rationale="Mutant produced no detectable behavioral failure; test passed",
         )
 
     # 7. Fallback unexpected exit
     return ExecutionResult(
-        status="ERROR",
+        status="INVALID_BASELINE" if is_baseline else "ERROR",
         classification="UNEXPECTED_EXIT",
         killer_test=None,
         failure_type="UnexpectedExit",
         phase="unknown",
         exit_code=exit_code,
         diagnostic=f"Pytest exited with code {exit_code} without test report",
+        exception_class="UnexpectedExit",
+        exception_message=f"Pytest exited with code {exit_code}",
+        source_location=None,
+        rationale=f"Pytest exited with unexpected code {exit_code}",
     )
 
 
@@ -513,7 +737,7 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Exe
             return left  # unconditionally return left, ignoring right dimension
         expr._add_type = _mut
         try:
-            return run_target_test("tests/eir/test_expression_typing.py::test_addition_requires_equal_dimensions")
+            return run_target_test("tests/eir/test_expression_typing.py::test_addition_requires_equal_dimensions", expected_failure_type="Failed", expected_failure_pattern="DID NOT RAISE")
         finally:
             expr._add_type = orig
     mutants.append((
@@ -541,7 +765,7 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Exe
                 setattr(m, "infer_expression_type", _mut)
                 patched_mods.append(m)
         try:
-            return run_target_test("tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_deeply_nested_expression_rejected_with_typed_error")
+            return run_target_test("tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_deeply_nested_expression_rejected_with_typed_error", expected_failure_type="Failed", expected_failure_pattern="DID NOT RAISE")
         finally:
             ee.infer_expression_type = orig_ee
             for m in patched_mods:
@@ -567,7 +791,7 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Exe
                 setattr(m, "_identifier", lambda val: str(val))
                 patched_mods.append(m)
         try:
-            return run_target_test("tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_identifier_rejects_control_and_confusable_characters")
+            return run_target_test("tests/eir/test_adversarial_hardening.py::TestAdversarialFuzzing::test_identifier_rejects_control_and_confusable_characters", expected_failure_type="Failed", expected_failure_pattern="DID NOT RAISE")
         finally:
             em._identifier = orig_em
             for m in patched_mods:
@@ -603,10 +827,10 @@ def main():
     baseline_failures = []
     for tt in unique_target_tests:
         res = run_target_test(tt, is_baseline=True)
-        # In baseline, the test MUST pass cleanly (status == SURVIVED means exit_code == 0)
-        if res.status != "SURVIVED":
+        # In baseline, the test MUST pass cleanly (status == BASELINE_PASS or SURVIVED)
+        if res.status not in ("BASELINE_PASS", "SURVIVED"):
             baseline_failures.append((tt, res))
-            print(f"  [FAIL] Baseline test failed: {tt} -> {res.diagnostic}")
+            print(f"  [FAIL] Baseline test failed: {tt} -> {res.status} ({res.classification}): {res.diagnostic}")
         else:
             print(f"  [PASS] Baseline test: {tt}")
 
@@ -622,9 +846,11 @@ def main():
         print(f"  Target Test: {test_target}")
 
         start_time = time.time()
+        injection_result = "SUCCESS"
         try:
             exec_res = runner()
         except Exception as e:
+            injection_result = "INVALID_INJECTION"
             exec_res = ExecutionResult(
                 status="INVALID_MUTANT",
                 classification="RUNNER_EXCEPTION",
@@ -633,13 +859,39 @@ def main():
                 phase="runner",
                 exit_code=1,
                 diagnostic=f"Mutation runner exception: {type(e).__name__}: {e}",
+                exception_class=type(e).__name__,
+                exception_message=str(e),
+                source_location=None,
+                rationale="Exception occurred in mutation runner callable",
             )
 
         elapsed = time.time() - start_time
         print(f"  Result: {exec_res.status} in {elapsed:.2f}s (Killer: {exec_res.killer_test})")
         print(f"  Diagnostic: {exec_res.diagnostic[:150]}")
 
+        py_res = (
+            "FAILED"
+            if exec_res.status in ("KILLED", "INVALID_MUTANT")
+            else ("PASSED" if exec_res.status in ("SURVIVED", "BASELINE_PASS") else "ERROR")
+        )
+
         rec = MutantRecord(
+            mutation_id=mid,
+            target_production_function=f"{mod}.{func}",
+            mutation_description=desc,
+            target_test_node_id=test_target,
+            unmutated_baseline_result="BASELINE_PASS",
+            mutation_injection_result=injection_result,
+            pytest_execution_result=py_res,
+            captured_failure_phase=exec_res.phase,
+            exception_class=exec_res.exception_class,
+            exception_message=exec_res.exception_message,
+            final_classification=exec_res.status,
+            classification_rationale=exec_res.rationale,
+            source_location=exec_res.source_location,
+            killer_test=exec_res.killer_test,
+            exit_code=exec_res.exit_code,
+            diagnostic=exec_res.diagnostic,
             mutant_id=mid,
             target_module=mod,
             target_function=func,
@@ -648,13 +900,11 @@ def main():
             target_test=test_target,
             unmutated_passed=True,
             status=exec_res.status,
-            killer_test=exec_res.killer_test,
             failure_type=exec_res.failure_type,
             phase=exec_res.phase,
-            exit_code=exec_res.exit_code,
-            diagnostic=exec_res.diagnostic,
             classification=exec_res.classification,
         )
+        validate_mutant_record(asdict(rec))
         records.append(rec)
 
     total = len(records)
