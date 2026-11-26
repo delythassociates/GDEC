@@ -4,7 +4,7 @@
 **Repository:** delythassociates/GDEC  
 **Branch:** research/decision-sufficiency-algorithm  
 **Harness:** [research/prototypes/dwaop_reference_harness.py](prototypes/dwaop_reference_harness.py)  
-**Harness blob SHA:** ebeaa85a6c22c473333d4d0b88fd9b017c82d480  
+**Harness blob SHA:** f884a11a21d648418b1d1e30ce5a333245214414  
 **Runtime:** Python 3.13.5
 
 ---
@@ -51,7 +51,7 @@ Python reported 3.13.5. The unit-test run completed with **25 passed, 0 failed**
 
 ## 3. Test results
 
-22 passed · 0 failed
+25 passed · 0 failed
 
 | Test | Result | What it checks |
 |---|---|---|
