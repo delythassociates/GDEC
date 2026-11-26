@@ -681,6 +681,74 @@ def make_dominance_graph(fast_action_cost: float = 1.0,
     return DominanceGraph(states, actions)
 
 
+def make_parameterized_dominance_graph(
+    fast_action_cost: float,
+    good_spent_ru: float,
+    fast_peak_gb: float,
+    pass_only: bool,
+    label_variant: int,
+) -> DominanceGraph:
+    """Generate a small family of compatible better/worse state pairs."""
+    base = make_dominance_graph(fast_action_cost=fast_action_cost)
+    actions = dict(base.actions)
+    states = dict(base.states)
+
+    label_pairs = (
+        ("pass", "fail"),
+        ("approved", "rejected"),
+        ("cell_a", "cell_b"),
+    )
+    if label_variant not in range(len(label_pairs)):
+        raise ValueError("label_variant out of range")
+    pass_label, fail_label = label_pairs[label_variant]
+    fast_outcomes = ((pass_label, "good_pass"),)
+    if not pass_only:
+        fast_outcomes += ((fail_label, "good_fail"),)
+
+    fast = actions["fast"]
+    actions["fast"] = DominanceAction(
+        fast.action_id, fast.semantic_key, fast.preconditions,
+        fast.evidence_contract, fast.failure_semantics,
+        fast_action_cost, fast_peak_gb, fast_outcomes,
+    )
+
+    good = states["good_root"]
+    states["good_root"] = DominanceState(
+        good.state_id, good.model_scope, good.assurance_mode,
+        frozenset({"pass"}) if pass_only else frozenset({"pass", "fail"}),
+        good.open_obligations, good.capabilities, good.live_artifacts,
+        good_spent_ru, good.peak_committed_gb, good.memory_model,
+        good.actions, good.terminal,
+    )
+
+    good_pass = states["good_pass"]
+    states["good_pass"] = DominanceState(
+        good_pass.state_id, good_pass.model_scope, good_pass.assurance_mode,
+        good_pass.qoi_set, good_pass.open_obligations, good_pass.capabilities,
+        good_pass.live_artifacts, good_spent_ru + fast_action_cost,
+        max(good.peak_committed_gb, fast_peak_gb), good_pass.memory_model,
+        good_pass.actions, good_pass.terminal,
+    )
+    good_fail = states["good_fail"]
+    states["good_fail"] = DominanceState(
+        good_fail.state_id, good_fail.model_scope, good_fail.assurance_mode,
+        good_fail.qoi_set, good_fail.open_obligations, good_fail.capabilities,
+        good_fail.live_artifacts, good_spent_ru + fast_action_cost,
+        max(good.peak_committed_gb, fast_peak_gb), good_fail.memory_model,
+        good_fail.actions, good_fail.terminal,
+    )
+    # The weaker path has already paid 2 RU for the slower reconstruction.
+    for state_id in ("bad_pass", "bad_fail", "bad_boundary"):
+        state = states[state_id]
+        states[state_id] = DominanceState(
+            state.state_id, state.model_scope, state.assurance_mode,
+            state.qoi_set, state.open_obligations, state.capabilities,
+            state.live_artifacts, 4.0, state.peak_committed_gb,
+            state.memory_model, state.actions, state.terminal,
+        )
+    return DominanceGraph(states, actions)
+
+
 class TestDWAOPReferenceHarness(unittest.TestCase):
     def setUp(self) -> None:
         self.fixture = make_fixture()
@@ -978,6 +1046,32 @@ class TestDWAOPReferenceHarness(unittest.TestCase):
             pruned_ids = prune_dominated_frontier(graph, candidates)
             pruned = candidate_policy_frontier(graph, pruned_ids)
             self.assertEqual(pruned, unpruned, fast_cost)
+
+    def test_generated_parameterized_dominance_graph_family_matches_oracle(self) -> None:
+        cases = 0
+        for fast_cost in (0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75):
+            for good_spent in (0.25, 1.50):
+                for fast_peak in (2.00, 2.20):
+                    for pass_only in (False, True):
+                        for label_variant in range(3):
+                            graph = make_parameterized_dominance_graph(
+                                fast_cost, good_spent, fast_peak,
+                                pass_only, label_variant
+                            )
+                            candidates = ("good_root", "bad_root")
+                            relation = greatest_simulation_relation(graph)
+                            self.assertIn(("good_root", "bad_root"), relation)
+                            pruned_ids = prune_dominated_frontier(graph, candidates)
+                            self.assertEqual(pruned_ids, ("good_root",))
+
+                            exhaustive = candidate_policy_frontier(graph, candidates)
+                            pruned = candidate_policy_frontier(graph, pruned_ids)
+                            self.assertEqual(pruned, exhaustive, (
+                                fast_cost, good_spent, fast_peak,
+                                pass_only, label_variant
+                            ))
+                            cases += 1
+        self.assertEqual(cases, 168)
 
     def test_dominance_fixed_point_handles_cyclic_action_graph(self) -> None:
         actions = {
