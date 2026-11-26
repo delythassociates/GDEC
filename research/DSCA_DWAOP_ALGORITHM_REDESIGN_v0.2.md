@@ -341,6 +341,47 @@ For each covered action outcome cell \(y\), the transition contract should decla
 
 These effects are not interchangeable. In particular, \`CONFIRM_VIOLATION\` refutes robust acceptance, while \`ESTABLISH_REJECTION\` is the stronger proof needed for a robust rejection verdict. A \`PARTITION\` effect creates multiple obligations for the planner: every child outcome branch must be handled.
 
+### 5.5 Decision-Assurance Plan Certificate (DAPC)
+
+A VWEC checks one numerical witness-exclusion or set-transition claim. DWAOP additionally needs a certificate for the **entire contingent computation plan**. The proposed plan-level artefact is a **Decision-Assurance Plan Certificate (DAPC)**.
+
+A DAPC is a finite rooted tree (or a DAG only where shared subplans are represented without losing branch identity). Each node records:
+
+- canonical state identity and model/specification hash;
+- the joint admissible QoI set representation;
+- unresolved decision-witness regions;
+- open, satisfied, blocked and conflicted assurance obligations;
+- accumulated and remaining resource vectors;
+- evidence-dependence/provenance graph reference.
+
+Each action node records:
+
+- action contract identifier/version and checked preconditions;
+- action execution artefact and measured resource consumption;
+- the complete outcome-cell cover used by the planner;
+- for every outcome edge, the child-state identity and transition certificate;
+- VWEC, partition, violation, rejection, assumption-invalidation or obligation-discharge certificates as applicable.
+
+Every leaf must contain one of:
+- a checked \`ACCEPT\` proof satisfying all mandatory acceptance constraints/regret requirements and obligations;
+- a checked \`REJECT\` proof establishing the declared rejection condition and obligations;
+- a safe non-acceptance leaf (\`INCONCLUSIVE\` or \`REFUSE\`) in an exploratory/partial plan, which means the DAPC is **not** a decision-complete acceptance plan.
+
+The independent DAPC checker must verify:
+
+1. the root state matches the exact requested specification and provenance;
+2. every action's preconditions and evidence contract apply to its parent state;
+3. outcome cells cover all possibilities claimed by the action contract; if disjointness is part of the semantics, that is checked too;
+4. each edge's child-state set is a sound outer representation of the parent state conditioned on that outcome;
+5. every witness exclusion and obligation discharge is backed by a valid scoped certificate;
+6. evidence conflicts and model invalidations are not silently discarded;
+7. every terminal leaf satisfies its own decision and assurance predicates;
+8. worst-case resource upper bounds for every branch fit the declared budget.
+
+The DAPC does not certify the physical truth of the declared model. Its top-level proposition is conditional: all covered executions of the plan reach the stated terminal outcomes with evidence valid under the declared model, assumptions and assurance scope.
+
+A tree containing only a producer's asserted statuses is not a DAPC. A proof checker must validate the underlying artefacts and transition relations. Plan completeness is distinct from plan optimality: DWAOP may return a sound, decision-complete plan without proving it is globally minimum-cost. A Pareto-optimality claim requires its own search-completeness and optimality certificate; otherwise report only the nondominated frontier found within the declared search limits.
+
 ## 6. Evidence-state transition
 
 For state \(S\), action \(a\) and an outcome cell \(y\in\mathcal Y_a(S)\), define:
@@ -741,6 +782,7 @@ Do not claim:
 | Zhao et al. (2026), MF-PBALC | Posterior-mean failure-probability bounds, a stopping rule, and cost-aware joint evaluation-point/fidelity selection for structural reliability | Do not claim novelty for bounded stopping or cost-aware joint fidelity selection |
 | Habera et al. (2026), running error analysis in FE kernels | Automatically propagates running round-off/error estimates through generated FE kernels; the paper explicitly states its estimates are not certified bounds | Do not claim novelty for running kernel-error estimates; do not treat REA estimates as VWECs without a separate certification argument |
 | Ning & You (2018), adaptive robust optimisation with minimax regret | Minimax-regret objectives and algorithms in adaptive robust optimisation | Do not claim novelty for the regret objective or worst-case regret formulation |
+| Mugdan, Christen & Eriksson (2023), optimality certificates for classical planning | Computer-verifiable certificates for plan correctness and optimality, with sound/complete certification methods in the studied setting | Do not claim novelty for plan certificates or optimality certificates in generic planning |
 | Hill, Komendantskaya & Petrick (2020), Proof-Carrying Plans | Resource logic and typed pre/postconditions for checking AI plans, with formal soundness proof and Agda formalisation | Do not claim novelty for resource-aware plans carrying machine-checkable proofs |
 | Gardiol & Kaelbling, action equivalence for planning | Runtime partitioning of actions into approximate equivalence classes to reduce planning search | Do not claim novelty for action-signature compression in generic planning |
 | CEGAR literature | Counterexample generation, abstraction refinement and validation loops | Do not claim novelty for counterexample-guided refinement alone |
@@ -779,6 +821,7 @@ This is not yet a demonstrated gap. It may still be obvious to a skilled reader 
 - Zhao et al. (2026), MF-PBALC: https://doi.org/10.1016/j.ress.2026.113871
 - Habera et al. (2026), running error analysis in FE kernels: https://arxiv.org/abs/2609.37844
 - Ning & You (2018), adaptive robust optimisation with minimax regret: https://doi.org/10.1016/j.compchemeng.2017.09.026
+- Mugdan, Christen & Eriksson (2023), optimality certificates for classical planning: https://ai.dmi.unibas.ch/papers/mugdan-et-al-icaps2023.pdf
 - Hill et al. (2020), Proof-Carrying Plans: https://doi.org/10.1145/3414080.3414094
 - Gardiol & Kaelbling, computing action equivalences for planning: https://people.csail.mit.edu/nhg/papers/gardiol_icaps_consortium.pdf
 - Clarke et al. (2000), CEGAR: https://doi.org/10.1007/10722167_15
@@ -876,7 +919,7 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 ## 14. Research status and next gate
 
 - **RESEARCHED:** GOAFEM, stochastic FEM error control, Bayesian inverse-FEM adaptivity, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, running FE-kernel error analysis, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
-- **FORMULATED:** decision-witness state, obligation state, typed action contracts, verified witness-exclusion certificates, robust AND-OR planning objective, vector budgets, blocker-distance lower bound and proof-preserving state dominance.
+- **FORMULATED:** decision-witness state, obligation state, typed branch-conditional action effects, VWEC and DAPC certificate layers, robust AND-OR planning objective, vector budgets, blocker-distance/LP-cover lower bounds and proof-preserving state dominance.
 - **CONDITIONALLY JUSTIFIED:** terminal soundness proposition under explicit enclosure, transition and checker assumptions.
 - **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate.
 - **NOT IMPLEMENTED:** no production or research controller code.
@@ -884,4 +927,4 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 - **NOT INDEPENDENTLY VERIFIED:** no external mathematical review.
 - **NOT APPROVED:** no production implementation authorisation.
 
-**Next gate:** independent review of the formal state/action model and soundness assumptions, then a hand-computed action-planning example with at least two complementary actions and a branching outcome. Only after that should the research prototype be proposed.
+**Next gate:** independent review of the formal state/action model and soundness assumptions, followed by a direct comparison against a one-step greedy policy on a hand-computed complementary-action example. Only after that should the research prototype be proposed.
