@@ -318,6 +318,235 @@ def make_fixture(effect_map_complete: bool = True) -> Fixture:
     return Fixture(states, actions, effect_map_complete)
 
 
+@dataclass(frozen=True)
+class DominanceAction:
+    action_id: str
+    semantic_key: str
+    preconditions: FrozenSet[str]
+    evidence_contract: FrozenSet[str]
+    failure_semantics: FrozenSet[str]
+    ru_upper: float
+    during_peak_gb: float
+    outcomes: Tuple[Tuple[str, str], ...]
+
+
+@dataclass(frozen=True)
+class DominanceState:
+    state_id: str
+    model_scope: str
+    assurance_mode: str
+    qoi_set: FrozenSet[str]
+    open_obligations: FrozenSet[str]
+    capabilities: FrozenSet[str]
+    live_artifacts: FrozenSet[str]
+    additive_spent_ru: float
+    peak_committed_gb: float
+    memory_model: str
+    actions: Tuple[str, ...] = ()
+    terminal: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class DominanceGraph:
+    states: Mapping[str, DominanceState]
+    actions: Mapping[str, DominanceAction]
+
+
+def validate_dominance_graph(graph: DominanceGraph) -> None:
+    for state_id, state in graph.states.items():
+        if state.state_id != state_id:
+            raise ValueError(f"Dominance state key/id mismatch: {state_id}")
+        if state.additive_spent_ru < 0 or state.peak_committed_gb < 0:
+            raise ValueError(f"Negative resource ledger in {state_id}")
+        if state.terminal is not None and state.actions:
+            raise ValueError(f"Terminal dominance state {state_id} cannot expose actions")
+        for action_id in state.actions:
+            if action_id not in graph.actions:
+                raise ValueError(f"Unknown dominance action {action_id} from {state_id}")
+    for action_id, action in graph.actions.items():
+        if action.action_id != action_id:
+            raise ValueError(f"Dominance action key/id mismatch: {action_id}")
+        if action.ru_upper < 0 or action.during_peak_gb < 0 or not action.outcomes:
+            raise ValueError(f"Invalid dominance action resources/outcomes: {action_id}")
+        labels = [label for label, _ in action.outcomes]
+        if len(labels) != len(set(labels)) or any(not label for label in labels):
+            raise ValueError(f"Duplicate/empty dominance outcome label: {action_id}")
+        for _, child_id in action.outcomes:
+            if child_id not in graph.states:
+                raise ValueError(f"Unknown dominance child state {child_id} in {action_id}")
+
+
+def _locally_dominates(left: DominanceState, right: DominanceState) -> bool:
+    """Necessary state-order conditions before action simulation is checked."""
+    return (
+        left.model_scope == right.model_scope
+        and left.assurance_mode == right.assurance_mode
+        and left.memory_model == right.memory_model
+        and left.qoi_set.issubset(right.qoi_set)
+        and left.open_obligations.issubset(right.open_obligations)
+        and right.capabilities.issubset(left.capabilities)
+        and left.live_artifacts.issubset(right.live_artifacts)
+        and left.additive_spent_ru <= right.additive_spent_ru + 1e-12
+        and left.peak_committed_gb <= right.peak_committed_gb + 1e-12
+        and left.terminal == right.terminal
+    )
+
+
+def _action_contract_dominates(left: DominanceAction, right: DominanceAction) -> bool:
+    """Require semantic, precondition, evidence and failure compatibility."""
+    return (
+        left.semantic_key == right.semantic_key
+        and left.preconditions == right.preconditions
+        and left.evidence_contract == right.evidence_contract
+        and left.failure_semantics == right.failure_semantics
+        and left.ru_upper <= right.ru_upper + 1e-12
+        and left.during_peak_gb <= right.during_peak_gb + 1e-12
+    )
+
+
+def greatest_simulation_relation(graph: DominanceGraph) -> FrozenSet[Tuple[str, str]]:
+    """Compute a finite greatest simulation relation by monotone elimination.
+
+    (left, right) means left can safely dominate right: every action offered by
+    right has a semantically compatible, no-more-expensive action from left,
+    and each outcome possible from the left action maps to a no-worse successor
+    under the current relation.
+    """
+    validate_dominance_graph(graph)
+    relation = {
+        (left_id, right_id)
+        for left_id, left in graph.states.items()
+        for right_id, right in graph.states.items()
+        if _locally_dominates(left, right)
+    }
+
+    changed = True
+    while changed:
+        changed = False
+        remove = set()
+        for left_id, right_id in relation:
+            left_state = graph.states[left_id]
+            right_state = graph.states[right_id]
+            if right_state.terminal is not None:
+                continue
+
+            all_right_actions_simulated = True
+            for right_action_id in right_state.actions:
+                right_action = graph.actions[right_action_id]
+                matching_left_action = False
+                for left_action_id in left_state.actions:
+                    left_action = graph.actions[left_action_id]
+                    if not _action_contract_dominates(left_action, right_action):
+                        continue
+
+                    every_left_outcome_maps = True
+                    for _, left_child_id in left_action.outcomes:
+                        if not any((left_child_id, right_child_id) in relation
+                                   for _, right_child_id in right_action.outcomes):
+                            every_left_outcome_maps = False
+                            break
+                    if every_left_outcome_maps:
+                        matching_left_action = True
+                        break
+
+                if not matching_left_action:
+                    all_right_actions_simulated = False
+                    break
+
+            if not all_right_actions_simulated:
+                remove.add((left_id, right_id))
+
+        if remove:
+            relation.difference_update(remove)
+            changed = True
+
+    return frozenset(relation)
+
+
+def prune_dominated_frontier(graph: DominanceGraph, state_ids: Sequence[str]) -> Tuple[str, ...]:
+    """Remove strictly dominated states; keep equivalent states deterministically."""
+    relation = greatest_simulation_relation(graph)
+    dominated = set()
+    for weaker_id in state_ids:
+        for stronger_id in state_ids:
+            if stronger_id == weaker_id:
+                continue
+            if ((stronger_id, weaker_id) in relation
+                    and (weaker_id, stronger_id) not in relation):
+                dominated.add(weaker_id)
+                break
+    return tuple(state_id for state_id in state_ids if state_id not in dominated)
+
+
+def make_dominance_graph(fast_action_cost: float = 1.0,
+                         include_fast_action: bool = True,
+                         fast_fail_child: str = "good_fail") -> DominanceGraph:
+    actions = {
+        "fast": DominanceAction(
+            "fast", "certified-qoi-reconstruction",
+            frozenset({"mesh_ready", "dual_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            fast_action_cost, 2.4,
+            (("pass", "good_pass"), ("fail", fast_fail_child)),
+        ),
+        "slow": DominanceAction(
+            "slow", "certified-qoi-reconstruction",
+            frozenset({"mesh_ready", "dual_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            2.0, 2.8,
+            (("pass", "bad_pass"), ("fail", "bad_fail"), ("boundary", "bad_boundary")),
+        ),
+    }
+    states = {
+        "good_root": DominanceState(
+            "good_root", "model-v1", "bounded",
+            frozenset({"pass", "fail"}), frozenset({"independent_check"}),
+            frozenset({"mesh_ready", "dual_ready", "independent_checker"}),
+            frozenset({"mesh", "dual"}), 1.0, 2.0, "sequential-live-set-v1",
+            ("fast",) if include_fast_action else (),
+        ),
+        "bad_root": DominanceState(
+            "bad_root", "model-v1", "bounded",
+            frozenset({"pass", "fail", "boundary"}),
+            frozenset({"independent_check", "model_check"}),
+            frozenset({"mesh_ready", "dual_ready"}),
+            frozenset({"mesh", "dual", "legacy_cache"}), 2.0, 2.5,
+            "sequential-live-set-v1", ("slow",),
+        ),
+        "good_pass": DominanceState(
+            "good_pass", "model-v1", "bounded", frozenset({"pass"}), frozenset(),
+            frozenset({"mesh_ready", "verified_bound"}), frozenset({"mesh", "bound"}),
+            2.0, 2.4, "sequential-live-set-v1", terminal="ACCEPT",
+        ),
+        "good_fail": DominanceState(
+            "good_fail", "model-v1", "bounded", frozenset({"fail"}), frozenset(),
+            frozenset({"mesh_ready", "verified_bound"}), frozenset({"mesh", "bound"}),
+            2.0, 2.4, "sequential-live-set-v1", terminal="REJECT",
+        ),
+        "bad_pass": DominanceState(
+            "bad_pass", "model-v1", "bounded", frozenset({"pass", "near"}),
+            frozenset({"extra_review"}), frozenset({"mesh_ready"}),
+            frozenset({"mesh", "bound", "legacy_cache"}), 3.0, 2.8,
+            "sequential-live-set-v1", terminal="ACCEPT",
+        ),
+        "bad_fail": DominanceState(
+            "bad_fail", "model-v1", "bounded", frozenset({"fail", "near"}),
+            frozenset({"extra_review"}), frozenset({"mesh_ready"}),
+            frozenset({"mesh", "bound", "legacy_cache"}), 3.0, 2.8,
+            "sequential-live-set-v1", terminal="REJECT",
+        ),
+        "bad_boundary": DominanceState(
+            "bad_boundary", "model-v1", "bounded", frozenset({"pass", "fail", "boundary"}),
+            frozenset({"extra_review"}), frozenset({"mesh_ready"}),
+            frozenset({"mesh", "legacy_cache"}), 3.0, 2.8,
+            "sequential-live-set-v1", terminal="INCONCLUSIVE",
+        ),
+    }
+    return DominanceGraph(states, actions)
+
+
 class TestDWAOPReferenceHarness(unittest.TestCase):
     def setUp(self) -> None:
         self.fixture = make_fixture()
@@ -467,6 +696,66 @@ class TestDWAOPReferenceHarness(unittest.TestCase):
 
         visit_family(0, [])
         self.assertEqual(total_families, 2401)
+
+    def test_state_dominance_requires_full_action_simulation(self) -> None:
+        graph = make_dominance_graph()
+        relation = greatest_simulation_relation(graph)
+        self.assertIn(("good_root", "bad_root"), relation)
+        self.assertNotIn(("bad_root", "good_root"), relation)
+        self.assertEqual(prune_dominated_frontier(graph, ("good_root", "bad_root")),
+                         ("good_root",))
+
+    def test_narrower_qoi_set_without_matching_action_does_not_dominate(self) -> None:
+        graph = make_dominance_graph(include_fast_action=False)
+        relation = greatest_simulation_relation(graph)
+        self.assertNotIn(("good_root", "bad_root"), relation)
+
+    def test_more_expensive_action_does_not_dominate(self) -> None:
+        graph = make_dominance_graph(fast_action_cost=3.0)
+        relation = greatest_simulation_relation(graph)
+        self.assertNotIn(("good_root", "bad_root"), relation)
+
+    def test_unmatched_successor_prevents_dominance(self) -> None:
+        graph = make_dominance_graph(fast_fail_child="bad_boundary")
+        actions = dict(graph.actions)
+        slow = actions["slow"]
+        actions["slow"] = DominanceAction(
+            slow.action_id, slow.semantic_key, slow.preconditions,
+            slow.evidence_contract, slow.failure_semantics, slow.ru_upper,
+            slow.during_peak_gb, (("pass", "bad_pass"), ("fail", "bad_fail")),
+        )
+        graph = DominanceGraph(graph.states, actions)
+        relation = greatest_simulation_relation(graph)
+        self.assertNotIn(("good_root", "bad_root"), relation)
+
+    def test_dominance_fixed_point_handles_cyclic_action_graph(self) -> None:
+        actions = {
+            "left_loop": DominanceAction(
+                "left_loop", "loop", frozenset(), frozenset({"evidence"}), frozenset(),
+                1.0, 1.0, (("again", "left"),),
+            ),
+            "right_loop": DominanceAction(
+                "right_loop", "loop", frozenset(), frozenset({"evidence"}), frozenset(),
+                2.0, 2.0, (("again", "right"),),
+            ),
+        }
+        common = dict(
+            model_scope="m", assurance_mode="bounded",
+            capabilities=frozenset({"evidence"}), live_artifacts=frozenset(),
+            memory_model="sequential-live-set-v1",
+        )
+        states = {
+            "left": DominanceState(
+                "left", qoi_set=frozenset({"q"}), open_obligations=frozenset(),
+                additive_spent_ru=0.0, peak_committed_gb=0.0, actions=("left_loop",), **common
+            ),
+            "right": DominanceState(
+                "right", qoi_set=frozenset({"q", "extra"}), open_obligations=frozenset({"review"}),
+                additive_spent_ru=1.0, peak_committed_gb=1.0, actions=("right_loop",), **common
+            ),
+        }
+        relation = greatest_simulation_relation(DominanceGraph(states, actions))
+        self.assertIn(("left", "right"), relation)
 
     def test_resource_limits_reject_peak_overrun_even_when_ru_fits(self) -> None:
         self.assertIsNone(find_plan(self.fixture, "root", ResourceBudget(4.0, 2.5)))
