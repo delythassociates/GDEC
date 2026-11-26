@@ -262,11 +262,26 @@ A policy \(\pi\) chooses an action at each reachable state and branches on the o
 
 The objective is to find a policy that resolves all mandatory decision witnesses and obligations at minimum worst-case cost:
 
+For each policy, define its worst-case resource vector by taking the componentwise supremum over all covered outcome paths:
+
 \[
-\pi^*\in\arg\min_{\pi}
-\operatorname{ParetoCost}_{\omega\in\Omega(\pi)}
-\left[\mathbf C(\pi,\omega)\right]
+\overline{\mathbf C}(\pi)
+=
+\sup_{\omega\in\Omega(\pi)}^{\mathrm{componentwise}}
+\sum_{a\in\pi(\omega)}\mathbf c_a^\uparrow.
 \]
+
+The feasible-policy set contains only policies whose every covered branch reaches a terminal decision with all obligations satisfied and whose worst-case resource vector fits the hard budget. The planner returns the nondominated set:
+
+\[
+\Pi^*(S)=\operatorname{ParetoMin}
+\left\{
+\overline{\mathbf C}(\pi):
+\pi\text{ is feasible from }S
+\right\}.
+\]
+
+If an owner-specified preference is needed to select one plan from this Pareto set, the preference must be explicit. The algorithm does not invent weights for unlike resources.
 
 subject to, for every reachable terminal branch \(\omega\):
 
@@ -283,7 +298,7 @@ Here \(\Omega(\pi)\) is the set of all outcome branches covered by the policy. \
 
 No single scalarisation is imposed when the owner has not supplied defensible resource weights. The planner retains a Pareto set of feasible cost vectors.
 
-A plan is robust only when all branches represented in its sound outcome model either resolve to an allowed terminal decision or explicitly lead to a safe non-acceptance result. The planner cannot omit adverse outcomes to make a plan look feasible.
+A policy that satisfies the planning constraints must resolve every covered outcome branch to an allowed terminal decision with all obligations met. A branch that ends INCONCLUSIVE or REFUSE is not counted as a successful feasible plan; it is reported as a safe failure of the plan and the controller must not issue ACCEPT. The planner cannot omit adverse outcomes to make a plan look feasible.
 
 ### 7.2 AND-OR recursion
 
@@ -468,10 +483,10 @@ Primary links:
 - Yang et al. (2024), *Structural Safety*: https://doi.org/10.1016/j.strusafe.2023.102426
 - Solak et al. (2026), MF-CAS preprint: https://arxiv.org/abs/2610.38582
 - Zhao et al. (2026), MF-PBALC: https://doi.org/10.1016/j.ress.2026.113871
-- CEGAR foundational paper: https://doi.org/10.1145/309847.309867
+- CEGAR foundational paper: Clarke et al. (2000), CAV, https://doi.org/10.1007/10722167_15; expanded journal treatment (2003): https://doi.org/10.1145/876638.876643
 - Patent publication: https://patents.google.com/patent/US20240348663A1/en
 
-The patent was located through a preliminary search. The published claims and related applications are broad and require specialist analysis; this is not a legal opinion.
+The patent was located through a preliminary search. Google Patents lists this publication as pending and shows a long priority/family chain; its own page warns that legal status is not a legal conclusion. Claims 1, 8 and 12 explicitly discuss goal/constraint-driven simulation and uncertainty reduction, active-learning/targeted exploration, and adaptive look-ahead/branching subject to resources. This is a material adjacent disclosure to review with a patent professional; it does not establish whether any specific DWAOP claim is anticipated, obvious, infringing or free to operate.
 
 ## 12. Required novelty experiments
 
