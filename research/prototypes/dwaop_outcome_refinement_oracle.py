@@ -994,6 +994,7 @@ class RefinementAndPolicyTests(unittest.TestCase):
             self.candidates, self.contracts, self.oracle, self.budget
         )
         self.assertEqual(retained, ("fine_safe", "fine_unsafe"))
+
     def test_root_action_policy_frontiers_match(self) -> None:
         # Compare complete policies from the same root, not isolated child
         # states. This checks the two root-action alternatives independently;
