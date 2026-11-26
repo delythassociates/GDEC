@@ -43,11 +43,11 @@ The hashes match exactly. Executed commands:
 
 ~~~bash
 python --version
-python -m unittest -v /tmp/dwaop_reference/dwaop_reference_harness_candidate.py
-python -m py_compile /tmp/dwaop_reference/dwaop_reference_harness_candidate.py
+python -m unittest -v /tmp/dwaop_reference/dwaop_reference_harness_final_candidate.py
+python -m py_compile /tmp/dwaop_reference/dwaop_reference_harness_final_candidate.py
 ~~~
 
-Python reported 3.13.5. The unit-test run completed with **23 passed, 0 failed**. Bytecode compilation completed without error.
+Python reported 3.13.5. The unit-test run completed with **25 passed, 0 failed**. Bytecode compilation completed without error.
 
 ## 3. Test results
 
@@ -78,6 +78,8 @@ Python reported 3.13.5. The unit-test run completed with **23 passed, 0 failed**
 | Relation transitivity on reference graph | PASS | Returned relation is transitive on the finite test graph |
 | ACCEPT versus REJECT terminal states | PASS | Opposite terminal verdicts are not related by dominance |
 | Frontier pruning preserves complete policy cost/verdicts | PASS | Exhaustive policy summaries before/after candidate-state pruning preserve ACCEPT/REJECT coverage and the nondominated RU/peak-memory result in the constructed graph |
+| Frontier pruning can remove an impossible verdict branch | PASS | A narrower QoI state with only a PASS outcome safely removes a FAIL branch; its policy remains complete and matches the pruned/exhaustive frontier |
+| Parameterized candidate-frontier family | PASS | For seven fast-action costs, dominance-pruned and unpruned candidate frontiers agree on verdict sets, RU cost and peak memory |
 
 ## 4. Numeric outputs
 
@@ -119,7 +121,8 @@ The finite dominance example returns:
 - ("good_root", "bad_root") in the greatest-simulation relation;
 - the reverse pair is absent;
 - the candidate frontier ("good_root", "bad_root") reduces to ("good_root",);
-- exhaustive policy-frontier enumeration before/after candidate pruning retains the same terminal verdict set {ACCEPT, REJECT}, total RU upper cost 2.0 and peak memory 2.4 GB.
+- exhaustive policy-frontier enumeration before/after candidate pruning retains the same terminal verdict set {ACCEPT, REJECT}, total RU upper cost 2.0 and peak memory 2.4 GB;
+- in a narrower pass-only variant, the possible verdict set reduces from {ACCEPT, REJECT} to {ACCEPT} while the candidate remains decision-complete and the exhaustive/pruned frontier still agrees.
 
 These are abstract fixture outputs, not measured GDEC solver performance.
 
@@ -130,7 +133,7 @@ The harness supports two narrow conclusions:
 1. For its finite planning fixture, the implemented blocker-distance prune preserves feasibility relative to the exhaustive unpruned search and the resource aggregation returns the expected path totals.
 2. For its finite dominance graph, the implemented greatest-simulation relation refuses several unsafe local comparisons and removes a strictly dominated candidate from a small frontier.
 
-The tests do **not** prove admissibility for arbitrary engineering action graphs. The set-cover property test covers a finite family of 2,401 small instances. The planning oracle comparison uses one hand-constructed contingent graph. Dominance tests use a hand-constructed finite graph. One additional test enumerates complete policies from the two candidate states and confirms that candidate-frontier pruning preserves its nondominated result; it still does not verify integration into the general planner or generated-graph search.
+The tests do **not** prove admissibility for arbitrary engineering action graphs. The set-cover property test covers a finite family of 2,401 small instances. The planning oracle comparison uses one hand-constructed contingent graph. Dominance tests use a hand-constructed finite graph. The policy-frontier comparison covers seven parameterised action-cost instances and one additional pass-only refinement case; it still does not verify integration into the general planner or generated graph families.
 
 The harness's verify_plan_tree function is a test-specific structural/resource checker. It does not inspect mathematical numerical certificates, validate outer QoI enclosures, establish theorem assumptions, or provide independent engineering assurance.
 
@@ -138,9 +141,9 @@ The harness's verify_plan_tree function is a test-specific structural/resource c
 
 Not yet tested:
 
-1. generated larger contingent DAGs and adversarial cyclic action/state graphs;
+1. generated larger contingent DAGs and adversarial cyclic action/state graphs with independently computed simulation oracles;
 2. dominance-pruned versus exhaustive unpruned search on generated finite graphs and cyclic transition systems;
-3. correctness of frontier pruning across broader generated state sets and resource/capability combinations;
+3. correctness of frontier pruning across broader generated state sets, verdict refinements, and resource/capability combinations;
 4. scenario-tree lower bounds for branching policies;
 5. the blocker-cover LP relaxation;
 6. resource dimensions beyond additive RU and peak memory;
@@ -152,7 +155,7 @@ The next research test should integrate the greatest-simulation relation into th
 ## 7. Classification
 
 - **IMPLEMENTED:** standalone finite-state planner/oracle harness; greatest-simulation relation; strict candidate-frontier reducer; exhaustive complete-policy summary comparison for a small constructed graph.
-- **EXECUTED:** 23 Python unittest cases passed; Python 3.13.5.
+- **EXECUTED:** 25 Python unittest cases passed; Python 3.13.5.
 - **CHECKED:** the exact committed Git blob was the source of the executed test copy.
 - **NOT INTEGRATED:** the dominance reducer is not called from the harness's find_plan search recursion or any GDEC runtime. The policy-frontier comparison is a separate finite reference check, not search integration.
 - **NOT IMPLEMENTED:** GDEC DWAOP controller, numerical certificate producers, trusted DAPC checker, LP pruning or production resource ledger.
