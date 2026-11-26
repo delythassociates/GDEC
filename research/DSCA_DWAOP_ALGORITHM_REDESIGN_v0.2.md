@@ -711,9 +711,10 @@ DWAOP(spec, resource_budget):
             return PLAN_SELECTION_REQUIRED(plan_frontier)
 
         action = first_action(select_declared_preference_from_Pareto_frontier(plan_frontier))
+        prior_ledger = ledger
         result = execute_sequentially_and_record_resource_observations(action)
         ledger = update_resource_ledger_by_declared_semantics(
-            ledger,
+            prior_ledger,
             action,
             result,
             resource_semantics
@@ -746,7 +747,10 @@ DWAOP(spec, resource_budget):
 
 ~~~
 
-The resource ledger keeps additive consumption, peak high-water marks, and live retained artefacts as separate fields. Additive remaining budget is computed by subtraction from cumulative consumption. A peak-memory limit is checked against the maximum of the already committed high-water mark and predicted future live-set peaks; it is not reduced by summing every action's memory estimate. The first prototype prohibits overlapping actions, so elapsed wall time is additive. Parallel execution requires a schedule-aware ledger and is unsupported.
+The resource ledger keeps additive consumption, peak high-water marks, and live retained artefacts as separate fields. For additive resources, remaining budget is the hard limit minus cumulative upper consumption. For peak/live-set resources, the planner retains the original peak limit and checks whether the maximum of the already committed high-water mark and the predicted future peak fits that limit; it does not subtract previous peak memory and then add action memory again. The first prototype prohibits overlapping actions, so elapsed wall time is additive. Parallel execution requires a schedule-aware ledger and is unsupported.
+
+
+The transition checker receives both the pre-action and post-action ledgers. It must independently recompute or validate the resource update from the action's declared aggregation semantics and measured resource observations; it must not trust the planner's post-action ledger as an asserted status.
 
 If the Pareto frontier contains multiple incomparable plans and no preference was declared, the system must expose the frontier for operator selection; it must not invent a trade-off between resource types. \`PLAN_SELECTION_REQUIRED\` is a planning interaction state, not an engineering acceptance result.
 
