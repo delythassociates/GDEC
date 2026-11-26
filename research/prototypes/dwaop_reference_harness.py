@@ -853,6 +853,98 @@ def make_layered_dominance_graph(depth: int) -> DominanceGraph:
     return DominanceGraph(states, actions)
 
 
+def make_nonlayered_dominance_graph(topology: Sequence[Sequence[int]],
+                                    extra_terminal: str = "REJECT") -> DominanceGraph:
+    """Build a paired non-layered DAG; repeated child IDs create reconvergence.
+
+    Each left/good node has exactly the specified outgoing edges. Its paired
+    right/bad node has matching mapped edges plus one additional weak-only
+    outcome. Edges must point to a later node index or to a terminal child.
+    """
+    if extra_terminal not in {"ACCEPT", "REJECT"}:
+        raise ValueError("extra_terminal must be ACCEPT or REJECT")
+    node_count = len(topology)
+    if node_count < 2:
+        raise ValueError("topology needs at least two nodes")
+    for i, children in enumerate(topology):
+        if any(child <= i or child >= node_count for child in children):
+            raise ValueError("non-layered DAG edges must point to later node indices")
+        if len(children) != len(set(enumerate(children))):
+            raise ValueError("invalid child sequence")
+
+    states: Dict[str, DominanceState] = {}
+    actions: Dict[str, DominanceAction] = {}
+    memory_model = "sequential-live-set-v1"
+    terminal_nodes = {i for i, children in enumerate(topology) if not children}
+
+    for i, children in enumerate(topology):
+        g_id, b_id = f"g{i}", f"b{i}"
+        if i in terminal_nodes:
+            verdict = "ACCEPT" if i == node_count - 1 else "REJECT"
+            states[g_id] = DominanceState(
+                g_id, "model-nonlayered-v1", "bounded",
+                frozenset({f"q{i}"}), frozenset(),
+                frozenset({"mesh_ready", "dual_ready", "independent_checker"}),
+                frozenset({"mesh", "dual"}), 0.25 * i, 1.2,
+                memory_model, terminal=verdict,
+            )
+            states[b_id] = DominanceState(
+                b_id, "model-nonlayered-v1", "bounded",
+                frozenset({f"q{i}", "latent"}), frozenset({"review"}),
+                frozenset({"mesh_ready"}),
+                frozenset({"mesh", "dual", "legacy_cache"}), 1.0 + 0.25 * i,
+                2.0, memory_model, terminal=verdict,
+            )
+            continue
+
+        g_action_id, b_action_id = f"ga{i}", f"ba{i}"
+        g_outcomes = []
+        b_outcomes = []
+        for j, child in enumerate(children):
+            g_outcomes.append((f"g{i}_{j}", f"g{child}"))
+            b_outcomes.append((f"b{i}_{j}", f"b{child}"))
+        extra_id = f"b_extra{i}"
+        b_outcomes.append((f"b{i}_extra", extra_id))
+
+        states[extra_id] = DominanceState(
+            extra_id, "model-nonlayered-v1", "bounded",
+            frozenset({"extra", "latent"}), frozenset(),
+            frozenset({"mesh_ready"}), frozenset({"mesh", "legacy_cache"}),
+            2.0 + i, 2.5, memory_model, terminal=extra_terminal,
+        )
+
+        # Cost and resource records make the left action strictly no worse.
+        actions[g_action_id] = DominanceAction(
+            g_action_id, f"nonlayered-certificate-step-{i}",
+            frozenset({"mesh_ready", "dual_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            0.5 + 0.1 * i, 1.5 + 0.1 * i, tuple(g_outcomes),
+        )
+        actions[b_action_id] = DominanceAction(
+            b_action_id, f"nonlayered-certificate-step-{i}",
+            frozenset({"mesh_ready", "dual_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            1.5 + 0.1 * i, 2.5 + 0.1 * i, tuple(b_outcomes),
+        )
+        states[g_id] = DominanceState(
+            g_id, "model-nonlayered-v1", "bounded",
+            frozenset({f"q{i}"}), frozenset(),
+            frozenset({"mesh_ready", "dual_ready", "independent_checker"}),
+            frozenset({"mesh", "dual"}), 0.25 * i, 1.2,
+            memory_model, (g_action_id,),
+        )
+        states[b_id] = DominanceState(
+            b_id, "model-nonlayered-v1", "bounded",
+            frozenset({f"q{i}", "latent"}), frozenset({"review"}),
+            frozenset({"mesh_ready"}),
+            frozenset({"mesh", "dual", "legacy_cache"}), 1.0 + 0.25 * i,
+            2.0, memory_model, (b_action_id,),
+        )
+    return DominanceGraph(states, actions)
+
+
 class TestDWAOPReferenceHarness(unittest.TestCase):
     def setUp(self) -> None:
         self.fixture = make_fixture()
@@ -1220,6 +1312,33 @@ class TestDWAOPReferenceHarness(unittest.TestCase):
             pruned = candidate_policy_frontier(graph, pruned_ids)
             self.assertEqual(pruned, exhaustive, depth)
             self.assertEqual(exhaustive[0][1], frozenset({"ACCEPT"}), depth)
+
+    def test_nonlayered_reconvergent_graph_families_match_exhaustive_frontier(self) -> None:
+        topologies = (
+            # Reconvergent diamond; two root outcomes merge at node 3.
+            ((1, 2), (3,), (3,), ()),
+            # Unequal fan-out and a second reconvergence.
+            ((1, 2, 3), (4,), (4, 5), (5,), (6,), (6,), ()),
+            # Mixed branch depths with a reconvergent terminal continuation.
+            ((1, 2), (3, 4), (4,), (5,), (5,), ()),
+            # A wider root whose branches converge at different downstream nodes.
+            ((1, 2, 3, 4), (5,), (5, 6), (6,), (6,), (7,), (7,), ()),
+        )
+        case_count = 0
+        for topology in topologies:
+            for extra_terminal in ("ACCEPT", "REJECT"):
+                graph = make_nonlayered_dominance_graph(topology, extra_terminal)
+                candidates = ("g0", "b0")
+                relation = greatest_simulation_relation(graph)
+                self.assertIn(("g0", "b0"), relation, (topology, extra_terminal))
+                self.assertNotIn(("b0", "g0"), relation, (topology, extra_terminal))
+                pruned_ids = prune_dominated_frontier(graph, candidates)
+                self.assertEqual(pruned_ids, ("g0",), (topology, extra_terminal))
+                exhaustive = candidate_policy_frontier(graph, candidates)
+                pruned = candidate_policy_frontier(graph, pruned_ids)
+                self.assertEqual(pruned, exhaustive, (topology, extra_terminal))
+                case_count += 1
+        self.assertEqual(case_count, 8)
 
     def test_resource_limits_reject_peak_overrun_even_when_ru_fits(self) -> None:
         self.assertIsNone(find_plan(self.fixture, "root", ResourceBudget(4.0, 2.5)))
