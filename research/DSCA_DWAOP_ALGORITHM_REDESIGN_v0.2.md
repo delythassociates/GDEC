@@ -220,6 +220,26 @@ Actions may target different evidence channels:
 
 A mesh refinement cannot claim to resolve uncertain conductivity data. A second solver using the same equations cannot claim experimental validation. A GPU action that did not execute on the GPU cannot produce GPU performance evidence.
 
+### 5.1 Evidence assurance type and checker status
+
+Evidence type and verification status are orthogonal fields. Do not flatten them into a single confidence score.
+
+| Evidence class | Permitted use | Not sufficient by itself for |
+|---|---|---|
+| Point estimate | Nominal reporting and exploratory guidance | A bounded acceptance claim or calibrated probability |
+| Heuristic indicator | Action targeting and prioritisation | A deterministic bound or calibrated probability |
+| Statistical estimate/bound | Probability statement within a declared model, sampling and calibration scope | Deterministic enclosure or out-of-domain guarantee |
+| Deterministic mathematical bound | Bounded claim under explicit theorem assumptions | Physical model validity or omitted uncertainty |
+| Formal proof/certificate | The proposition actually encoded and checked | Claims outside its formal scope |
+| Experimental validation evidence | Agreement/disagreement with measurements over a declared domain | Universal proof outside tested conditions |
+| Provenance/integrity evidence | Identity/integrity of inputs, executable, configuration and outputs | Numerical accuracy by itself |
+
+Independently record checker status, for example: \`PRODUCER_ASSERTED\`, \`AUTOMATICALLY_CHECKED\`, \`INDEPENDENTLY_CHECKED\`, \`CONFLICTED\`, or \`STALE\`. These labels do not replace the underlying artefact or proof.
+
+A statistical confidence interval is not a deterministic enclosure. A DWR asymptotic indicator is not a standard deviation. A running round-off estimate is not automatically a certified floating-point enclosure. A floating-point residual is not automatically a rigorous residual bound.
+
+A VWEC used to exclude a witness in bounded mode must be backed by a deterministic mathematical bound or formal proof whose assumptions cover the entire claimed region and action outcome. Statistical or heuristic evidence can guide a separately declared probabilistic or exploratory path, but cannot discharge a deterministic-bound obligation.
+
 ### 5.1 Verified Witness-Exclusion Certificates (VWEC)
 
 The key numerical evidence object proposed for DWAOP is a **Verified Witness-Exclusion Certificate (VWEC)**. This is a scoped proof artefact, not a confidence score.
@@ -394,7 +414,7 @@ The AND-OR search can be expensive. Two pruning mechanisms are proposed. Neither
 
 Let \(B(S)\) be the current unresolved blockers. For each blocker \(b\), construct an optimistic relaxed action graph that:
 
-- retains only actions that could possibly affect \(b\) under their declared contracts;
+- over-approximates all actions that could possibly discharge \(b\) under their declared contracts; any uncertain or incompletely characterised route is included with zero lower-bound cost, or the pruning rule is disabled;
 - relaxes action prerequisites;
 - chooses the most favourable covered outcome;
 - ignores conflicts with other blockers;
@@ -408,7 +428,7 @@ Define:
 LB_r(S)=\max_{b\in B(S)}d_r(b\mid S).
 \]
 
-This is deliberately weak. For a fixed blocker \(b\), every path of a decision-complete policy must contain some action sequence that discharges \(b\). The relaxed graph permits at least all such sequences and additionally relaxes preconditions and outcome constraints; its minimum path cost, using resource lower bounds, therefore cannot exceed the cost of the actual sequence. Taking the maximum of these per-blocker minima remains a lower bound on the worst-case policy cost. The relaxation can underestimate the true cost because it ignores prerequisites, adverse outcomes, action interactions and other blockers. It must never overestimate it.
+This is deliberately weak. For a fixed blocker \(b\), every path of a decision-complete policy must contain some action sequence that discharges \(b\). The relaxed graph permits at least all such sequences and additionally relaxes preconditions and outcome constraints; its minimum path cost, using resource lower bounds, therefore cannot exceed the cost of the actual sequence. Taking the maximum of these per-blocker minima remains a lower bound on the worst-case policy cost. The relaxed graph must be a supergraph of every potentially valid blocker-discharge route. It can underestimate the true cost because it ignores prerequisites, adverse outcomes, action interactions and other blockers. It must never overestimate it. If the effect map is incomplete, the computed bound is not admissible and must not be used to prune.
 
 **Admissibility proof sketch:** Fix resource component \(r\) and blocker \(b\). For every outcome path \(\omega\) of a decision-complete policy, let \(P_{\omega,b}\) be the subsequence of actions on that path that causally discharges \(b\). By construction, this sequence is represented in the relaxed graph, whose edge costs are no greater than the corresponding actual action costs. Hence \(C_r^\uparrow(\pi,\omega)\ge C_r^\downarrow(P_{\omega,b})\ge d_r(b\mid S)\). Taking the supremum over \(\omega\) and then the maximum over \(b\) gives \(\overline C_r^\uparrow(\pi)\ge LB_r(S)\). This argument fails if the action-effect graph omits a valid discharge route or if a claimed cost lower bound exceeds actual cost; in either case the pruning rule must be disabled.
 
@@ -432,9 +452,13 @@ A search state \(S_1\) may dominate \(S_2\) only when all of the following are e
 4. the resource vector already consumed in \(S_1\) is componentwise no greater than in \(S_2\);
 5. every continuation action/policy available from \(S_2\) has a corresponding valid continuation from \(S_1\), with outcome coverage and proof obligations no harder.
 
-Condition 5 is essential. A smaller QoI set alone does not guarantee that a solver, estimator or verifier remains applicable. The implementation must establish an action-simulation relation or decline to use dominance pruning.
+Condition 5 is essential. A smaller QoI set alone does not guarantee that a solver, estimator or verifier remains applicable.
 
-Under these conditions, any feasible continuation from \(S_2\) can be simulated from \(S_1\) without a worse assurance state or greater resource use. The planner may retain \(S_1\) and prune \(S_2\). This is a conditional dominance argument, not a proof that a generic subset test is safe.
+For a finite state abstraction, make the simulation relation explicit. For every action \(a_2\) enabled at \(S_2\), there must be a matching action \(a_1\) enabled at \(S_1\), with no greater upper resource cost, such that for every outcome \(y_1\in\mathcal Y_{a_1}(S_1)\), there is a matching outcome \(y_2\in\mathcal Y_{a_2}(S_2)\) whose successor states satisfy \(T(S_1,a_1,y_1)\preceq T(S_2,a_2,y_2)\). The relation must preserve terminal decision predicates, outcome coverage and certificate scope/validity.
+
+**Conditional dominance proposition:** if \(S_1\preceq S_2\) satisfies these conditions, every decision-complete continuation from \(S_2\) can be simulated from \(S_1\) with no greater worst-case upper resource vector and no weaker terminal assurance. Therefore \(S_2\) may be pruned when searching for Pareto-minimal complete policies. If the simulation relation cannot be checked, retain both states.
+
+This is a conditional dominance argument, not a proof that a generic QoI-set subset test is safe.
 
 #### 7.3.3 Action-equivalence reduction
 
@@ -602,6 +626,11 @@ A heuristic search timeout is not evidence that no plan exists. It returns `INCO
 - Joint steering of mesh refinement and iterative solver work.
 - Multi-goal and coupled-physics error control.
 - Multi-fidelity cost-aware active learning and reliability-based sampling.
+- Decision-dependent information discovery and controllable uncertainty sets.
+- Minimax-regret robust optimisation and witness-style policy computation.
+- Joint spatial, surrogate-model and sampling-error control in stochastic FEM.
+- Bayesian inverse-FEM methods coupling discretisation-error and sampling-error control.
+- Proof-carrying plans and resource logics for AI planning.
 - Expected value of information / optimal computing budget allocation.
 - Counterexample-guided abstraction refinement.
 - Assurance cases, evidence graphs, verification and provenance tracking.
@@ -636,6 +665,10 @@ Do not claim:
 | Yang et al. (2024), active learning for RBDO under multiple simulation models | Active constraints, model selection and differing simulation costs in reliability-based design optimisation | Do not claim novelty for cost-aware fidelity/action selection in reliability optimisation |
 | Vayanos et al. (2023), robust optimisation with decision-dependent information discovery | Decisions control when uncertain information is revealed through costly exploratory investments; develops multistage robust formulations and a solution method | Do not claim novelty for planning costly queries that reveal information before a decision |
 | Ley et al. (2026), optimisation under elementwise controllable uncertainty | Decision maker can pay to shrink bounded uncertainty intervals element by element and optimise under the remaining uncertainty | Do not claim novelty for paid computation/measurement reducing an uncertainty set |
+| Bonilla-Villalba et al. (2020), goal-oriented model adaptivity in stochastic elastodynamics | Simultaneously controls spatial discretisation, surrogate-model and Monte Carlo sampling errors to compute QoI statistics at minimum cost | Do not claim novelty for jointly controlling multiple numerical approximation/sampling errors |
+| Bayesian inverse FEM adaptive methodology (2019) | Simultaneous control of goal-oriented FEM discretisation error and statistical sampling error in Bayesian parameter identification, including stopping and mesh-refinement decisions | Do not claim novelty for coupling sampling sufficiency and FEM discretisation-error control |
+| Goal-oriented adaptive modelling of random heterogeneous media and model-based MLMC (2019) | QoI-driven adaptive surrogate/model resolution and multilevel Monte Carlo for stochastic heat conduction and elastostatics | Do not claim novelty for QoI-driven model-resolution plus sampling-cost control |
+| Habera et al. (2026), running error bounds in FE kernels | Propagates a posteriori running round-off/error estimates through generated FE kernels; authors distinguish these estimates from certified bounds | Do not claim novelty for running kernel-error estimates; do not treat these estimates as VWECs without a separate certification argument |
 | Solak et al. (2026), MF-CAS preprint | Joint sample-location and fidelity selection using decomposed uncertainty intervals and model cost | Do not claim novelty for cost-aware interval-based sampling/fidelity selection |
 | Zhao et al. (2026), MF-PBALC | Posterior-mean failure-probability bounds, a stopping rule, and cost-aware joint evaluation-point/fidelity selection for structural reliability | Do not claim novelty for bounded stopping or cost-aware joint fidelity selection |
 | Minimax-regret robust optimisation (e.g. Ning & You, 2018) | Minimax-regret objectives and algorithms in adaptive robust optimisation | Do not claim novelty for the regret objective or worst-case regret formulation |
@@ -670,6 +703,10 @@ This is not yet a demonstrated gap. It may still be obvious to a skilled reader 
 - Yang et al. (2024), multi-model active learning for RBDO: https://doi.org/10.1016/j.strusafe.2023.102426
 - Vayanos et al., decision-dependent information discovery: https://doi.org/10.1287/mnsc.2021.00160
 - Ley et al. (2026), elementwise controllable uncertainty: https://doi.org/10.1007/s00291-026-00856-z
+- Bonilla-Villalba et al. (2020), stochastic elastodynamics model adaptivity: https://doi.org/10.1615/Int.J.UncertaintyQuantification.2020031735
+- Bayesian inverse-FEM adaptive methodology (2019): https://pmc.ncbi.nlm.nih.gov/articles/PMC6416561/
+- Adaptive modelling of random heterogeneous media / model-based MLMC (2019): https://doi.org/10.1016/j.camwa.2019.04.014
+- Habera et al. (2026), running error estimates in FE kernels: https://arxiv.org/abs/2609.37844
 - Solak et al. (2026), MF-CAS: https://arxiv.org/abs/2610.38582
 - Zhao et al. (2026), MF-PBALC: https://doi.org/10.1016/j.ress.2026.113871
 - Ning & You (2018), adaptive robust optimisation with minimax regret: https://doi.org/10.1016/j.compchemeng.2017.09.026
