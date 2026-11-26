@@ -37,6 +37,7 @@ from research.prototypes.dwaop_integrated_planner import (
     verify_action_contract,
     verify_state_provenance,
 )
+from research.prototypes.dwaop_exhaustive_policy_oracle import enumerate_exact_pareto_frontier
 from test_dwaop_integrated_pruning import (
     _all_partitions,
     assert_frontiers_match,
@@ -502,6 +503,7 @@ def test_c17_unrecoverable_refusal_is_sticky() -> None:
         "recover_op",
         universe,
         {"w0": "ok"},
+        discharged_by_label={"ok": frozenset({"ob1"})},
         ru_upper=1.0,
     )
     oracle = WorldOracle(
@@ -511,6 +513,7 @@ def test_c17_unrecoverable_refusal_is_sticky() -> None:
         universe=universe,
         decision_by_world=decisions,
         actions={"fail_act": fail_act, "recover": recover},
+        initial_obligations=frozenset({"ob1"}),
     )
     budget = ResourceBudget(ru_upper=5.0, cpu_ticks=50.0, energy_ticks=50.0, peak_memory_gb=8.0)
     res_p = plan_policies(oracle, budget, max_horizon=3, prune=True)
