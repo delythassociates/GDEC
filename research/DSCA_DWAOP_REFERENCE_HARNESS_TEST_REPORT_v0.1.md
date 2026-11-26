@@ -1,10 +1,10 @@
 # DWAOP v0.2 — Finite-State Reference Harness Test Report
 
 **Status:** EXECUTED RESEARCH-ONLY TESTS  
-**Repository:** \`delythassociates/GDEC\`  
-**Branch:** \`research/decision-sufficiency-algorithm\`  
-**Harness:** [\`research/prototypes/dwaop_reference_harness.py\`](prototypes/dwaop_reference_harness.py)  
-**Harness blob SHA:** \`e05a652bc3c134fbc411d1b2aceef39eaee787ee\`  
+**Repository:** delythassociates/GDEC  
+**Branch:** research/decision-sufficiency-algorithm  
+**Harness:** [research/prototypes/dwaop_reference_harness.py](prototypes/dwaop_reference_harness.py)  
+**Harness blob SHA:** ebeaa85a6c22c473333d4d0b88fd9b017c82d480  
 **Runtime:** Python 3.13.5
 
 ---
@@ -13,64 +13,78 @@
 
 The harness is an offline finite-state reference model. It is separate from the GDEC runtime and has no imports from GDEC production packages.
 
-It tests a restricted subset of the DWAOP proposal:
+It tests a restricted subset of DWAOP:
 
-- finite action/state transitions;
-- complete handling of every action outcome;
+- finite action/state transitions and complete handling of each action outcome;
 - one additive resource (resource units, RU);
 - peak memory as a live-set high-water mark;
 - the weak blocker-distance lower bound;
-- disabling pruning when the blocker-effect map is declared incomplete;
-- rejection of malformed outcome/effect contracts;
-- comparison of pruned and unpruned feasibility on the same finite fixture.
+- disabling lower-bound pruning when the action-effect map is declared incomplete;
+- malformed action/effect/outcome contract rejection;
+- pruned versus unpruned feasibility on the same finite fixture;
+- a finite greatest-simulation relation for state dominance;
+- a candidate-frontier reducer that removes strictly dominated finite states;
+- model, assurance, capability, evidence-contract, failure-semantics, cost and successor-state mismatch cases.
 
-It does **not** implement the optional blocker-cover LP, proof-preserving state dominance, numerical witness generation, VWEC generation, or a production DAPC checker.
+The dominance implementation is isolated from the planner recursion. It does **not** yet prune states during the controller's AND-OR search, and the harness does not compare dominance-pruned search against an exhaustive search oracle over generated graphs.
+
+It does **not** implement the optional blocker-cover LP, numerical witness generation, VWEC generation, a production DAPC checker, or GDEC runtime integration.
 
 ## 2. Provenance and commands
 
-The GitHub file was fetched after commit. Its content was copied into a local test file and the Git blob hash was compared:
+The current GitHub file was fetched after commit. Its content was copied into a local test file and the Git blob hash was compared:
 
-\`\`\`text
-GitHub blob:     e05a652bc3c134fbc411d1b2aceef39eaee787ee
-Local blob:      e05a652bc3c134fbc411d1b2aceef39eaee787ee
-\`\`\`
+~~~text
+GitHub blob:     ebeaa85a6c22c473333d4d0b88fd9b017c82d480
+Local blob:      ebeaa85a6c22c473333d4d0b88fd9b017c82d480
+~~~
 
-The hashes match exactly. The executed commands were:
+The hashes match exactly. Executed commands:
 
-\`\`\`bash
+~~~bash
 python --version
-python -m unittest -v /tmp/dwaop_reference/dwaop_reference_harness_remote.py
-python -m py_compile /tmp/dwaop_reference/dwaop_reference_harness_remote.py
-\`\`\`
+python -m unittest -v /tmp/dwaop_reference/dwaop_reference_harness_latest.py
+python -m py_compile /tmp/dwaop_reference/dwaop_reference_harness_latest.py
+~~~
 
-Python reported \`3.13.5\`. The unit-test run completed with 12 passed and 0 failed. Bytecode compilation also completed without error.
+Python reported 3.13.5. The unit-test run completed with **22 passed, 0 failed**. Bytecode compilation completed without error.
 
 ## 3. Test results
 
-<badge>12 passed · 0 failed</badge>
+22 passed · 0 failed
 
 | Test | Result | What it checks |
 |---|---|---|
-| Exhaustive optimum and complete branch tree | PASS | Exact unpruned oracle and pruned planner both produce the 4.0 RU two-outcome plan; the pass and fail branches terminate in ACCEPT and REJECT respectively |
+| Exhaustive optimum and complete branch tree | PASS | Exact unpruned oracle and pruned planner produce the 4.0 RU two-outcome plan; pass and fail branches end in ACCEPT and REJECT |
 | Pruned/unpruned budget sweep | PASS | Feasibility agrees at 25 RU budgets from 0.00 through 6.00 in 0.25 increments |
-| Lower bound versus exact cost | PASS | The blocker-distance lower bound does not exceed the exact unpruned remaining RU cost at each non-terminal fixture state |
-| Incomplete effect map | PASS | Declaring the effect map incomplete disables lower-bound pruning; a feasible plan is still found without pruning |
-| Omitted blocker-removal effect | PASS | An effect map marked complete is rejected when a transition removes a blocker absent from that action's declared effect |
+| Lower bound versus exact cost | PASS | Blocker-distance lower bound does not exceed exact unpruned remaining RU cost at each non-terminal fixture state |
+| Incomplete effect map | PASS | Incomplete blocker-effect map disables lower-bound pruning |
+| Omitted blocker-removal effect | PASS | A claimed-complete effect map is rejected when a transition removes an undeclared blocker |
 | Malformed outcome contract | PASS | Duplicate outcome labels are rejected |
-| Incomplete outcome tree | PASS | The plan-tree validator rejects a plan with one required branch deleted |
-| Sequential memory high-water mark | PASS | Live-set memory is calculated as a path maximum, not the sum of workspaces |
-| Mutually exclusive branch aggregation | PASS | Additive RU and peak memory use worst-branch maxima, not sums across mutually exclusive outcomes |
-| Small set-cover lower-bound example | PASS | The maximum of each blocker's cheapest resolver is no greater than the exact integral cover cost |
-| Exhaustive small set-cover families | PASS | The same lower-bound property holds across all \(7^4=2{,}401\) non-empty action-cover assignments for three blockers and four actions |
-| Resource-limit rejection | PASS | A plan that fits the RU budget is rejected when its peak-memory limit is exceeded |
+| Incomplete outcome tree | PASS | Plan-tree validator rejects a missing required branch |
+| Sequential memory high-water mark | PASS | Live-set memory is a path maximum, not a sum of workspaces |
+| Mutually exclusive branch aggregation | PASS | RU and peak memory aggregate by worst realised branch, not by summing mutually exclusive branches |
+| Small set-cover lower-bound example | PASS | Maximum of each blocker's cheapest resolver is no greater than exact integral cover cost |
+| Exhaustive small set-cover families | PASS | Lower-bound property checked on all 7^4=2,401 non-empty action-cover assignments for three blockers/four actions |
+| Resource-limit rejection | PASS | A plan is rejected when peak-memory limit is exceeded even though RU budget fits |
+| State dominance requires full action simulation | PASS | Better root dominates weaker root only when a matching action and successor simulation exist |
+| Narrower QoI set without matching action | PASS | Smaller QoI set alone does not imply dominance |
+| More expensive action | PASS | A semantically matching action with higher upper resource cost cannot establish dominance |
+| Unmatched successor | PASS | Dominance is rejected when an outcome successor cannot be simulated |
+| Cyclic action graph | PASS | Greatest-simulation fixed point handles a simple cyclic finite graph |
+| Outcome labels versus successor semantics | PASS | Different outcome labels are allowed when successor-state simulation establishes the mapping |
+| Model-scope mismatch | PASS | States from different model scopes are not comparable |
+| Evidence/failure contract mismatch | PASS | Mismatched evidence and failure semantics prevent action matching |
+| Relation transitivity on reference graph | PASS | Returned relation is transitive on the finite test graph |
+| ACCEPT versus REJECT terminal states | PASS | Opposite terminal verdicts are not related by dominance |
 
 ## 4. Numeric outputs
 
-The reference fixture contains:
+The reference planning fixture contains:
 
-- \`prepare\`: 1.0 RU;
-- \`certify\`: 2.0 RU, branching to pass/fail outcomes;
-- \`check_pass\` / \`check_fail\`: 1.0 RU in the respective branch.
+- prepare: 1.0 RU;
+- certify: 2.0 RU, branching to pass/fail outcomes;
+- check_pass / check_fail: 1.0 RU in the respective branch.
 
 The complete worst-case plan is:
 
@@ -79,15 +93,9 @@ C_{\mathrm{RU}}^\uparrow
 =1+\max(2+1,2+1)=4.0\ \mathrm{RU}.
 \]
 
-The unpruned exhaustive oracle also returns 4.0 RU.
+The exhaustive unpruned oracle also returns 4.0 RU. The fixture's peak-memory limit is satisfied at a 2.70 GB high-water mark.
 
-The fixture's declared peak-memory values produce:
-
-\[
-M_{\mathrm{peak}}^\uparrow=2.70\ \mathrm{GB}.
-\]
-
-The blocker-distance lower bound and exact cost at each non-terminal state were:
+The blocker-distance lower bound and exact cost at each non-terminal planning state:
 
 | State | Lower bound | Exact unpruned remaining cost |
 |---|---:|---:|
@@ -96,56 +104,56 @@ The blocker-distance lower bound and exact cost at each non-terminal state were:
 | Certified pass | 1.0 RU | 1.0 RU |
 | Certified fail | 1.0 RU | 1.0 RU |
 
-For the independent sequential-memory example:
+For the separate sequential-memory example, the high-water mark is 4.20 GB rather than the invalid sum of action workspaces, 6.50 GB.
 
-\[
-M_{\mathrm{peak}}^\uparrow=4.20\ \mathrm{GB},
-\]
-
-rather than the invalid sum of action workspaces, 6.50 GB.
-
-For the mutually exclusive branch example:
+For the separate mutually exclusive branch example:
 
 \[
 C_{\mathrm{RU}}^\uparrow=2+\max(2,5)=7\ \mathrm{RU},
-\]
-
-\[
+\qquad
 M_{\mathrm{peak}}^\uparrow=\max(3,4,2)=4\ \mathrm{GB}.
 \]
 
-These values are fixture outputs, not measured GDEC solver performance.
+The finite dominance example returns:
+- ("good_root", "bad_root") in the greatest-simulation relation;
+- the reverse pair is absent;
+- the candidate frontier ("good_root", "bad_root") reduces to ("good_root",).
+
+These are abstract fixture outputs, not measured GDEC solver performance.
 
 ## 5. Interpretation
 
-The harness supports a narrow conclusion:
+The harness supports two narrow conclusions:
 
-**For this finite reference model, the implemented blocker-distance prune preserves feasibility relative to the exhaustive unpruned search, and the implemented resource aggregation returns the expected sequential and contingent-path totals.**
+1. For its finite planning fixture, the implemented blocker-distance prune preserves feasibility relative to the exhaustive unpruned search and the resource aggregation returns the expected path totals.
+2. For its finite dominance graph, the implemented greatest-simulation relation refuses several unsafe local comparisons and removes a strictly dominated candidate from a small frontier.
 
-The test does not prove the lower-bound rule for arbitrary action contracts or state spaces. The set-cover property test covers a finite family of small instances, while the plan-search comparison uses one hand-constructed contingent graph.
+The tests do **not** prove admissibility for arbitrary engineering action graphs. The set-cover property test covers a finite family of 2,401 small instances. The planning oracle comparison uses one hand-constructed contingent graph. Dominance tests use a hand-constructed finite graph and do not yet verify planner-level pruning against exhaustive search across generated graphs.
 
-The harness's \`verify_plan_tree\` function is a test-specific structural/resource checker. It does not inspect mathematical numerical certificates, validate outer QoI enclosures, establish theorem assumptions, or provide independent engineering assurance.
+The harness's verify_plan_tree function is a test-specific structural/resource checker. It does not inspect mathematical numerical certificates, validate outer QoI enclosures, establish theorem assumptions, or provide independent engineering assurance.
 
 ## 6. Known limitations and next tests
 
 Not yet tested:
 
-1. randomly/generated larger contingent DAGs and cyclic action graphs;
-2. proof-preserving state-dominance pruning against an exhaustive oracle;
-3. scenario-tree lower bounds for branching policies;
-4. the blocker-cover LP relaxation;
-5. resource dimensions beyond additive RU and peak memory;
-6. action failure, timeout and model-invalidation transitions at planner scale;
-7. any actual FEM/CFD solver, estimator or certified bound.
+1. generated larger contingent DAGs and adversarial cyclic action/state graphs;
+2. dominance-pruned versus exhaustive unpruned search on generated finite graphs;
+3. correctness of frontier pruning across broader generated state sets and resource/capability combinations;
+4. scenario-tree lower bounds for branching policies;
+5. the blocker-cover LP relaxation;
+6. resource dimensions beyond additive RU and peak memory;
+7. action failure, timeout and model-invalidation transitions at planner scale;
+8. any actual FEM/CFD solver, estimator or certified bound.
 
-The next research test should add state-dominance pruning to the reference harness and compare its result against unpruned exhaustive search over generated finite graphs. Until that comparison passes, dominance pruning remains a specification only.
+The next research test should integrate the greatest-simulation relation into the finite reference search, then compare its pruned and unpruned Pareto frontiers against exhaustive enumeration over generated small graphs. Until that passes, state-dominance pruning is **implemented as an isolated relation/frontier prototype only**, not as a validated DWAOP search optimisation.
 
 ## 7. Classification
 
-- **IMPLEMENTED:** standalone finite-state reference harness.
-- **EXECUTED:** 12 tests, all passing; Python 3.13.5.
-- **CHECKED:** exact committed Git blob was the source of the executed test copy.
-- **NOT IMPLEMENTED:** GDEC runtime controller, numerical certificate producers, trusted DAPC checker, LP pruning or state-dominance pruning.
+- **IMPLEMENTED:** standalone finite-state planner/oracle harness; greatest-simulation relation; candidate-frontier reducer.
+- **EXECUTED:** 22 Python unittest cases passed; Python 3.13.5.
+- **CHECKED:** the exact committed Git blob was the source of the executed test copy.
+- **NOT INTEGRATED:** the dominance reducer is not called from the harness's find_plan search recursion or any GDEC runtime.
+- **NOT IMPLEMENTED:** GDEC DWAOP controller, numerical certificate producers, trusted DAPC checker, LP pruning or production resource ledger.
 - **NOT NUMERICALLY VERIFIED:** no FEM/CFD solve or engineering QoI bound was generated.
 - **NOT INDEPENDENTLY REVIEWED:** no external reviewer has checked the algorithm or its proof assumptions.
 - **NOT A NOVELTY RESULT:** no novelty, performance or patentability conclusion follows from these tests.
