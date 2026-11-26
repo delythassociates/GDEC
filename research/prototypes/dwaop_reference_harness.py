@@ -478,6 +478,123 @@ def prune_dominated_frontier(graph: DominanceGraph, state_ids: Sequence[str]) ->
     return tuple(state_id for state_id in state_ids if state_id not in dominated)
 
 
+@dataclass(frozen=True)
+class PolicySummary:
+    terminal_verdicts: FrozenSet[str]
+    additional_ru_upper: float
+    peak_memory_gb: float
+
+
+def enumerate_complete_policy_summaries(
+    graph: DominanceGraph,
+    state_id: str,
+    stack: FrozenSet[str] = frozenset(),
+    depth_left: int = 12,
+) -> Tuple[PolicySummary, ...]:
+    """Exhaustively enumerate complete contingent policies from one state.
+
+    RU is additional future cost from this state. Each action's outcomes are
+    AND branches: every child must have at least one complete policy. Branch
+    RU is aggregated by maximum because outcomes are mutually exclusive.
+    """
+    validate_dominance_graph(graph)
+    state = graph.states[state_id]
+
+    if state.terminal in {"ACCEPT", "REJECT"}:
+        if state.open_obligations:
+            return ()
+        return (PolicySummary(
+            frozenset({state.terminal}), 0.0, state.peak_committed_gb
+        ),)
+
+    if state.terminal is not None or depth_left <= 0 or state_id in stack:
+        return ()
+
+    from itertools import product
+
+    next_stack = stack | {state_id}
+    summaries = []
+    for action_id in state.actions:
+        action = graph.actions[action_id]
+        child_summary_sets = [
+            enumerate_complete_policy_summaries(
+                graph, child_id, next_stack, depth_left - 1
+            )
+            for _, child_id in action.outcomes
+        ]
+        if not child_summary_sets or any(not child_set for child_set in child_summary_sets):
+            continue
+
+        for selected_children in product(*child_summary_sets):
+            verdicts = frozenset().union(
+                *(child.terminal_verdicts for child in selected_children)
+            )
+            child_ru_worst = max(
+                (child.additional_ru_upper for child in selected_children),
+                default=0.0,
+            )
+            child_peak_worst = max(
+                (child.peak_memory_gb for child in selected_children),
+                default=state.peak_committed_gb,
+            )
+            summaries.append(PolicySummary(
+                terminal_verdicts=verdicts,
+                additional_ru_upper=action.ru_upper + child_ru_worst,
+                peak_memory_gb=max(
+                    state.peak_committed_gb,
+                    action.during_peak_gb,
+                    child_peak_worst,
+                ),
+            ))
+    return tuple(summaries)
+
+
+def candidate_policy_frontier(
+    graph: DominanceGraph,
+    candidate_state_ids: Sequence[str],
+) -> Tuple[Tuple[str, FrozenSet[str], float, float], ...]:
+    """Exhaustively compute nondominated complete policy summaries.
+
+    Entries are (candidate state, terminal verdict set, total RU upper, peak
+    memory). Candidate state ledger values are pre-existing resource use.
+    """
+    candidates = []
+    for state_id in candidate_state_ids:
+        state = graph.states[state_id]
+        for summary in enumerate_complete_policy_summaries(graph, state_id):
+            candidates.append((
+                state_id,
+                summary.terminal_verdicts,
+                state.additive_spent_ru + summary.additional_ru_upper,
+                max(state.peak_committed_gb, summary.peak_memory_gb),
+            ))
+
+    frontier = []
+    for candidate in candidates:
+        _, verdicts, ru, peak = candidate
+        dominated = False
+        for other in candidates:
+            if other is candidate:
+                continue
+            _, other_verdicts, other_ru, other_peak = other
+            no_worse = (
+                other_verdicts.issuperset(verdicts)
+                and other_ru <= ru + 1e-12
+                and other_peak <= peak + 1e-12
+            )
+            strictly_better = (
+                other_verdicts != verdicts
+                or other_ru < ru - 1e-12
+                or other_peak < peak - 1e-12
+            )
+            if no_worse and strictly_better:
+                dominated = True
+                break
+        if not dominated:
+            frontier.append(candidate)
+    return tuple(frontier)
+
+
 def make_dominance_graph(fast_action_cost: float = 1.0,
                          include_fast_action: bool = True,
                          fast_fail_child: str = "good_fail") -> DominanceGraph:
@@ -497,6 +614,14 @@ def make_dominance_graph(fast_action_cost: float = 1.0,
             frozenset({"timeout", "not_applicable"}),
             2.0, 2.8,
             (("pass", "bad_pass"), ("fail", "bad_fail"), ("boundary", "bad_boundary")),
+        ),
+        "resolve_boundary": DominanceAction(
+            "resolve_boundary", "resolve-boundary-interval",
+            frozenset({"boundary_case"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            3.0, 3.1,
+            (("resolved", "bad_boundary_reject"),),
         ),
     }
     states = {
@@ -539,9 +664,15 @@ def make_dominance_graph(fast_action_cost: float = 1.0,
         ),
         "bad_boundary": DominanceState(
             "bad_boundary", "model-v1", "bounded", frozenset({"pass", "fail", "boundary"}),
-            frozenset({"extra_review"}), frozenset({"mesh_ready"}),
-            frozenset({"mesh", "legacy_cache"}), 3.0, 2.8,
-            "sequential-live-set-v1", terminal="INCONCLUSIVE",
+            frozenset({"extra_review"}), frozenset({"mesh_ready", "boundary_case"}),
+            frozenset({"mesh", "legacy_cache"}), 4.0, 2.8,
+            "sequential-live-set-v1", ("resolve_boundary",),
+        ),
+        "bad_boundary_reject": DominanceState(
+            "bad_boundary_reject", "model-v1", "bounded", frozenset({"boundary"}),
+            frozenset(), frozenset({"mesh_ready", "verified_bound"}),
+            frozenset({"mesh", "bound"}), 7.0, 3.1,
+            "sequential-live-set-v1", terminal="REJECT",
         ),
     }
     return DominanceGraph(states, actions)
@@ -781,6 +912,24 @@ class TestDWAOPReferenceHarness(unittest.TestCase):
         relation = greatest_simulation_relation(graph)
         self.assertNotIn(("good_pass", "good_fail"), relation)
         self.assertNotIn(("good_fail", "good_pass"), relation)
+
+    def test_frontier_pruning_preserves_complete_policy_cost_and_verdicts(self) -> None:
+        graph = make_dominance_graph()
+        unpruned_candidates = ("good_root", "bad_root")
+        pruned_candidates = prune_dominated_frontier(graph, unpruned_candidates)
+
+        unpruned_frontier = candidate_policy_frontier(graph, unpruned_candidates)
+        pruned_frontier = candidate_policy_frontier(graph, pruned_candidates)
+
+        self.assertEqual(pruned_candidates, ("good_root",))
+        self.assertEqual(len(unpruned_frontier), 1)
+        self.assertEqual(len(pruned_frontier), 1)
+        self.assertEqual(unpruned_frontier[0][1], frozenset({"ACCEPT", "REJECT"}))
+        self.assertEqual(pruned_frontier[0][1], frozenset({"ACCEPT", "REJECT"}))
+        self.assertAlmostEqual(unpruned_frontier[0][2], 2.0)
+        self.assertAlmostEqual(pruned_frontier[0][2], 2.0)
+        self.assertAlmostEqual(unpruned_frontier[0][3], 2.4)
+        self.assertAlmostEqual(pruned_frontier[0][3], 2.4)
 
     def test_dominance_fixed_point_handles_cyclic_action_graph(self) -> None:
         actions = {
