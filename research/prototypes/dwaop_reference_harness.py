@@ -945,6 +945,99 @@ def make_nonlayered_dominance_graph(topology: Sequence[Sequence[int]],
     return DominanceGraph(states, actions)
 
 
+def make_cyclic_exit_dominance_graph() -> DominanceGraph:
+    """A matched cyclic state with a controllable finite exit on both sides."""
+    states = {
+        "good_root": DominanceState(
+            "good_root", "model-cycle-v1", "bounded",
+            frozenset({"pass"}), frozenset(),
+            frozenset({"mesh_ready", "dual_ready", "independent_checker"}),
+            frozenset({"mesh"}), 0.5, 1.2, "sequential-live-set-v1",
+            ("good_begin",),
+        ),
+        "bad_root": DominanceState(
+            "bad_root", "model-cycle-v1", "bounded",
+            frozenset({"pass", "latent"}), frozenset({"review"}),
+            frozenset({"mesh_ready"}), frozenset({"mesh", "legacy_cache"}),
+            1.0, 2.0, "sequential-live-set-v1", ("bad_begin",),
+        ),
+        "good_loop": DominanceState(
+            "good_loop", "model-cycle-v1", "bounded",
+            frozenset({"pass"}), frozenset(),
+            frozenset({"mesh_ready", "dual_ready", "independent_checker"}),
+            frozenset({"mesh"}), 0.8, 1.5, "sequential-live-set-v1",
+            ("good_wait", "good_exit"),
+        ),
+        "bad_loop": DominanceState(
+            "bad_loop", "model-cycle-v1", "bounded",
+            frozenset({"pass", "latent"}), frozenset({"review"}),
+            frozenset({"mesh_ready"}), frozenset({"mesh", "legacy_cache"}),
+            1.5, 2.2, "sequential-live-set-v1",
+            ("bad_wait", "bad_exit"),
+        ),
+        "good_done": DominanceState(
+            "good_done", "model-cycle-v1", "bounded",
+            frozenset({"pass"}), frozenset(),
+            frozenset({"verified_bound", "independent_checker"}),
+            frozenset({"bound"}), 1.0, 1.6, "sequential-live-set-v1",
+            terminal="ACCEPT",
+        ),
+        "bad_done": DominanceState(
+            "bad_done", "model-cycle-v1", "bounded",
+            frozenset({"pass", "latent"}), frozenset({"review"}),
+            frozenset({"verified_bound"}), frozenset({"bound", "legacy_cache"}),
+            2.0, 2.4, "sequential-live-set-v1",
+            terminal="ACCEPT",
+        ),
+        "bad_extra": DominanceState(
+            "bad_extra", "model-cycle-v1", "bounded",
+            frozenset({"fail", "latent"}), frozenset(),
+            frozenset({"mesh_ready"}), frozenset({"legacy_cache"}),
+            2.0, 2.4, "sequential-live-set-v1",
+            terminal="REJECT",
+        ),
+    }
+    actions = {
+        "good_begin": DominanceAction(
+            "good_begin", "enter-cyclic-state", frozenset({"mesh_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            0.3, 1.3, (("loop", "good_loop"),),
+        ),
+        "bad_begin": DominanceAction(
+            "bad_begin", "enter-cyclic-state", frozenset({"mesh_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            0.6, 2.1, (("loop", "bad_loop"), ("extra", "bad_extra")),
+        ),
+        "good_wait": DominanceAction(
+            "good_wait", "wait-or-refine", frozenset({"mesh_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout"}), 0.1, 1.5,
+            (("again", "good_loop"),),
+        ),
+        "bad_wait": DominanceAction(
+            "bad_wait", "wait-or-refine", frozenset({"mesh_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout"}), 0.2, 2.2,
+            (("again", "bad_loop"), ("extra", "bad_extra")),
+        ),
+        "good_exit": DominanceAction(
+            "good_exit", "exit-to-certified-state", frozenset({"dual_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout"}), 0.2, 1.6,
+            (("verified", "good_done"),),
+        ),
+        "bad_exit": DominanceAction(
+            "bad_exit", "exit-to-certified-state", frozenset({"dual_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout"}), 0.4, 2.4,
+            (("verified", "bad_done"), ("extra", "bad_extra")),
+        ),
+    }
+    return DominanceGraph(states, actions)
+
+
 class TestDWAOPReferenceHarness(unittest.TestCase):
     def setUp(self) -> None:
         self.fixture = make_fixture()
@@ -1339,6 +1432,21 @@ class TestDWAOPReferenceHarness(unittest.TestCase):
                 self.assertEqual(pruned, exhaustive, (topology, extra_terminal))
                 case_count += 1
         self.assertEqual(case_count, 8)
+
+    def test_cyclic_state_with_finite_exit_preserves_policy_frontier(self) -> None:
+        graph = make_cyclic_exit_dominance_graph()
+        relation = greatest_simulation_relation(graph)
+        self.assertIn(("good_root", "bad_root"), relation)
+        self.assertIn(("good_loop", "bad_loop"), relation)
+
+        candidates = ("good_root", "bad_root")
+        self.assertEqual(prune_dominated_frontier(graph, candidates), ("good_root",))
+        exhaustive = candidate_policy_frontier(graph, candidates)
+        pruned = candidate_policy_frontier(
+            graph, prune_dominated_frontier(graph, candidates)
+        )
+        self.assertEqual(pruned, exhaustive)
+        self.assertEqual(exhaustive[0][1], frozenset({"ACCEPT"}))
 
     def test_resource_limits_reject_peak_overrun_even_when_ru_fits(self) -> None:
         self.assertIsNone(find_plan(self.fixture, "root", ResourceBudget(4.0, 2.5)))
