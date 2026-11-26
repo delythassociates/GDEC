@@ -3,7 +3,7 @@
 **Research memo:** v0.1  
 **Status:** RESEARCH PROTOTYPE — NOT A NUMERICAL CERTIFICATE, NOT A FORMAL PROOF, NOT APPROVED FOR PRODUCTION  
 **Branch:** `research/dwaop-outcome-refinement-cover` (created from DWAOP proposal tip `abc90afcfa650838392f36660051dde8a00fb158`)  
-**Prototype:** Companion source file `dwaop_outcome_refinement_oracle.py` is supplied as a separate download artifact; it is not yet committed on this branch.  
+**Prototype:** [`prototypes/dwaop_outcome_refinement_oracle.py`](prototypes/dwaop_outcome_refinement_oracle.py) (committed on this branch).  
 **Relationship to existing work:** sharpens the state-dominance / AND-OR search proposal in [`DSCA_DWAOP_ALGORITHM_REDESIGN_v0.2.md`](DSCA_DWAOP_ALGORITHM_REDESIGN_v0.2.md)
 
 ---
