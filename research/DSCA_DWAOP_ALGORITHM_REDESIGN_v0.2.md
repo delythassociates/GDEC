@@ -408,13 +408,16 @@ For a sequential path \(\omega\):
 \[
 M_{\mathrm{peak}}^\uparrow(\omega)
 =
-\max_{a_t\in\omega}
-M_{\mathrm{during}}^\uparrow(a_t,S_t),
+\max\left(
+M_{\mathrm{resident}}^\uparrow(S_0),
+\max_{a_t\in\omega}M_{\mathrm{during}}^\uparrow(a_t,S_t),
+\max_t M_{\mathrm{resident}}^\uparrow(S_{t+1})
+\right),
 \]
 
 where \(S_t\) carries the current retained artefacts and resident-memory bound. This is a high-water mark, not a cumulative sum of all action memory costs.
 
-A memory lower bound must also respect live-set semantics. A defensible per-action unavoidable peak lower bound \(m^\downarrow(a,S)\) can be used only when the action contract proves that amount must be simultaneously resident. If lifetime/overlap information is absent, use zero for the lower-bound calculation. Never sum per-action peak-memory lower bounds merely because the actions occur sequentially.
+A memory lower bound must also respect live-set semantics. A defensible per-action unavoidable peak lower bound \(m^\downarrow(a,S)\) must include the minimum resident input/live-artifact footprint that cannot be released plus the minimum workspace/output footprint that must coexist. It can be used only when the action contract proves that amount must be simultaneously resident. If lifetime/overlap information is absent, use zero for the lower-bound calculation. Never sum per-action peak-memory lower bounds merely because the actions occur sequentially.
 
 The plan's resource envelope is computed per resource using its declared aggregation function. Componentwise comparison against a budget is allowed only after each component has been computed with the correct semantics.
 
@@ -570,13 +573,15 @@ LB_m^{\max}(S)=\max_{b\in B(S)}d_m^{\max}(b\mid S).
 
 This is admissible only if every complete branch must follow a route represented in the relaxed graph and each \(m^\downarrow\) is a genuine lower bound on simultaneously live memory. If retained-artifact lifetimes or necessary residency cannot be established, use zero for the affected lower bound and do not prune on that component.
 
+**Lower-bound argument:** on every complete outcome path, the actions that resolve blocker \(b\) form a path in the relaxed graph. The actual peak live memory on that path is at least the maximum of the unavoidable per-action live-memory lower bounds along it, which is at least the minimum such maximum over all relaxed paths. Taking the maximum over blockers therefore remains a lower bound on the policy's worst-case peak memory. This argument depends on the relaxed graph containing every valid blocker-resolution route and on each per-action memory lower bound being sound.
+
 **Safe pruning rule.** For additive resources, compare spent cumulative consumption plus the admissible remaining lower bound to the hard total budget. For peak memory, compare the maximum already observed/committed high-water mark and the admissible lower bound for future unavoidable peaks to the peak-memory limit. Never add action peak-memory estimates as if memory were cumulative.
 
-#### 7.3.2 Blocker-cover LP relaxation (additive resources only)
+#### 7.3.2 Blocker-cover LP relaxation — deterministic paths only
 
-The blocker-cover LP is a lower bound only for additive resource dimensions. It is not a valid peak-memory or parallel-wall-time bound.
+The blocker-cover LP is an optional relaxation for **additive resource dimensions only** and for a deterministic, non-branching action path (or a subproblem whose selected actions are all executed on the same path). It is not part of the core contingent-plan pruning rule.
 
-Let \(\bar M_{ba}=1\) when action \(a\) has any potentially valid route to blocker \(b\), including outcome-conditional effects; the relation must over-approximate all valid routes. For each additive resource \(r\in\mathcal R_\Sigma\), solve:
+Let \(\bar M_{ba}=1\) when action \(a\) has any potentially valid route to blocker \(b\); the relation must over-approximate all valid routes. For additive resource \(r\in\mathcal R_\Sigma\), solve:
 
 \[
 LB_r^{\mathrm{cover}}(S)=
@@ -587,9 +592,11 @@ LB_r^{\mathrm{cover}}(S)=
 \quad\forall b\in B(S).
 \]
 
-The variables are continuous and unbounded above, giving an optimistic fractional relaxation of action multiplicities. This is admissible only if every current blocker must be addressed on every complete path, the action-effect relation includes every potentially valid discharge route, and costs are defensible lower bounds. False-positive edges weaken the bound; missing a valid edge can make it inadmissible.
+The variables are continuous and unbounded above, giving an optimistic fractional relaxation of action multiplicities. This is admissible only if every blocker must be addressed by actions on the same deterministic path, the action-effect relation includes every potentially valid discharge route, and costs are defensible additive lower bounds.
 
-Use:
+**Important contingent-plan restriction:** do not apply this LP to the union of actions from mutually exclusive policy branches. Summing action counts across branches can exceed the maximum cost of any realised path, so the LP objective can overestimate the worst-case contingent cost and is not an admissible lower bound. A scenario-tree or max-path relaxation would be required before using an LP for branched plans. Until such a formulation is derived and proved, disable this LP whenever the plan branches.
+
+For an eligible deterministic path only, combine it with the additive blocker-distance lower bound:
 
 \[
 LB_r^{\mathrm{combined}}(S)=
@@ -598,9 +605,9 @@ LB_r^\Sigma(S),LB_r^{\mathrm{cover}}(S)
 \right\}.
 \]
 
-Do not apply this LP to peak memory: summing action-memory lower bounds can overestimate the minimum peak live set and could prune a feasible policy. Peak memory uses the minimax-path bound in Section 7.3.1 or zero if a sound live-set lower bound is unavailable. Parallel latency requires a schedule-aware relaxation and is out of scope.
+Do not apply this LP to peak memory: summing action-memory lower bounds can overestimate the minimum peak live set and could prune a feasible plan. Peak memory uses the minimax-path bound in Section 7.3.1 or zero if a sound live-set lower bound is unavailable. Parallel latency requires a schedule-aware relaxation and is out of scope.
 
-If a blocker can be discharged by deterministic inference over already available evidence without resource-consuming computation, represent that as an explicit zero-cost action so the relaxation remains complete.
+If a blocker can be discharged by deterministic inference over already available evidence without resource-consuming computation, represent that inference as an explicit zero-cost action so the relaxation remains complete.
 
 #### 7.3.3 Proof-preserving state dominance
 
@@ -614,7 +621,7 @@ A search state \(S_1\) may dominate \(S_2\) only when all of the following are e
 
 Condition 5 is essential. A smaller QoI set alone does not guarantee that a solver, estimator or verifier remains applicable.
 
-For a finite state abstraction, make the simulation relation explicit. For every action \(a_2\) enabled at \(S_2\), there must be a matching action \(a_1\) enabled at \(S_1\), with no greater upper resource cost, such that for every outcome \(y_1\in\mathcal Y_{a_1}(S_1)\), there is a matching outcome \(y_2\in\mathcal Y_{a_2}(S_2)\) whose successor states satisfy \(T(S_1,a_1,y_1)\preceq T(S_2,a_2,y_2)\). The relation must preserve terminal decision predicates, outcome coverage and certificate scope/validity.
+For a finite state abstraction, make the simulation relation explicit. For every action \(a_2\) enabled at \(S_2\), there must be a matching action \(a_1\) enabled at \(S_1\), with no greater upper resource use under the declared resource semantics (and no worse live-set state), such that for every outcome \(y_1\in\mathcal Y_{a_1}(S_1)\), there is a matching outcome \(y_2\in\mathcal Y_{a_2}(S_2)\) whose successor states satisfy \(T(S_1,a_1,y_1)\preceq T(S_2,a_2,y_2)\). The relation must preserve terminal decision predicates, outcome coverage and certificate scope/validity.
 
 **Conditional dominance proposition:** if \(S_1\preceq S_2\) satisfies these conditions, every decision-complete continuation from \(S_2\) can be simulated from \(S_1\) with no greater worst-case upper resource vector and no weaker terminal assurance. Therefore \(S_2\) may be pruned when searching for Pareto-minimal complete policies. If the simulation relation cannot be checked, retain both states.
 
@@ -633,20 +640,26 @@ If these are equivalent and one action has no greater upper resource cost in eve
 
 ### 7.4 Receding-horizon controller
 
-The planner constructs a bounded contingent plan, executes only its first action, verifies the result, and then replans from the updated state. This prevents a long predicted plan from being executed blindly after its assumptions have changed.
+The planner constructs a bounded contingent plan, executes only its first action, verifies the result, and then replans from the updated evidence and resource state. It does not blindly execute a long predicted plan after its assumptions have changed.
 
 ~~~text
 DWAOP(spec, resource_budget):
     validate_specification_and_decision_rules(spec)
     obligations = compile_mandatory_obligations(spec)
     state = establish_initial_sound_QoI_set_and_provenance(spec)
-    actual_cost = zero_resource_vector()
+
+    ledger = {
+        additive_consumed_upper: zero_vector(),
+        peak_committed_upper: initial_live_set_high_water(state),
+        live_artifacts: state.retained_artifacts,
+        schedule_state: SEQUENTIAL_ONLY
+    }
 
     if specification_invalid_or_claim_inapplicable:
-        return REFUSE(reason, state)
+        return REFUSE(reason, state, ledger)
 
     repeat:
-        verify_state_integrity_and_model_identity(state)
+        verify_state_integrity_model_identity_and_live_set(state, ledger)
 
         blockers = construct_tagged_witness_and_obligation_blockers(state)
         witnesses = generate_decision_reversing_witnesses(state.Q)
@@ -656,60 +669,70 @@ DWAOP(spec, resource_budget):
             return TERMINAL_DECISION(
                 decision,
                 independently_checked_certificate_bundle,
-                actual_cost
+                resource_ledger = ledger
             )
 
         actions = enumerate_supported_actions(state)
         contracts = validate_action_preconditions_and_effect_contracts(
             actions,
-            blockers
+            blockers,
+            resource_semantics
         )
 
-        apply_blocker_distance_lower_bound_pruning(
+        apply_only_admissible_resource_specific_lower_bound_pruning(
             state,
             contracts,
-            actual_cost,
+            ledger,
             resource_budget
         )
-        apply_proof_preserving_state_dominance()
+        apply_proof_preserving_state_dominance_including_live_set()
 
         plan_frontier = bounded_vector_cost_AND_OR_search(
             state,
             eligible_contracts,
-            hard_resource_budget = resource_budget - actual_cost,
+            hard_resource_budget = resource_budget,
+            current_resource_ledger = ledger,
             mandatory_obligations = obligations,
             terminal_decision_gate = decision_gate
         )
 
         if no_complete_plan_fits(plan_frontier):
             if required_claim_is_invalid_or_unsupported:
-                return REFUSE(reason, blockers, actual_cost)
+                return REFUSE(reason, blockers, ledger)
             return INCONCLUSIVE(
                 blockers,
-                remaining_budget,
+                remaining_additive_budget,
+                remaining_peak_limits,
                 rejected_action_and_pruning_reasons,
-                actual_cost
+                ledger
             )
 
         if plan_frontier_has_multiple_incomparable_options and no_predeclared_operator_preference:
             return PLAN_SELECTION_REQUIRED(plan_frontier)
 
         action = first_action(select_declared_preference_from_Pareto_frontier(plan_frontier))
-        result = execute_and_record_actual_cost(action)
-        actual_cost += result.measured_resource_cost
+        result = execute_sequentially_and_record_resource_observations(action)
+        ledger = update_resource_ledger_by_declared_semantics(
+            ledger,
+            action,
+            result,
+            resource_semantics
+        )
 
         if result.failed_or_timed_out:
             preserve_failure_artifacts_and_update_state(state, result)
-            if actual_cost_exceeds_budget:
-                return INCONCLUSIVE("ACTUAL_BUDGET_EXHAUSTED", blockers, actual_cost)
+            if any_hard_resource_limit_exceeded(ledger, resource_budget):
+                return INCONCLUSIVE("ACTUAL_RESOURCE_LIMIT_EXCEEDED", blockers, ledger)
             continue
 
         proposed_state = apply_typed_evidence_transition(state, result)
-        checker_result = independent_checker.verify_transition_and_certificates(
+        checker_result = independent_checker.verify_transition_certificates_and_live_set(
             old_state = state,
             action = action,
             result = result,
-            proposed_state = proposed_state
+            proposed_state = proposed_state,
+            old_resource_ledger = prior_ledger,
+            new_resource_ledger = ledger
         )
 
         if checker_result != VERIFIED:
@@ -718,10 +741,12 @@ DWAOP(spec, resource_budget):
         else:
             state = proposed_state
 
-        if actual_cost_exceeds_budget:
-            return INCONCLUSIVE("ACTUAL_BUDGET_OVERRUN", state, actual_cost)
+        if any_hard_resource_limit_exceeded(ledger, resource_budget):
+            return INCONCLUSIVE("ACTUAL_RESOURCE_LIMIT_OVERRUN", state, ledger)
 
 ~~~
+
+The resource ledger keeps additive consumption, peak high-water marks, and live retained artefacts as separate fields. Additive remaining budget is computed by subtraction from cumulative consumption. A peak-memory limit is checked against the maximum of the already committed high-water mark and predicted future live-set peaks; it is not reduced by summing every action's memory estimate. The first prototype prohibits overlapping actions, so elapsed wall time is additive. Parallel execution requires a schedule-aware ledger and is unsupported.
 
 If the Pareto frontier contains multiple incomparable plans and no preference was declared, the system must expose the frontier for operator selection; it must not invent a trade-off between resource types. \`PLAN_SELECTION_REQUIRED\` is a planning interaction state, not an engineering acceptance result.
 
