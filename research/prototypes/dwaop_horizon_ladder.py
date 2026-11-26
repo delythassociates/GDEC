@@ -85,9 +85,41 @@ def run_ladder_benchmark(n_stages: int) -> Dict[str, object]:
     pruned = plan_policies(oracle, budget, max_horizon=horizon, prune=True)
     unpruned = plan_policies(oracle, budget, max_horizon=horizon, prune=False)
     exact = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=horizon)
-    equal = pruned.pareto_frontier == unpruned.pareto_frontier == exact
+    def signature(policy):
+        return (
+            policy.world_verdict_map,
+            tuple(sorted(policy.terminal_verdicts)),
+            policy.resource_vector.exact_key(),
+            policy.max_actions_on_path,
+        )
+
+    def compare_frontiers(left, right):
+        left_set = {signature(p) for p in left}
+        right_set = {signature(p) for p in right}
+        return {
+            "left_size": len(left_set),
+            "right_size": len(right_set),
+            "left_only_count": len(left_set - right_set),
+            "right_only_count": len(right_set - left_set),
+            "left_only_examples": [repr(x) for x in sorted(left_set - right_set, key=repr)[:2]],
+            "right_only_examples": [repr(x) for x in sorted(right_set - left_set, key=repr)[:2]],
+        }
+
+    pruned_vs_unpruned = compare_frontiers(pruned.pareto_frontier, unpruned.pareto_frontier)
+    unpruned_vs_oracle = compare_frontiers(unpruned.pareto_frontier, exact)
+    pruned_vs_oracle = compare_frontiers(pruned.pareto_frontier, exact)
+    equal = (
+        pruned_vs_unpruned["left_only_count"] == 0
+        and unpruned_vs_oracle["left_only_count"] == 0
+        and pruned_vs_oracle["left_only_count"] == 0
+    )
+    debug = {
+        "pruned_vs_unpruned": pruned_vs_unpruned,
+        "unpruned_vs_oracle": unpruned_vs_oracle,
+        "pruned_vs_oracle": pruned_vs_oracle,
+    }
     if not equal:
-        raise AssertionError("Pareto frontiers diverged at horizon " + str(horizon))
+        raise AssertionError("Pareto frontiers diverged at horizon " + str(horizon) + ": " + json.dumps(debug, sort_keys=True))
     def metrics(result):
         m = result.metrics
         return {
