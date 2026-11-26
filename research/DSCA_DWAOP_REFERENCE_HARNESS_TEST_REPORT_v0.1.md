@@ -4,7 +4,7 @@
 **Repository:** delythassociates/GDEC  
 **Branch:** research/decision-sufficiency-algorithm  
 **Harness:** [research/prototypes/dwaop_reference_harness.py](prototypes/dwaop_reference_harness.py)  
-**Harness blob SHA:** 0ac15407371d241678d62459340067b57fcb1d64  
+**Harness blob SHA:** bc5a8df629b2c47ee70a35a93f335e1c301a3d16  
 **Runtime:** Python 3.13.5
 
 ---
@@ -35,15 +35,15 @@ It does **not** implement the optional blocker-cover LP, numerical witness gener
 The current GitHub file was fetched after commit. Its content was copied into a local test file and the Git blob hash was compared:
 
 ~~~text
-GitHub blob:     0ac15407371d241678d62459340067b57fcb1d64
-Local blob:      0ac15407371d241678d62459340067b57fcb1d64
+GitHub blob:     bc5a8df629b2c47ee70a35a93f335e1c301a3d16
+Local blob:      bc5a8df629b2c47ee70a35a93f335e1c301a3d16
 ~~~
 
 The hashes match exactly. Executed commands:
 
 ~~~bash
 python --version
-python -m unittest -v /tmp/dwaop_reference/dwaop_reference_harness_generated.py
+python -m unittest -v /tmp/dwaop_reference/dwaop_reference_harness_layered.py
 python -m py_compile /tmp/dwaop_reference/dwaop_reference_harness_final_candidate.py
 ~~~
 
@@ -51,7 +51,7 @@ Python reported 3.13.5. The unit-test run completed with **26 passed, 0 failed**
 
 ## 3. Test results
 
-26 passed · 0 failed
+27 passed · 0 failed
 
 | Test | Result | What it checks |
 |---|---|---|
@@ -81,6 +81,7 @@ Python reported 3.13.5. The unit-test run completed with **26 passed, 0 failed**
 | Frontier pruning can remove an impossible verdict branch | PASS | A narrower QoI state with only a PASS outcome safely removes a FAIL branch; its policy remains complete and matches the pruned/exhaustive frontier |
 | Parameterized candidate-frontier family | PASS | For seven fast-action costs, dominance-pruned and unpruned candidate frontiers agree on verdict sets, RU cost and peak memory |
 | Generated parameterised dominance graph family | PASS | Across 168 instances varying action cost, prior RU, peak memory, pass-only/pass-fail QoI regions and outcome labels, dominance-pruned and exhaustive candidate policy frontiers agree |
+| Layered contingent graph family | PASS | At depths 1–4, dominance-pruned and exhaustive complete-policy frontiers agree across layered two-outcome/three-outcome graphs |
 
 ## 4. Numeric outputs
 
@@ -125,6 +126,17 @@ The finite dominance example returns:
 - exhaustive policy-frontier enumeration before/after candidate pruning retains the same terminal verdict set {ACCEPT, REJECT}, total RU upper cost 2.0 and peak memory 2.4 GB;
 - in a narrower pass-only variant, the possible verdict set reduces from {ACCEPT, REJECT} to {ACCEPT} while the candidate remains decision-complete and the exhaustive/pruned frontier still agrees.
 
+For generated layered graphs, the exhaustive/pruned frontier comparison produced:
+
+| Depth | States | Actions | Greatest-simulation pairs | Complete-policy frontier |
+|---:|---:|---:|---:|---|
+| 1 | 7 | 2 | 16 | 1.5 RU, 1.5 GB, ACCEPT |
+| 2 | 17 | 6 | 70 | 2.5 RU, 1.6 GB, ACCEPT |
+| 3 | 37 | 14 | 290 | 3.5 RU, 1.7 GB, ACCEPT |
+| 4 | 77 | 30 | 1,178 | 4.5 RU, 1.8 GB, ACCEPT |
+
+At every depth, candidate pruning retained only the stronger root and matched the unpruned exhaustive policy frontier. The weaker graph also has a REJECT branch at each level, but those additional branches are excluded by the stronger state's sound pass-only QoI set.
+
 These are abstract fixture outputs, not measured GDEC solver performance.
 
 ## 5. Interpretation
@@ -142,7 +154,7 @@ The harness's verify_plan_tree function is a test-specific structural/resource c
 
 Not yet tested:
 
-1. generated larger contingent DAGs with different transition topologies and adversarial cyclic action/state graphs with independently computed simulation oracles;
+1. generated contingent DAGs with topologies beyond the layered binary/ternary family, plus adversarial cyclic action/state graphs with independently computed simulation oracles;
 2. dominance-pruned versus exhaustive unpruned search on generated finite graphs and cyclic transition systems with varying topology;
 3. correctness of frontier pruning across broader generated state sets, verdict refinements, and resource/capability combinations;
 4. scenario-tree lower bounds for branching policies;
@@ -155,8 +167,8 @@ The next research test should integrate the greatest-simulation relation into th
 
 ## 7. Classification
 
-- **IMPLEMENTED:** standalone finite-state planner/oracle harness; greatest-simulation relation; strict candidate-frontier reducer; exhaustive complete-policy summary comparison for a constructed topology and 168 parameterised variants.
-- **EXECUTED:** 26 Python unittest cases passed; Python 3.13.5.
+- **IMPLEMENTED:** standalone finite-state planner/oracle harness; greatest-simulation relation; strict candidate-frontier reducer; exhaustive complete-policy summary comparison for 168 parameterised cases and four generated layered graph depths.
+- **EXECUTED:** 27 Python unittest cases passed; Python 3.13.5.
 - **CHECKED:** the exact committed Git blob was the source of the executed test copy.
 - **NOT INTEGRATED:** the dominance reducer is not called from the harness's find_plan search recursion or any GDEC runtime. The policy-frontier comparison is a separate finite reference check, not search integration.
 - **NOT IMPLEMENTED:** GDEC DWAOP controller, numerical certificate producers, trusted DAPC checker, LP pruning or production resource ledger.
