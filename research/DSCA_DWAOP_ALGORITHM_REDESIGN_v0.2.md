@@ -503,6 +503,8 @@ LB_r(S),LB_r^{\mathrm{cover}}(S)
 \right\}.
 \]
 
+If a blocker can be discharged by a deterministic inference/check over already available evidence without an additional resource-consuming action, represent that inference as an explicit zero-cost action so the relaxation remains complete.
+
 This LP bound is not admissible if a path can terminate without affecting a blocker counted in \(B(S)\), if the blocker-effect map omits a valid route, or if action costs lack defensible lower bounds. In those cases, omit the affected blocker or disable this relaxation; do not infer infeasibility from an invalid LP.
 
 This is a search relaxation, not a new engineering computation or assurance certificate. Its practical value must be measured against its setup/solve overhead and the simpler blocker-distance bound.
@@ -729,20 +731,16 @@ Do not claim:
 | Oden & Prudhomme (2001), goal-oriented FEM | QoI-based a posteriori estimates and goal-oriented mesh adaptivity, including upper/lower bounds for classes of elliptic problems | Do not claim novelty for QoI-centric error estimation or mesh adaptation |
 | Becker et al. (2023), goal-oriented AFEM | Joint mesh-refinement and iterative-solver steering, with convergence and optimal rates in total computational cost under assumptions | Do not claim novelty for solver/mesh co-steering |
 | NASA Nemec & Aftosmis (2014/2015), automatic verification of goal-oriented flow simulations | Adjoint-weighted error estimates and automatic control of discretisation error in practical Euler simulations | Do not claim novelty for automated goal-oriented verification and mesh control |
+| Kerfriden, Kundu & Claus (2019), Bayesian inverse FEM adaptivity | Simultaneous control of goal-oriented FEM discretisation error and statistical sampling error in Bayesian parameter identification, with stopping and mesh-refinement decisions | Do not claim novelty for coupling sampling sufficiency and FEM discretisation-error control |
+| Bonilla-Villalba et al. (2020), stochastic elastodynamics model adaptivity | Joint control of spatial discretisation, surrogate-model and Monte Carlo sampling errors for QoI statistics at minimum cost | Do not claim novelty for coordinating these numerical approximation and sampling errors |
+| Goal-oriented adaptive modelling of random heterogeneous media / model-based MLMC (2019) | QoI-driven adaptive surrogate/model resolution and multilevel Monte Carlo for stochastic heat conduction and elastostatics | Do not claim novelty for QoI-driven model-resolution plus sampling-cost control |
 | Yang et al. (2024), active learning for RBDO under multiple simulation models | Active constraints, model selection and differing simulation costs in reliability-based design optimisation | Do not claim novelty for cost-aware fidelity/action selection in reliability optimisation |
 | Vayanos et al. (2023), robust optimisation with decision-dependent information discovery | Decisions control when uncertain information is revealed through costly exploratory investments; develops multistage robust formulations and a solution method | Do not claim novelty for planning costly queries that reveal information before a decision |
 | Ley et al. (2026), optimisation under elementwise controllable uncertainty | Decision maker can pay to shrink bounded uncertainty intervals element by element and optimise under the remaining uncertainty | Do not claim novelty for paid computation/measurement reducing an uncertainty set |
-| Bonilla-Villalba et al. (2020), goal-oriented model adaptivity in stochastic elastodynamics | Jointly controls spatial discretisation, surrogate-model and Monte Carlo sampling errors to compute QoI statistics at minimum cost | Do not claim novelty for coordinating these numerical approximation and sampling errors |
-| Bayesian inverse-FEM adaptive methodology (2019) | Simultaneously controls goal-oriented FEM discretisation error and statistical sampling error in Bayesian parameter identification, with stopping and mesh-refinement decisions | Do not claim novelty for coupling sampling sufficiency and FEM discretisation control |
-| Goal-oriented adaptive modelling of random heterogeneous media / model-based MLMC (2019) | QoI-driven adaptive surrogate/model resolution and multilevel Monte Carlo for stochastic heat conduction and elastostatics | Do not claim novelty for QoI-driven model-resolution plus sampling-cost control |
-| Habera et al. (2026), running error bounds in FE kernels | Propagates a posteriori running round-off/error estimates through generated FE kernels; the authors distinguish these estimates from certified bounds | Do not claim novelty for running kernel-error estimates; do not treat them as VWECs without a separate certification argument |
-| Bonilla-Villalba et al. (2020), goal-oriented model adaptivity in stochastic elastodynamics | Simultaneously controls spatial discretisation, surrogate-model and Monte Carlo sampling errors to compute QoI statistics at minimum cost | Do not claim novelty for jointly controlling multiple numerical approximation/sampling errors |
-| Bayesian inverse FEM adaptive methodology (2019) | Simultaneous control of goal-oriented FEM discretisation error and statistical sampling error in Bayesian parameter identification, including stopping and mesh-refinement decisions | Do not claim novelty for coupling sampling sufficiency and FEM discretisation-error control |
-| Goal-oriented adaptive modelling of random heterogeneous media and model-based MLMC (2019) | QoI-driven adaptive surrogate/model resolution and multilevel Monte Carlo for stochastic heat conduction and elastostatics | Do not claim novelty for QoI-driven model-resolution plus sampling-cost control |
-| Habera et al. (2026), running error bounds in FE kernels | Propagates a posteriori running round-off/error estimates through generated FE kernels; authors distinguish these estimates from certified bounds | Do not claim novelty for running kernel-error estimates; do not treat these estimates as VWECs without a separate certification argument |
 | Solak et al. (2026), MF-CAS preprint | Joint sample-location and fidelity selection using decomposed uncertainty intervals and model cost | Do not claim novelty for cost-aware interval-based sampling/fidelity selection |
 | Zhao et al. (2026), MF-PBALC | Posterior-mean failure-probability bounds, a stopping rule, and cost-aware joint evaluation-point/fidelity selection for structural reliability | Do not claim novelty for bounded stopping or cost-aware joint fidelity selection |
-| Minimax-regret robust optimisation (e.g. Ning & You, 2018) | Minimax-regret objectives and algorithms in adaptive robust optimisation | Do not claim novelty for the regret objective or worst-case regret formulation |
+| Habera et al. (2026), running error analysis in FE kernels | Automatically propagates running round-off/error estimates through generated FE kernels; the paper explicitly states its estimates are not certified bounds | Do not claim novelty for running kernel-error estimates; do not treat REA estimates as VWECs without a separate certification argument |
+| Ning & You (2018), adaptive robust optimisation with minimax regret | Minimax-regret objectives and algorithms in adaptive robust optimisation | Do not claim novelty for the regret objective or worst-case regret formulation |
 | Hill, Komendantskaya & Petrick (2020), Proof-Carrying Plans | Resource logic and typed pre/postconditions for checking AI plans, with formal soundness proof and Agda formalisation | Do not claim novelty for resource-aware plans carrying machine-checkable proofs |
 | Gardiol & Kaelbling, action equivalence for planning | Runtime partitioning of actions into approximate equivalence classes to reduce planning search | Do not claim novelty for action-signature compression in generic planning |
 | CEGAR literature | Counterexample generation, abstraction refinement and validation loops | Do not claim novelty for counterexample-guided refinement alone |
@@ -771,19 +769,15 @@ This is not yet a demonstrated gap. It may still be obvious to a skilled reader 
 - Oden & Prudhomme (2001), goal-oriented FEM: https://doi.org/10.1016/S0898-1221(00)00317-5
 - Becker et al. (2023), GOAFEM: https://doi.org/10.1007/s00211-022-01334-8
 - NASA Nemec & Aftosmis, automatic goal-oriented flow verification: https://ntrs.nasa.gov/citations/20150000864
+- Kerfriden, Kundu & Claus (2019), Bayesian inverse-FEM adaptivity: https://pmc.ncbi.nlm.nih.gov/articles/PMC6416561/
+- Bonilla-Villalba et al. (2020), stochastic elastodynamics model adaptivity: https://doi.org/10.1615/Int.J.UncertaintyQuantification.2020031735
+- Adaptive modelling of random heterogeneous media / model-based MLMC (2019): https://doi.org/10.1016/j.camwa.2019.04.014
 - Yang et al. (2024), multi-model active learning for RBDO: https://doi.org/10.1016/j.strusafe.2023.102426
 - Vayanos et al., decision-dependent information discovery: https://doi.org/10.1287/mnsc.2021.00160
 - Ley et al. (2026), elementwise controllable uncertainty: https://doi.org/10.1007/s00291-026-00856-z
-- Bonilla-Villalba et al. (2020), stochastic elastodynamics model adaptivity: https://doi.org/10.1615/Int.J.UncertaintyQuantification.2020031735
-- Bayesian inverse-FEM adaptive methodology (2019): https://pmc.ncbi.nlm.nih.gov/articles/PMC6416561/
-- Adaptive modelling of random heterogeneous media / model-based MLMC (2019): https://doi.org/10.1016/j.camwa.2019.04.014
-- Habera et al. (2026), running error estimates in FE kernels: https://arxiv.org/abs/2609.37844
-- Bonilla-Villalba et al. (2020), stochastic elastodynamics model adaptivity: https://doi.org/10.1615/Int.J.UncertaintyQuantification.2020031735
-- Bayesian inverse-FEM adaptive methodology (2019): https://pmc.ncbi.nlm.nih.gov/articles/PMC6416561/
-- Adaptive modelling of random heterogeneous media / model-based MLMC (2019): https://doi.org/10.1016/j.camwa.2019.04.014
-- Habera et al. (2026), running error estimates in FE kernels: https://arxiv.org/abs/2609.37844
 - Solak et al. (2026), MF-CAS: https://arxiv.org/abs/2610.38582
 - Zhao et al. (2026), MF-PBALC: https://doi.org/10.1016/j.ress.2026.113871
+- Habera et al. (2026), running error analysis in FE kernels: https://arxiv.org/abs/2609.37844
 - Ning & You (2018), adaptive robust optimisation with minimax regret: https://doi.org/10.1016/j.compchemeng.2017.09.026
 - Hill et al. (2020), Proof-Carrying Plans: https://doi.org/10.1145/3414080.3414094
 - Gardiol & Kaelbling, computing action equivalences for planning: https://people.csail.mit.edu/nhg/papers/gardiol_icaps_consortium.pdf
@@ -881,7 +875,7 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 
 ## 14. Research status and next gate
 
-- **RESEARCHED:** GOAFEM, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
+- **RESEARCHED:** GOAFEM, stochastic FEM error control, Bayesian inverse-FEM adaptivity, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, running FE-kernel error analysis, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
 - **FORMULATED:** decision-witness state, obligation state, typed action contracts, verified witness-exclusion certificates, robust AND-OR planning objective, vector budgets, blocker-distance lower bound and proof-preserving state dominance.
 - **CONDITIONALLY JUSTIFIED:** terminal soundness proposition under explicit enclosure, transition and checker assumptions.
 - **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate.
