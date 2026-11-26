@@ -35,8 +35,8 @@ It does **not** implement the optional blocker-cover LP, numerical witness gener
 The current GitHub file was fetched after commit. Its content was copied into a local test file and the Git blob hash was compared:
 
 ~~~text
-GitHub blob:     ebeaa85a6c22c473333d4d0b88fd9b017c82d480
-Local blob:      ebeaa85a6c22c473333d4d0b88fd9b017c82d480
+GitHub blob:     f884a11a21d648418b1d1e30ce5a333245214414
+Local blob:      f884a11a21d648418b1d1e30ce5a333245214414
 ~~~
 
 The hashes match exactly. Executed commands:
