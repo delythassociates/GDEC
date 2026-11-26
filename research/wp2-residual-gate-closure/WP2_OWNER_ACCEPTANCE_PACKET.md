@@ -5,7 +5,7 @@
 **Verified Documentation Closeout Commit:** `d64a488d9e52851095ef9ec530b2f1ada74fec66`  
 **Parent Implementation/Evidence Commit:** `20baa84cbb4ec305450e715a6a2b000a35ca0d3e`  
 **Packet Date:** 2026-11-27  
-**Governance Status:** Technical gates complete & independently reviewed; **OWNER ACCEPTANCE PENDING**  
+**Governance Status:** Technical gates complete & independently reviewed; **OWNER ACCEPTED WITH SPECIFIED CONDITIONS (2026-11-27)**  
 
 ---
 
@@ -89,24 +89,27 @@ Key delivered capabilities and artifacts:
 ## 6. Technical Completion vs. Formal Owner Acceptance
 
 - **Technical Status:** `IMPLEMENTED`, `EXECUTED`, `TESTED`, `NUMERICALLY VERIFIED`, and `INDEPENDENTLY REVIEWED`.
-- **Governance Status:** **NOT YET `OWNER ACCEPTED`**. Technical completion and green CI do not constitute formal owner sign-off.
-- **Conditions Before WP3 Can Begin:**
-  1. Owner reviews this acceptance packet and linked WP2 evidence.
-  2. Owner selects an acceptance decision below (and confirms ADR-013 provenance if desired).
-  3. WP3 remains blocked until formal owner acceptance is recorded.
+- **Governance Status:** **OWNER ACCEPTED WITH SPECIFIED CONDITIONS** by explicit written owner authorization recorded on 2026-11-27.
+- **Acceptance scope:** This decision accepts the WP2 technical/evidence package for progression to WP3. It does not upgrade any WP2 evidence beyond its stated scope or limitations.
+- **Conditions retained without exception:**
+  1. Preserve all disclosed WP2 limitations.
+  2. DWR remains an asymptotic estimator, not a certified error bound.
+  3. The 20/20 mutation result applies only to the targeted campaign and must not be represented as whole-repository mutation coverage.
+- **Progression:** WP3 is authorized to begin on a separate branch, strictly within the approved WP3 scope. WP3 must not change solver or estimator mathematics, add GPU work, alter WP2 evidence, or integrate DWAOP/DSES research.
 
 ---
 
-## 7. Owner Decision (To Be Completed by Owner)
+## 7. Owner Decision
 
-Select one:
-
+**Selected decision:**
 - [ ] **ACCEPT WP2.**
-- [ ] **ACCEPT WP2 WITH SPECIFIED CONDITIONS.**
+- [x] **ACCEPT WP2 WITH SPECIFIED CONDITIONS.**
 - [ ] **REJECT / RETURN FOR CORRECTION.**
 
-**Owner Comments / Conditions:**  
-*(Leave blank until owner review)*
+**Owner Comments / Conditions (recorded verbatim):**
 
-**Owner Sign-Off / Date:**  
-*(Leave blank until owner review)*
+> Preserve all disclosed WP2 limitations. DWR remains asymptotic, not certified. Targeted mutation testing must not be represented as whole-repository coverage. Proceed to WP3 only within its approved scope.
+
+**Owner Sign-Off / Date:**
+
+Explicit written authorization in the ChatGPT conversation, recorded 2026-11-27. No external digital signature is asserted.
