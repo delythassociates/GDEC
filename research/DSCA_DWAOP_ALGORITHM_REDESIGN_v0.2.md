@@ -421,6 +421,9 @@ A memory lower bound must also respect live-set semantics. A defensible per-acti
 
 The plan's resource envelope is computed per resource using its declared aggregation function. Componentwise comparison against a budget is allowed only after each component has been computed with the correct semantics.
 
+Worked numeric checks of additive, peak/live-set and branch resource aggregation are recorded in [DWAOP Resource Algebra Sanity Check v0.2](DSCA_DWAOP_RESOURCE_ALGEBRA_SANITY_CHECK_v0.2.md). This note is a hand-calculated specification check, not an implementation test.
+
+
 ## 6. Evidence-state transition
 
 For state \(S\), action \(a\) and an outcome cell \(y\in\mathcal Y_a(S)\), define:
@@ -1021,8 +1024,9 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 - **CONDITIONALLY JUSTIFIED:** terminal soundness proposition under explicit enclosure, transition and checker assumptions.
 - **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate. Resource-specific upper/lower aggregation must be validated for every supported backend before implementation.
 - **NOT IMPLEMENTED:** no production or research controller code.
-- **NOT TESTED:** no controller benchmark or adversarial implementation test run.
+- **HAND-CHECKED:** sequential additive totals, peak/live-set memory and contingent branch aggregation in the separate resource-algebra note; not an executable test.
+- **NOT TESTED:** no controller benchmark, exhaustive finite-graph pruning comparison or adversarial implementation test run.
 - **NOT INDEPENDENTLY VERIFIED:** no external mathematical review.
 - **NOT APPROVED:** no production implementation authorisation.
 
-**Next gate:** independent review of the formal state/action model and soundness assumptions, followed by a direct comparison against a one-step greedy policy on a hand-computed complementary-action example. Only after that should the research prototype be proposed.
+**Next gate:** independent review of the formal state/action/resource model and soundness assumptions; then implement an offline finite-state reference harness (not the GDEC runtime) to compare pruned and unpruned planning, verify lower-bound admissibility, and test the resource aggregation rules. The contingent greedy comparison already exists as a hand-constructed example, but no algorithmic benchmark has run. Only after these checks should the GDEC research prototype be proposed.
