@@ -749,6 +749,110 @@ def make_parameterized_dominance_graph(
     return DominanceGraph(states, actions)
 
 
+def make_layered_dominance_graph(depth: int) -> DominanceGraph:
+    """Create a depth-d contingent graph with one extra branch at each weaker node.
+
+    The stronger (left) graph has two outcomes per action. The weaker (right)
+    graph has the corresponding two outcomes plus a third branch which is
+    explicitly resolved to REJECT. Each stronger successor is simulated by
+    its matching weaker successor. All actions have typed matching contracts,
+    but the weaker actions cost more and use more peak memory.
+    """
+    if depth < 1 or depth > 6:
+        raise ValueError("depth must be in [1, 6]")
+
+    states: Dict[str, DominanceState] = {}
+    actions: Dict[str, DominanceAction] = {}
+    memory_model = "sequential-live-set-v1"
+
+    def build_pair(prefix: str, level: int, left_spent: float,
+                   right_spent: float, left_peak: float,
+                   right_peak: float) -> Tuple[str, str]:
+        left_id = "good_" + (prefix or "root")
+        right_id = "bad_" + (prefix or "root")
+
+        if level == depth:
+            states[left_id] = DominanceState(
+                left_id, "model-layered-v1", "bounded",
+                frozenset({"pass"}), frozenset(),
+                frozenset({"mesh_ready", "dual_ready", "independent_checker"}),
+                frozenset({"mesh", "dual"}), left_spent, left_peak,
+                memory_model, terminal="ACCEPT",
+            )
+            states[right_id] = DominanceState(
+                right_id, "model-layered-v1", "bounded",
+                frozenset({"pass", "latent"}), frozenset(),
+                frozenset({"mesh_ready"}),
+                frozenset({"mesh", "dual", "legacy_cache"}), right_spent,
+                right_peak, memory_model, terminal="ACCEPT",
+            )
+            return left_id, right_id
+
+        left_action_id = "left_action_" + (prefix or "root")
+        right_action_id = "right_action_" + (prefix or "root")
+        left_during_peak = 1.50 + 0.10 * level
+        right_during_peak = 2.50 + 0.10 * level
+
+        left_children = []
+        right_children = []
+        for bit in ("0", "1"):
+            child_left, child_right = build_pair(
+                prefix + bit,
+                level + 1,
+                left_spent + 1.0,
+                right_spent + 2.0,
+                max(left_peak, left_during_peak),
+                max(right_peak, right_during_peak),
+            )
+            left_children.append((f"L{level}-{prefix}-{bit}", child_left))
+            right_children.append((f"R{level}-{prefix}-{bit}", child_right))
+
+        extra_id = "bad_extra_" + (prefix or "root")
+        states[extra_id] = DominanceState(
+            extra_id, "model-layered-v1", "bounded",
+            frozenset({"fail", "boundary"}), frozenset(),
+            frozenset({"mesh_ready"}),
+            frozenset({"mesh", "legacy_cache"}),
+            right_spent + 2.0, max(right_peak, right_during_peak),
+            memory_model, terminal="REJECT",
+        )
+        right_children.append((f"R{level}-{prefix}-extra", extra_id))
+
+        actions[left_action_id] = DominanceAction(
+            left_action_id, f"certified-layer-{level}",
+            frozenset({"mesh_ready", "dual_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            1.0, left_during_peak, tuple(left_children),
+        )
+        actions[right_action_id] = DominanceAction(
+            right_action_id, f"certified-layer-{level}",
+            frozenset({"mesh_ready", "dual_ready"}),
+            frozenset({"deterministic_qoi_enclosure"}),
+            frozenset({"timeout", "not_applicable"}),
+            2.0, right_during_peak, tuple(right_children),
+        )
+
+        states[left_id] = DominanceState(
+            left_id, "model-layered-v1", "bounded",
+            frozenset({"pass"}), frozenset(),
+            frozenset({"mesh_ready", "dual_ready", "independent_checker"}),
+            frozenset({"mesh", "dual"}), left_spent, left_peak,
+            memory_model, (left_action_id,),
+        )
+        states[right_id] = DominanceState(
+            right_id, "model-layered-v1", "bounded",
+            frozenset({"pass", "latent"}), frozenset(),
+            frozenset({"mesh_ready"}),
+            frozenset({"mesh", "dual", "legacy_cache"}), right_spent,
+            right_peak, memory_model, (right_action_id,),
+        )
+        return left_id, right_id
+
+    build_pair("", 0, 0.5, 1.0, 1.0, 2.0)
+    return DominanceGraph(states, actions)
+
+
 class TestDWAOPReferenceHarness(unittest.TestCase):
     def setUp(self) -> None:
         self.fixture = make_fixture()
@@ -1101,6 +1205,21 @@ class TestDWAOPReferenceHarness(unittest.TestCase):
         }
         relation = greatest_simulation_relation(DominanceGraph(states, actions))
         self.assertIn(("left", "right"), relation)
+
+    def test_layered_graph_families_match_exhaustive_frontier(self) -> None:
+        for depth in (1, 2, 3, 4):
+            graph = make_layered_dominance_graph(depth)
+            candidates = ("good_root", "bad_root")
+            relation = greatest_simulation_relation(graph)
+            self.assertIn(("good_root", "bad_root"), relation, depth)
+
+            pruned_ids = prune_dominated_frontier(graph, candidates)
+            self.assertEqual(pruned_ids, ("good_root",), depth)
+
+            exhaustive = candidate_policy_frontier(graph, candidates)
+            pruned = candidate_policy_frontier(graph, pruned_ids)
+            self.assertEqual(pruned, exhaustive, depth)
+            self.assertEqual(exhaustive[0][1], frozenset({"ACCEPT"}), depth)
 
     def test_resource_limits_reject_peak_overrun_even_when_ru_fits(self) -> None:
         self.assertIsNone(find_plan(self.fixture, "root", ResourceBudget(4.0, 2.5)))
