@@ -2,7 +2,7 @@
 
 | Gate | Acceptance Requirement | Observed Evidence | Status |
 |---|---|---|---|
-| **A1** | Branch coverage measured and baseline committed | `research/wp2/coverage-baseline.json` (`62.27%` floor; `1045 / 1678 = 62.2765%` branches) | **PASS** |
+| **A1** | Branch coverage measured and baseline committed | `research/wp2/coverage-baseline.json` (`62.15%` CI non-GPU floor; `1043 / 1678 = 62.16%` without `nvidia-smi`, `1045 / 1678 = 62.28%` with `nvidia-smi`, `65.08%` with GPU) | **PASS** |
 | **A2** | CI enforces the branch coverage floor | `.github/workflows/ci.yml` runs `scripts/check_branch_coverage.py` | **PASS** |
 | **A3** | Negative coverage-gate tests pass | `tests/verification/test_coverage_gate.py` (4/4 passed) | **PASS** |
 | **B1** | FEM and estimator mutation targets audited | `MUTATION_RESULTS_BY_MODULE.md` documents all 8 modules & 20 targets | **PASS** |

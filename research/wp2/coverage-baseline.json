@@ -9,10 +9,11 @@
     "src/gdec/core/analyser.py",
     "src/gdec/runtime/*"
   ],
-  "baseline_branch_coverage_pct": 62.27,
-  "covered_branches": 1045,
+  "baseline_branch_coverage_pct": 62.15,
+  "covered_branches": 1043,
   "num_branches": 1678,
   "statement_coverage_pct": 78.63,
+  "local_cpu_with_nvidia_smi_branch_coverage_pct": 62.28,
   "local_gpu_branch_coverage_pct": 65.08,
   "local_gpu_covered_branches": 1092,
   "ratchet_policy": "Observed branch coverage must be >= baseline_branch_coverage_pct. The floor may only be raised manually after verified coverage improvements and must never be automatically lowered."

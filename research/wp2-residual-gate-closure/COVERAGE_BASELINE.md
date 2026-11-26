@@ -13,9 +13,10 @@
   - `branch = true`
   - `source = ["src/gdec"]`
   - `omit = ["src/gdec/core/analyser.py", "src/gdec/runtime/*"]` (untracked user-owned files not present in git or CI)
-- **Locked CPU-only CI-equivalent baseline** (matching `windows-latest` / Python 3.13 non-GPU CI runner using `uv sync --locked --extra test --extra amg` where `cupy-cuda12x` is not installed and 14 CUDA tests skip):
+- **Locked CPU-only CI-equivalent baseline** (matching `windows-latest` / Python 3.13 non-GPU CI runner using `uv sync --locked --extra test --extra amg` where neither `cupy-cuda12x` nor `nvidia-smi` is present and 14 CUDA tests skip):
   - Command: `uv run --no-sync python -m pytest --cov=src/gdec --cov-branch --cov-report=json:coverage.json tests/`
-  - Result: **452 passed, 14 skipped**, **1045 / 1678 branches covered = 62.2765%** (ratcheting floor set to **62.27%**).
+  - Result (CI, no `nvidia-smi`): **452 passed, 14 skipped**, **1043 / 1678 branches covered = 62.16%** (ratcheting floor set to **62.15%**).
+  - Result (local CPU-only `.venv` with `nvidia-smi` present on host): **1045 / 1678 branches covered = 62.28%**.
 - **Local NVIDIA GPU-enabled measurement** (with `cupy-cuda12x` installed and operational GPU):
   - Command: `.venv\Scripts\python.exe -m pytest --cov=src/gdec --cov-branch --cov-report=json:coverage.json tests/`
   - Result: **459 passed**, **1092 / 1678 branches covered = 65.08%** (`65.0775%`).
@@ -28,7 +29,7 @@
 - It **fails closed** if:
   - Coverage JSON or baseline JSON is missing or malformed.
   - `num_branches <= 0` (rejects zero-branch or statement-only coverage reports).
-  - `observed_pct < baseline_branch_coverage_pct` (`62.27%`).
+  - `observed_pct < baseline_branch_coverage_pct` (`62.15%`).
 - **How to raise the baseline:** After verified test additions increase branch coverage, a developer may manually update `baseline_branch_coverage_pct`, `covered_branches`, and `num_branches` in `research/wp2/coverage-baseline.json` via an audited commit. The floor must **never** be lowered automatically.
 
 ---

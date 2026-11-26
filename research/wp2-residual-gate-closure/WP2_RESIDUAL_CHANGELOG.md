@@ -5,7 +5,7 @@
 ### Added
 - **Branch Coverage Gate (`WP2-A`)**:
   - Added `[tool.coverage.run]` (`branch = true`, `source = ["src/gdec"]`, omitting untracked user-owned `src/gdec/core/analyser.py` and `src/gdec/runtime/*`) in `pyproject.toml`.
-  - Committed measured branch coverage baseline in `research/wp2/coverage-baseline.json` (`62.28%`, `1045 / 1678` branches in locked CPU-only CI environment).
+  - Committed measured branch coverage baseline in `research/wp2/coverage-baseline.json` (`62.15%` CI non-GPU floor; `1043 / 1678` without `nvidia-smi`, `1045 / 1678` with `nvidia-smi`).
   - Created `scripts/check_branch_coverage.py` enforcing ratcheting floor and failing closed on missing, malformed, or zero-branch data.
   - Added `tests/verification/test_coverage_gate.py` with 4 negative/positive tests.
 - **Core FEM & Estimator Mutation Coverage (`WP2-B`)**:
