@@ -577,8 +577,11 @@ def candidate_policy_frontier(
             if other is candidate:
                 continue
             _, other_verdicts, other_ru, other_peak = other
+            # A more precise state may eliminate verdict branches that are
+            # impossible in its sound QoI subset. Its possible verdicts should
+            # therefore be a subset of those of the weaker state.
             no_worse = (
-                other_verdicts.issuperset(verdicts)
+                other_verdicts.issubset(verdicts)
                 and other_ru <= ru + 1e-12
                 and other_peak <= peak + 1e-12
             )
@@ -930,6 +933,51 @@ class TestDWAOPReferenceHarness(unittest.TestCase):
         self.assertAlmostEqual(pruned_frontier[0][2], 2.0)
         self.assertAlmostEqual(unpruned_frontier[0][3], 2.4)
         self.assertAlmostEqual(pruned_frontier[0][3], 2.4)
+
+    def test_frontier_pruning_can_remove_an_impossible_verdict_branch(self) -> None:
+        graph = make_dominance_graph()
+        states = dict(graph.states)
+        good = states["good_root"]
+        states["good_root"] = DominanceState(
+            good.state_id, good.model_scope, good.assurance_mode,
+            frozenset({"pass"}), good.open_obligations, good.capabilities,
+            good.live_artifacts, good.additive_spent_ru, good.peak_committed_gb,
+            good.memory_model, good.actions, good.terminal,
+        )
+        actions = dict(graph.actions)
+        fast = actions["fast"]
+        actions["fast"] = DominanceAction(
+            fast.action_id, fast.semantic_key, fast.preconditions,
+            fast.evidence_contract, fast.failure_semantics, fast.ru_upper,
+            fast.during_peak_gb, (("pass", "good_pass"),),
+        )
+        graph = DominanceGraph(states, actions)
+
+        candidates = ("good_root", "bad_root")
+        relation = greatest_simulation_relation(graph)
+        self.assertIn(("good_root", "bad_root"), relation)
+        self.assertEqual(prune_dominated_frontier(graph, candidates), ("good_root",))
+
+        exhaustive = candidate_policy_frontier(graph, candidates)
+        pruned = candidate_policy_frontier(
+            graph, prune_dominated_frontier(graph, candidates)
+        )
+        self.assertEqual(len(exhaustive), 1)
+        self.assertEqual(exhaustive, pruned)
+        self.assertEqual(exhaustive[0][1], frozenset({"ACCEPT"}))
+        self.assertAlmostEqual(exhaustive[0][2], 2.0)
+
+    def test_generated_parameterized_candidate_frontiers_match(self) -> None:
+        # A small deterministic family varies the relative action cost. For
+        # every member, dominance-pruned and exhaustive candidate frontiers
+        # must agree on terminal verdicts and worst-case resource results.
+        for fast_cost in (0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75):
+            graph = make_dominance_graph(fast_action_cost=fast_cost)
+            candidates = ("good_root", "bad_root")
+            unpruned = candidate_policy_frontier(graph, candidates)
+            pruned_ids = prune_dominated_frontier(graph, candidates)
+            pruned = candidate_policy_frontier(graph, pruned_ids)
+            self.assertEqual(pruned, unpruned, fast_cost)
 
     def test_dominance_fixed_point_handles_cyclic_action_graph(self) -> None:
         actions = {
