@@ -240,6 +240,26 @@ A statistical confidence interval is not a deterministic enclosure. A DWR asympt
 
 A VWEC used to exclude a witness in bounded mode must be backed by a deterministic mathematical bound or formal proof whose assumptions cover the entire claimed region and action outcome. Statistical or heuristic evidence can guide a separately declared probabilistic or exploratory path, but cannot discharge a deterministic-bound obligation.
 
+### Evidence assurance type and checker status
+
+Evidence type and verification status are orthogonal fields. Do not flatten them into a single confidence score.
+
+| Evidence class | Permitted use | Not sufficient by itself for |
+|---|---|---|
+| Point estimate | Nominal reporting and exploratory guidance | A bounded acceptance claim or calibrated probability |
+| Heuristic indicator | Action targeting and prioritisation | A deterministic bound or calibrated probability |
+| Statistical estimate/bound | Probability statement within a declared model, sampling and calibration scope | Deterministic enclosure or out-of-domain guarantee |
+| Deterministic mathematical bound | Bounded claim under explicit theorem assumptions | Physical model validity or omitted uncertainty |
+| Formal proof/certificate | The proposition actually encoded and checked | Claims outside its formal scope |
+| Experimental validation evidence | Agreement/disagreement with measurements over a declared domain | Universal proof outside tested conditions |
+| Provenance/integrity evidence | Identity/integrity of inputs, executable, configuration and outputs | Numerical accuracy by itself |
+
+Independently record checker status, for example: \`PRODUCER_ASSERTED\`, \`AUTOMATICALLY_CHECKED\`, \`INDEPENDENTLY_CHECKED\`, \`CONFLICTED\`, or \`STALE\`. These labels do not replace the underlying artefact or proof.
+
+A statistical confidence interval is not a deterministic enclosure. A DWR asymptotic indicator is not a standard deviation. A running round-off estimate is not automatically a certified floating-point enclosure. A floating-point residual is not automatically a rigorous residual bound.
+
+A VWEC used to exclude a witness in bounded mode must be backed by a deterministic mathematical bound or formal proof whose assumptions cover the entire claimed region and action outcome. Statistical or heuristic evidence can guide a separately declared probabilistic or exploratory path, but cannot discharge a deterministic-bound obligation.
+
 ### 5.1 Verified Witness-Exclusion Certificates (VWEC)
 
 The key numerical evidence object proposed for DWAOP is a **Verified Witness-Exclusion Certificate (VWEC)**. This is a scoped proof artefact, not a confidence score.
@@ -299,12 +319,27 @@ M_{ba}=
 This map is used only for candidate filtering and lower-bound construction. It is not proof that an action will resolve a blocker. Conditional outcomes, prerequisites and certificate checking remain explicit in the AND-OR planner.
 
 The map must distinguish:
-- action can produce evidence relevant to blocker;
-- action can guarantee blocker closure under every covered outcome;
+- action can produce evidence relevant to a blocker;
+- action may close or partition a blocker under a specified outcome cell, subject to post-run checking;
+- action has a guaranteed proof effect for each specified outcome cell;
 - action can only provide heuristic guidance;
 - action is inapplicable.
 
-Only the second category can be used as a guaranteed effect in a terminal plan. The first may be included in an optimistic lower-bound relaxation but never in the terminal acceptance test.
+An action need not close the same blocker in every outcome. It may partition the state, after which each child branch has its own witness and obligation set. A contingent plan is guaranteed only when **every** outcome cell has a sound checked transition and every child branch is itself decision-complete. The pre-run effect map is used for optimistic candidate filtering and lower bounds; the actual branch effect is established only by the checked output artefact.
+
+### 5.4 Typed witness and decision effects
+
+For each covered action outcome cell \(y\), the transition contract should declare one or more typed effects:
+
+- \`EXCLUDE_REGION(R)\`: a checked set-transition certificate proves a region \(R\) is incompatible with the observed outcome/model and removes it from the sound admissible set.
+- \`PARTITION(\{R_i\})\`: a checked outcome partition covers the prior admissible set; each \(R_i\) becomes a separate child state. The partition must be exhaustive and non-overlapping where required by its semantics.
+- \`CONFIRM_VIOLATION(q^*)\`: a checked feasible point shows that a candidate acceptance claim is false. It does not alone prove robust rejection.
+- \`ESTABLISH_REJECTION\`: a checked global result proves that every admissible QoI state violates at least one required constraint, i.e. \(\mathcal Q\cap\mathcal F=\varnothing\).
+- \`DISCHARGE_OBLIGATION(o_i)\`: an artefact satisfies the exact predicate for a named mandatory assurance obligation.
+- \`INVALIDATE_ASSUMPTION(m_i)\`: evidence shows a model assumption is unsupported or false; the model scope and admissible set must be rebuilt or the claim refused.
+- \`HEURISTIC_GUIDANCE\`: may reprioritise future actions but cannot remove a witness or discharge a bounded assurance obligation.
+
+These effects are not interchangeable. In particular, \`CONFIRM_VIOLATION\` refutes robust acceptance, while \`ESTABLISH_REJECTION\` is the stronger proof needed for a robust rejection verdict. A \`PARTITION\` effect creates multiple obligations for the planner: every child outcome branch must be handled.
 
 ## 6. Evidence-state transition
 
@@ -442,7 +477,37 @@ C_{r,\mathrm{spent}}(S)+LB_r(S)>B_{r,\mathrm{total}}
 
 Apply this test independently to each resource dimension. Do not sum individual blocker distances: one action may resolve multiple blockers, and different branches may use different actions. If the relaxed graph or resource lower bounds are not sound, disable this pruning rule.
 
-#### 7.3.2 Proof-preserving state dominance
+#### 7.3.2 Blocker-cover LP relaxation
+
+A stronger optional lower bound can be obtained from a relaxed blocker-cover problem. Let \(\bar M_{ba}=1\) when action \(a\) has any potentially valid route to blocker \(b\), including route uncertainty and outcome-conditional effects. The relation must be an over-approximation: false-positive edges weaken the bound, but a missing valid edge can make it inadmissible.
+
+For each resource component \(r\), solve:
+
+\[
+LB_r^{\mathrm{cover}}(S)=
+\min_{x_a\ge0}
+\sum_{a\in\mathcal A(S)}c_{a,r}^{\downarrow}x_a
+\quad\text{subject to}\quad
+\sum_{a\in\mathcal A(S)}\bar M_{ba}x_a\ge1
+\quad\forall b\in B(S).
+\]
+
+The variables are continuous and unbounded above; this is an optimistic fractional relaxation of action multiplicities. For any complete policy path, its action-count vector is feasible for this relaxation if every current blocker is necessarily acted upon (discharged, partitioned into child blockers or otherwise resolved) on every path. Hence the LP optimum cannot exceed the lower-bound cost of any such path. It can therefore be used as a lower bound on worst-case plan cost.
+
+Use:
+
+\[
+LB_r^{\mathrm{combined}}(S)=
+\max\left\{
+LB_r(S),LB_r^{\mathrm{cover}}(S)
+\right\}.
+\]
+
+This LP bound is not admissible if a path can terminate without affecting a blocker counted in \(B(S)\), if the blocker-effect map omits a valid route, or if action costs lack defensible lower bounds. In those cases, omit the affected blocker or disable this relaxation; do not infer infeasibility from an invalid LP.
+
+This is a search relaxation, not a new engineering computation or assurance certificate. Its practical value must be measured against its setup/solve overhead and the simpler blocker-distance bound.
+
+#### 7.3.3 Proof-preserving state dominance
 
 A search state \(S_1\) may dominate \(S_2\) only when all of the following are established:
 
@@ -460,7 +525,7 @@ For a finite state abstraction, make the simulation relation explicit. For every
 
 This is a conditional dominance argument, not a proof that a generic QoI-set subset test is safe.
 
-#### 7.3.3 Action-equivalence reduction
+#### 7.3.4 Action-equivalence reduction
 
 Actions may be merged or one removed only if a checked equivalence relation establishes identical:
 - applicability/preconditions;
@@ -630,6 +695,8 @@ A heuristic search timeout is not evidence that no plan exists. It returns `INCO
 - Minimax-regret robust optimisation and witness-style policy computation.
 - Joint spatial, surrogate-model and sampling-error control in stochastic FEM.
 - Bayesian inverse-FEM methods coupling discretisation-error and sampling-error control.
+- Goal-oriented adaptive modelling of stochastic heterogeneous media and model-based multilevel Monte Carlo.
+- Running error propagation through generated finite-element kernels.
 - Proof-carrying plans and resource logics for AI planning.
 - Expected value of information / optimal computing budget allocation.
 - Counterexample-guided abstraction refinement.
@@ -665,6 +732,10 @@ Do not claim:
 | Yang et al. (2024), active learning for RBDO under multiple simulation models | Active constraints, model selection and differing simulation costs in reliability-based design optimisation | Do not claim novelty for cost-aware fidelity/action selection in reliability optimisation |
 | Vayanos et al. (2023), robust optimisation with decision-dependent information discovery | Decisions control when uncertain information is revealed through costly exploratory investments; develops multistage robust formulations and a solution method | Do not claim novelty for planning costly queries that reveal information before a decision |
 | Ley et al. (2026), optimisation under elementwise controllable uncertainty | Decision maker can pay to shrink bounded uncertainty intervals element by element and optimise under the remaining uncertainty | Do not claim novelty for paid computation/measurement reducing an uncertainty set |
+| Bonilla-Villalba et al. (2020), goal-oriented model adaptivity in stochastic elastodynamics | Jointly controls spatial discretisation, surrogate-model and Monte Carlo sampling errors to compute QoI statistics at minimum cost | Do not claim novelty for coordinating these numerical approximation and sampling errors |
+| Bayesian inverse-FEM adaptive methodology (2019) | Simultaneously controls goal-oriented FEM discretisation error and statistical sampling error in Bayesian parameter identification, with stopping and mesh-refinement decisions | Do not claim novelty for coupling sampling sufficiency and FEM discretisation control |
+| Goal-oriented adaptive modelling of random heterogeneous media / model-based MLMC (2019) | QoI-driven adaptive surrogate/model resolution and multilevel Monte Carlo for stochastic heat conduction and elastostatics | Do not claim novelty for QoI-driven model-resolution plus sampling-cost control |
+| Habera et al. (2026), running error bounds in FE kernels | Propagates a posteriori running round-off/error estimates through generated FE kernels; the authors distinguish these estimates from certified bounds | Do not claim novelty for running kernel-error estimates; do not treat them as VWECs without a separate certification argument |
 | Bonilla-Villalba et al. (2020), goal-oriented model adaptivity in stochastic elastodynamics | Simultaneously controls spatial discretisation, surrogate-model and Monte Carlo sampling errors to compute QoI statistics at minimum cost | Do not claim novelty for jointly controlling multiple numerical approximation/sampling errors |
 | Bayesian inverse FEM adaptive methodology (2019) | Simultaneous control of goal-oriented FEM discretisation error and statistical sampling error in Bayesian parameter identification, including stopping and mesh-refinement decisions | Do not claim novelty for coupling sampling sufficiency and FEM discretisation-error control |
 | Goal-oriented adaptive modelling of random heterogeneous media and model-based MLMC (2019) | QoI-driven adaptive surrogate/model resolution and multilevel Monte Carlo for stochastic heat conduction and elastostatics | Do not claim novelty for QoI-driven model-resolution plus sampling-cost control |
@@ -703,6 +774,10 @@ This is not yet a demonstrated gap. It may still be obvious to a skilled reader 
 - Yang et al. (2024), multi-model active learning for RBDO: https://doi.org/10.1016/j.strusafe.2023.102426
 - Vayanos et al., decision-dependent information discovery: https://doi.org/10.1287/mnsc.2021.00160
 - Ley et al. (2026), elementwise controllable uncertainty: https://doi.org/10.1007/s00291-026-00856-z
+- Bonilla-Villalba et al. (2020), stochastic elastodynamics model adaptivity: https://doi.org/10.1615/Int.J.UncertaintyQuantification.2020031735
+- Bayesian inverse-FEM adaptive methodology (2019): https://pmc.ncbi.nlm.nih.gov/articles/PMC6416561/
+- Adaptive modelling of random heterogeneous media / model-based MLMC (2019): https://doi.org/10.1016/j.camwa.2019.04.014
+- Habera et al. (2026), running error estimates in FE kernels: https://arxiv.org/abs/2609.37844
 - Bonilla-Villalba et al. (2020), stochastic elastodynamics model adaptivity: https://doi.org/10.1615/Int.J.UncertaintyQuantification.2020031735
 - Bayesian inverse-FEM adaptive methodology (2019): https://pmc.ncbi.nlm.nih.gov/articles/PMC6416561/
 - Adaptive modelling of random heterogeneous media / model-based MLMC (2019): https://doi.org/10.1016/j.camwa.2019.04.014
