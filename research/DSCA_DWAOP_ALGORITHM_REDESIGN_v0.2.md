@@ -630,6 +630,11 @@ For a finite state abstraction, make the simulation relation explicit. For every
 
 This is a conditional dominance argument, not a proof that a generic QoI-set subset test is safe.
 
+**Finite-state reference implementation (research-only):** the standalone harness now contains a greatest-simulation-relation routine. It begins with pairs satisfying local scope, QoI-set, obligation, capability, live-artifact and resource-order conditions, then repeatedly removes pairs for which an action offered by the weaker state has no semantically compatible, no-more-expensive action in the stronger state, or for which an outcome successor cannot be mapped to a related successor. Outcome labels are not used as a substitute for successor-state semantics. A candidate-frontier reducer removes only strict dominance; equivalent states are retained.
+
+This routine is currently an isolated finite-state prototype. It is **not yet called by the AND-OR planner's search recursion**, and its correctness has not yet been tested by comparing dominance-pruned search against exhaustive unpruned search on generated contingent graphs. The current tests establish the specified relation's behaviour on a hand-constructed graph, including cycles and adversarial contract mismatches; they do not prove the relation sound for arbitrary engineering action contracts.
+
+
 #### 7.3.4 Action-equivalence reduction
 
 Actions may be merged or one removed only if a checked equivalence relation establishes identical:
@@ -1021,14 +1026,15 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 
 - **RESEARCHED:** constrained goal-oriented AFEM, goal-oriented flow verification, stochastic/parametric and nonlinear QoI adaptivity, model/discretisation/sampling error control, Bayesian inverse-FEM, adaptive RBDO under probability and interval uncertainty, PDE branch-and-bound with safe numerical bounds, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, running FE-kernel error analysis, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
 - **FORMULATED:** decision-witness state, obligation state, typed branch-conditional action effects, VWEC and DAPC certificate layers, robust AND-OR planning objective, resource-specific aggregation semantics, additive-only blocker-cover LP, peak-memory live-set accounting, blocker-distance lower bounds and proof-preserving state dominance.
-- **REFERENCE HARNESS IMPLEMENTED (RESEARCH ONLY):** standalone finite-state planner/oracle in [`research/prototypes/dwaop_reference_harness.py`](prototypes/dwaop_reference_harness.py). It is not imported by GDEC and does not change production/runtime behaviour.
-- **EXECUTED:** 12 Python unittest cases passed on Python 3.13.5. The harness compares pruned and unpruned feasibility over 25 additive-budget values, checks the simple blocker lower bound over 2,401 small action-cover families, validates a complete two-outcome policy tree, and exercises additive/peak resource aggregation. `py_compile` also passed.
+- **REFERENCE HARNESS IMPLEMENTED (RESEARCH ONLY):** standalone finite-state planner/oracle, greatest-simulation relation and strict candidate-frontier reducer in [`research/prototypes/dwaop_reference_harness.py`](prototypes/dwaop_reference_harness.py). It is not imported by GDEC and does not change production/runtime behaviour.
+- **EXECUTED:** 22 Python unittest cases passed on Python 3.13.5 against the exact committed harness blob `ebeaa85a6c22c473333d4d0b88fd9b017c82d480`. Tests cover the contingent finite fixture, 25 additive-budget points, 2,401 small action-cover families, resource aggregation, dominance relation direction, missing action, excess cost, unmatched successor, model-scope mismatch, evidence/failure-contract mismatch, outcome-label independence, a cyclic action graph, and transitivity on the reference graph. `py_compile` also passed.
 - **HAND-CHECKED:** sequential additive totals, peak/live-set memory and contingent branch aggregation in the separate resource-algebra note.
 - **CONDITIONALLY JUSTIFIED:** terminal soundness proposition under explicit enclosure, transition and checker assumptions.
-- **NOT IMPLEMENTED:** no GDEC DWAOP controller, VWEC generator, production resource ledger, or independent DAPC checker. The harness includes only a small test-specific plan-tree validator.
-- **NOT TESTED:** no FEM/CFD solve, no GDEC runtime integration, no numerical certificate generation, no blocker-cover LP implementation, no state-dominance pruning implementation, and no measured performance advantage.
+- **NOT INTEGRATED:** the greatest-simulation relation and candidate-frontier reducer are not called by the finite planner's search recursion; no dominance-pruned versus exhaustive planner-search comparison has been run.
+- **NOT IMPLEMENTED:** no GDEC DWAOP controller, VWEC generator, production resource ledger, independent DAPC checker, or blocker-cover LP pruning. The harness includes only a test-specific plan-tree validator.
+- **NOT TESTED:** no FEM/CFD solve, no GDEC runtime integration, no numerical certificate generation, no generated-graph dominance-pruning comparison, and no measured performance advantage.
 - **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate. The tested lower bound is the weak max-of-cheapest-resolver bound, not the optional blocker-cover LP.
 - **NOT INDEPENDENTLY VERIFIED:** no external numerical-analysis, formal-methods or planning review.
 - **NOT APPROVED:** no production implementation authorisation.
 
-**Next gate:** broaden the finite-state harness to generated contingent graphs, validate state-dominance pruning against exhaustive unpruned search, then obtain an independent review of the action contracts and proof obligations. The GDEC runtime remains out of scope until that gate and owner approval are complete.
+**Next gate:** integrate the relation into the offline finite-state planner only, construct generated contingent graph families, and compare dominance-pruned and unpruned Pareto frontiers against exhaustive search. Add mutation/adversarial cases for invalid dominance assumptions. Obtain independent review of action contracts and proof obligations before proposing any GDEC runtime integration. Main, WP2 and WP3 remain outside this research task.
