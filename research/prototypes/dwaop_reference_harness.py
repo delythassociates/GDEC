@@ -728,6 +728,60 @@ class TestDWAOPReferenceHarness(unittest.TestCase):
         relation = greatest_simulation_relation(graph)
         self.assertNotIn(("good_root", "bad_root"), relation)
 
+    def test_outcome_labels_do_not_replace_successor_semantics(self) -> None:
+        graph = make_dominance_graph()
+        actions = dict(graph.actions)
+        fast = actions["fast"]
+        actions["fast"] = DominanceAction(
+            fast.action_id, fast.semantic_key, fast.preconditions,
+            fast.evidence_contract, fast.failure_semantics, fast.ru_upper,
+            fast.during_peak_gb,
+            (("green", "good_pass"), ("red", "good_fail")),
+        )
+        graph = DominanceGraph(graph.states, actions)
+        relation = greatest_simulation_relation(graph)
+        self.assertIn(("good_root", "bad_root"), relation)
+
+    def test_different_model_scope_blocks_dominance(self) -> None:
+        graph = make_dominance_graph()
+        states = dict(graph.states)
+        bad = states["bad_root"]
+        states["bad_root"] = DominanceState(
+            bad.state_id, "model-v2", bad.assurance_mode, bad.qoi_set,
+            bad.open_obligations, bad.capabilities, bad.live_artifacts,
+            bad.additive_spent_ru, bad.peak_committed_gb, bad.memory_model,
+            bad.actions, bad.terminal,
+        )
+        relation = greatest_simulation_relation(DominanceGraph(states, graph.actions))
+        self.assertNotIn(("good_root", "bad_root"), relation)
+
+    def test_different_evidence_or_failure_contract_blocks_action_match(self) -> None:
+        graph = make_dominance_graph()
+        actions = dict(graph.actions)
+        slow = actions["slow"]
+        actions["slow"] = DominanceAction(
+            slow.action_id, slow.semantic_key, slow.preconditions,
+            frozenset({"statistical_estimate_only"}),
+            frozenset({"timeout", "not_applicable", "model_invalid"}),
+            slow.ru_upper, slow.during_peak_gb, slow.outcomes,
+        )
+        relation = greatest_simulation_relation(DominanceGraph(graph.states, actions))
+        self.assertNotIn(("good_root", "bad_root"), relation)
+
+    def test_simulation_relation_is_transitive_on_reference_graph(self) -> None:
+        graph = make_dominance_graph()
+        relation = greatest_simulation_relation(graph)
+        for left, middle in relation:
+            for middle_2, right in relation:
+                if middle == middle_2:
+                    self.assertIn((left, right), relation, (left, middle, right))
+
+    def test_accept_and_reject_terminal_states_are_not_dominated(self) -> None:
+        graph = make_dominance_graph()
+        relation = greatest_simulation_relation(graph)
+        self.assertNotIn(("good_pass", "good_fail"), relation)
+        self.assertNotIn(("good_fail", "good_pass"), relation)
+
     def test_dominance_fixed_point_handles_cyclic_action_graph(self) -> None:
         actions = {
             "left_loop": DominanceAction(
