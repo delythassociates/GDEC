@@ -1,13 +1,13 @@
 # GDEC Orchestration State
-Last updated: 2026-11-23T08:45:00+05:30  | Session #: 3
-Branch tip: research/wp2-mutation-classification-final  | Baseline: 459 passed / 0 skips / 0 failures on host with operational NVIDIA GPU (445 passed / 14 skipped in non-GPU CI)
+Last updated: 2026-11-26T23:45:00+05:30  | Session #: 4
+Branch tip: research/wp2-residual-gate-closure  | Baseline: 452 passed / 14 skipped / 0 failures in locked CPU-only env (459 passed w/ GPU)
 
 ## Work package board
 | WP | Status (todo/active/blocked/done) | Branch | Gates passed / total | Evidence path |
 |---|---|---|---|---|
 | WP0 | done | research/wp0-repo-integrity | 4 / 4 | research/wp0/ |
 | WP1 | done | research/wp1-eir-adversarial-hardening | 4 / 4 | research/wp1/ |
-| WP2 | active (final mutation classification and test coverage closure complete — ready for review) | research/wp2-mutation-classification-final | 9 / 9 gates passed | research/wp2-mutation-classification-final/ |
+| WP2 | active (residual acceptance-gate closure complete — pending CI & owner review) | research/wp2-residual-gate-closure | 17 / 17 gates | research/wp2-residual-gate-closure/ |
 | WP3 | todo | pending | 0 / 4 | pending |
 | WP4 | todo | pending | 0 / 2 | pending |
 | WP5 | todo | pending | 0 / 3 | pending |

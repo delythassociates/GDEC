@@ -806,6 +806,141 @@ def build_mutants() -> List[tuple[str, str, str, str, str, str, Callable[[], Exe
         mut_eir_confusable_check,
     ))
 
+    # 15. FEM Elasticity: Scale assembled stiffness matrix by 0.5
+    def mut_fem_stiffness_scale():
+        from gdec.fem.elasticity import LinearElasticitySolver
+        orig = LinearElasticitySolver.assemble_stiffness
+        def _mut(self, basis):
+            return 0.5 * orig(self, basis)
+        LinearElasticitySolver.assemble_stiffness = _mut
+        try:
+            return run_target_test("tests/test_fem_mathematical_verification.py::test_cantilever_beam_timoshenko_analytical_comparison")
+        finally:
+            LinearElasticitySolver.assemble_stiffness = orig
+    mutants.append((
+        "MUT-FEM-03",
+        "gdec.fem.elasticity",
+        "LinearElasticitySolver.assemble_stiffness",
+        "arithmetic",
+        "Scale global stiffness matrix K by 0.5 while preserving SPD structure",
+        "tests/test_fem_mathematical_verification.py::test_cantilever_beam_timoshenko_analytical_comparison",
+        mut_fem_stiffness_scale,
+    ))
+
+    # 16. FEM Estimators: Negate interior traction jumps in FacetTractionJumpEvaluator
+    def mut_est_traction_jump_sign():
+        from gdec.fem.estimators import FacetTractionJumpEvaluator
+        orig = FacetTractionJumpEvaluator.evaluate
+        def _mut(self, gdec_mesh, stresses, loads=None):
+            res = orig(self, gdec_mesh, stresses, loads=loads)
+            res.traction_jumps = -res.traction_jumps
+            return res
+        FacetTractionJumpEvaluator.evaluate = _mut
+        try:
+            return run_target_test("tests/test_dwr_verification.py::test_dwr_qoi_error_estimation_and_effectivity_convergence")
+        finally:
+            FacetTractionJumpEvaluator.evaluate = orig
+    mutants.append((
+        "MUT-EST-01",
+        "gdec.fem.estimators",
+        "FacetTractionJumpEvaluator.evaluate",
+        "arithmetic",
+        "Negate inter-element traction jumps [[sigma_h n]] across interior facets",
+        "tests/test_dwr_verification.py::test_dwr_qoi_error_estimation_and_effectivity_convergence",
+        mut_est_traction_jump_sign,
+    ))
+
+    # 17. FEM Estimators: Corrupt Hermite edge bubble constant (1/6 instead of 1/12)
+    def mut_est_dual_bubble_constant():
+        from gdec.fem.estimators import DualWeightEvaluator
+        orig = DualWeightEvaluator.compute_edge_bubble_integral
+        def _mut(h_F, t_F, grad_z_v0, grad_z_v1):
+            return 2.0 * orig(h_F, t_F, grad_z_v0, grad_z_v1)
+        DualWeightEvaluator.compute_edge_bubble_integral = staticmethod(_mut)
+        try:
+            return run_target_test("tests/test_dwr_verification.py::test_dwr_manufactured_polynomial_bubble_integration")
+        finally:
+            DualWeightEvaluator.compute_edge_bubble_integral = orig
+    mutants.append((
+        "MUT-EST-02",
+        "gdec.fem.estimators",
+        "DualWeightEvaluator.compute_edge_bubble_integral",
+        "arithmetic",
+        "Corrupt Hermite edge bubble quadrature constant from h_F^2/12 to h_F^2/6",
+        "tests/test_dwr_verification.py::test_dwr_manufactured_polynomial_bubble_integration",
+        mut_est_dual_bubble_constant,
+    ))
+
+    # 18. FEM Estimators: Drop thickness scaling in ElementResidualEvaluator
+    def mut_est_volume_thickness():
+        from gdec.fem.estimators import ElementResidualEvaluator
+        orig_desc = ElementResidualEvaluator.__dict__["evaluate"]
+        orig_fn = ElementResidualEvaluator.evaluate
+        def _mut(gdec_mesh, sol, body_force_fn=None, thickness=1.0, facet_data=None):
+            return orig_fn(gdec_mesh, sol, body_force_fn=body_force_fn, thickness=1.0, facet_data=facet_data)
+        ElementResidualEvaluator.evaluate = staticmethod(_mut)
+        try:
+            return run_target_test("tests/test_dwr_verification.py::test_dwr_element_volume_residual_thickness_scaling")
+        finally:
+            ElementResidualEvaluator.evaluate = orig_desc
+    mutants.append((
+        "MUT-EST-03",
+        "gdec.fem.estimators",
+        "ElementResidualEvaluator.evaluate",
+        "boundary",
+        "Ignore constitutive thickness parameter (force thickness=1.0) in volume residual evaluator",
+        "tests/test_dwr_verification.py::test_dwr_element_volume_residual_thickness_scaling",
+        mut_est_volume_thickness,
+    ))
+
+    # 19. FEM Estimators: Invert integration-by-parts sign in DWREstimator
+    def mut_est_dwr_sign():
+        from gdec.fem.estimators import DWREstimator
+        orig = DWREstimator.estimate
+        def _mut(self, *args, **kwargs):
+            res = orig(self, *args, **kwargs)
+            res.details["signed_qoi_error_estimate"] = -res.details["signed_qoi_error_estimate"]
+            res.details["signed_qoi_error_estimate_mm"] = -res.details["signed_qoi_error_estimate_mm"]
+            return res
+        DWREstimator.estimate = _mut
+        try:
+            return run_target_test("tests/test_estimators.py::test_estimator_indicators")
+        finally:
+            DWREstimator.estimate = orig
+    mutants.append((
+        "MUT-EST-04",
+        "gdec.fem.estimators",
+        "DWREstimator.estimate",
+        "arithmetic",
+        "Invert signed_qoi_error_estimate sign in DWREstimator.estimate",
+        "tests/test_estimators.py::test_estimator_indicators",
+        mut_est_dwr_sign,
+    ))
+
+    # 20. FEM Estimators: Zero out ZZ recovery energy norm indicators
+    def mut_est_zz_zero():
+        from gdec.fem.estimators import RefinementEstimator
+        orig = RefinementEstimator.compute_zz_recovery_indicator
+        def _mut(self, gdec_mesh, sol):
+            res = orig(self, gdec_mesh, sol)
+            res.indicators[:] = 0.0
+            res.priorities[:] = 0.0
+            return res
+        RefinementEstimator.compute_zz_recovery_indicator = _mut
+        try:
+            return run_target_test("tests/test_estimators.py::test_estimator_indicators")
+        finally:
+            RefinementEstimator.compute_zz_recovery_indicator = orig
+    mutants.append((
+        "MUT-EST-05",
+        "gdec.fem.estimators",
+        "RefinementEstimator.compute_zz_recovery_indicator",
+        "return_value",
+        "Zero out ZZ recovery energy norm indicators and priorities",
+        "tests/test_estimators.py::test_estimator_indicators",
+        mut_est_zz_zero,
+    ))
+
     return mutants
 
 
@@ -921,9 +1056,30 @@ def main():
     print(f"Execution errors: {errors}")
     print("=================================================================")
 
+    per_module: Dict[str, Dict[str, Any]] = {}
+    for r in records:
+        mod = r.target_module
+        if mod not in per_module:
+            per_module[mod] = {"total": 0, "killed": 0, "survived": 0, "invalid_mutants": 0, "errors": 0, "kill_rate": 0.0}
+        per_module[mod]["total"] += 1
+        if r.status == "KILLED":
+            per_module[mod]["killed"] += 1
+        elif r.status == "SURVIVED":
+            per_module[mod]["survived"] += 1
+        elif r.status == "INVALID_MUTANT":
+            per_module[mod]["invalid_mutants"] += 1
+        else:
+            per_module[mod]["errors"] += 1
+    for mod, stats in per_module.items():
+        stats["kill_rate"] = stats["killed"] / stats["total"] if stats["total"] > 0 else 0.0
+
+    print("\n--- Per-Module Mutation Scores ---")
+    for mod, stats in sorted(per_module.items()):
+        print(f"  {mod}: {stats['killed']}/{stats['total']} killed ({stats['kill_rate']:.1%})")
+
     report_data = {
         "campaign_type": "targeted_production_runtime_mutation",
-        "scope": "6 core production modules (14 targeted mutants)",
+        "scope": f"{len(per_module)} core production modules ({total} targeted mutants)",
         "excluded_areas": "Whole-repository AST source mutation (mutmut restricted on Windows per issue #397)",
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "baseline_validated": True,
@@ -933,6 +1089,7 @@ def main():
         "invalid_mutants": invalid_mutants,
         "error_mutants": errors,
         "kill_rate": kill_rate,
+        "per_module_summary": per_module,
         "mutants": [asdict(r) for r in records],
     }
 

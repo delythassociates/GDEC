@@ -33,18 +33,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
 
-      - name: Install package and dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[test,amg]"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --locked --extra test --extra amg
 
       - name: Byte-compile Python sources
-        run: python -m compileall -q src tests benchmarks
+        run: uv run --no-sync python -m compileall -q src tests benchmarks
 
       - name: Execute pytest test suite
-        run: python -m pytest -q
+        run: uv run --no-sync python -m pytest -q
 
   status-register-traceability:
     name: Status Register & Traceability Gate
@@ -59,18 +61,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[test,amg]"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install locked dependencies
+        run: uv sync --locked --extra test --extra amg
 
       - name: Generate authoritative status register
-        run: python scripts/generate_status_register.py --output results/status_register.json
+        run: uv run --no-sync python scripts/generate_status_register.py --output results/status_register.json
 
       - name: Verify status register and enforce traceability
-        run: python scripts/generate_status_register.py --check --input results/status_register.json
+        run: uv run --no-sync python scripts/generate_status_register.py --check --input results/status_register.json
 
       - name: Post-test clean working tree check
         run: |
@@ -120,22 +124,29 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
 
-      - name: Install dependencies with pytest-cov
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[test,amg]"
-          python -m pip install pytest-cov
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
-      - name: Run test suite with coverage report
-        run: python -m pytest --cov=src/gdec --cov-report=term --cov-report=xml tests/
+      - name: Install locked dependencies
+        run: uv sync --locked --extra test --extra amg
+
+      - name: Run test suite with branch coverage report
+        run: uv run --no-sync python -m pytest --cov=src/gdec --cov-branch --cov-report=term --cov-report=json:coverage.json tests/
+
+      - name: Enforce branch coverage ratcheting floor
+        run: uv run --no-sync python scripts/check_branch_coverage.py --coverage-json coverage.json --baseline research/wp2/coverage-baseline.json
+
+      - name: Run coverage gate negative tests
+        run: uv run --no-sync python -m pytest -v tests/verification/test_coverage_gate.py
 
       - name: Run targeted mutation sensitivity suite
-        run: python -m pytest -v tests/verification/test_mutation_resilience.py
+        run: uv run --no-sync python -m pytest -v tests/verification/test_mutation_resilience.py
 
       - name: Run targeted production-function runtime mutation campaign
-        run: python scripts/run_mutation_campaign.py --output results/mutation_campaign_report.json
+        run: uv run --no-sync python scripts/run_mutation_campaign.py --output results/mutation_campaign_report.json
 
       - name: Upload Mutation Campaign Artifact
         uses: actions/upload-artifact@v4

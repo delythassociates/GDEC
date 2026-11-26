@@ -30,7 +30,7 @@ Each record documents the technical context, problem statement, alternatives con
 - [ADR-010: Commercial Product Differentiation Strategy (Decision Wedge)](#adr-010-commercial-product-differentiation-strategy-decision-wedge)
 - [ADR-011: Legacy Mathematical Claim Reconciliation & Scope Demarcation](#adr-011-legacy-mathematical-claim-reconciliation--scope-demarcation)
 - [ADR-012: Zero-Solve Analytical Parameter Scaling for Linear Elasticity UQ](#adr-012-zero-solve-analytical-parameter-scaling-for-linear-elasticity-uq)
-- [ADR-013: Phase 5.2 Execution Authorization (OWNER MUST CONFIRM)](#adr-013-phase-52-execution-authorization-owner-must-confirm)
+- [ADR-013: Phase 5.2 Execution Authorization (Confirmed)](#adr-013-phase-52-execution-authorization-confirmed)
 
 ---
 
@@ -254,7 +254,7 @@ Each record documents the technical context, problem statement, alternatives con
 
 ---
 
-### ADR-013: Phase 5.2 Execution Authorization (OWNER MUST CONFIRM)
+### ADR-013: Phase 5.2 Execution Authorization (Confirmed)
 
 - **Status:** Confirmed by Owner (Session 2 Owner Authorization)
 - **Date:** 2026-11-22
@@ -268,7 +268,7 @@ Each record documents the technical context, problem statement, alternatives con
 - **Rationale:** Technical review of Phase 5.1.3 confirmed solver contract closure, DSE evidence integrity, and numerical validation baselines. The campaign systematically transforms GDEC into a verifiable, evidence-backed platform.
 - **Consequences:**
   - *Positive:* Unblocks execution of WP0 through WP7 and concurrent scientific research memos.
-  - *Action Required:* Owner must formally confirm or modify this decision record upon review.
+  - *Authorization Record:* Recorded as Confirmed by Owner (Session 2 Owner Authorization, 2026-11-22) in `WP0_CHANGELOG.md` and `ORCHESTRATION_STATE.md`. Original provisional scope (WP0–WP7) preserved.
 
 ---
 

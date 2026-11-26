@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "measured_at_commit": "2abc1a2f0422539356ad928931fdced692088652",
+  "environment_cpu": "Windows 11 / Python 3.13.14 / uv sync --locked --extra test --extra amg (non-GPU CI-equivalent, 452 passed, 14 skipped)",
+  "environment_gpu": "Windows 11 / Python 3.13.14 / NVIDIA GPU + cupy-cuda12x (459 passed)",
+  "command_cpu": "uv run --no-sync python -m pytest --cov=src/gdec --cov-branch --cov-report=json:coverage.json tests/",
+  "command_gpu": "python -m pytest --cov=src/gdec --cov-branch --cov-report=json:coverage.json tests/",
+  "omitted_untracked_user_files": [
+    "src/gdec/core/analyser.py",
+    "src/gdec/runtime/*"
+  ],
+  "baseline_branch_coverage_pct": 62.27,
+  "covered_branches": 1045,
+  "num_branches": 1678,
+  "statement_coverage_pct": 78.63,
+  "local_gpu_branch_coverage_pct": 65.08,
+  "local_gpu_covered_branches": 1092,
+  "ratchet_policy": "Observed branch coverage must be >= baseline_branch_coverage_pct. The floor may only be raised manually after verified coverage improvements and must never be automatically lowered."
+}
