@@ -189,7 +189,7 @@ where:
 
 - \(P_a\): preconditions and applicability predicate;
 - \(T_a\): affected evidence channels and witness types;
-- \(C_a\): hard upper-bound resource vector;
+- \(C_a=(\mathbf c_a^\downarrow,\mathbf c_a^\uparrow)\): defensible lower/upper resource-cost vectors. The upper vector is used for hard-budget planning; the lower vector is used only for admissible search lower bounds. If a defensible lower bound is unavailable for a resource, use zero for that component;
 - \(Y_a\): conservative cover of possible action outcomes;
 - \(K_a\): evidence/certificate contract;
 - \(D_a\): dependencies and shared assumptions;
@@ -324,11 +324,11 @@ A policy \(\pi\) maps each reachable evidence state/history to an action and bra
 Define the componentwise worst-case upper resource envelope:
 
 \[
-\overline{C}_r^\uparrow(\pi)
+\overline{\mathbf C}^\uparrow(\pi)
 =
-\sup_{\omega\in\Omega(\pi)}
-C_r^\uparrow(\pi,\omega)
-\quad\text{for every resource component }r.
+\left(
+\sup_{\omega\in\Omega(\pi)}C_r^\uparrow(\pi,\omega)
+\right)_{r=1}^{R}.
 \]
 
 This envelope may combine maxima attained on different paths. It is a conservative per-resource summary, not necessarily the cost vector of one physically realised path.
@@ -345,7 +345,7 @@ The planner returns the nondominated worst-case resource envelopes:
 \right\}.
 \]
 
-A plan fits hard budget \(\mathbf B\) only if \(\overline{\mathbf C}(\pi)\preceq\mathbf B\). If an owner preference is needed to select one plan from the Pareto frontier, it must be declared. The algorithm must not invent exchange rates between time, memory, energy or money.
+A plan fits hard budget \(\mathbf B\) only if \(\overline{\mathbf C}^\uparrow(\pi)\preceq\mathbf B\). If an owner preference is needed to select one plan from the Pareto frontier, it must be declared. The algorithm must not invent exchange rates between time, memory, energy or money.
 
 The optimization is over complete contingent policies, not the cost of the first action. A policy that covers only favourable outcomes is invalid.
 
@@ -408,7 +408,9 @@ Define:
 LB_r(S)=\max_{b\in B(S)}d_r(b\mid S).
 \]
 
-This is deliberately weak. Every decision-complete policy must resolve every current blocker on every covered branch, so its worst-case resource consumption must be at least the minimum relaxed cost of resolving each individual blocker; taking the maximum preserves a lower bound. The relaxation can underestimate the true cost because it ignores prerequisites, adverse outcomes, action interactions and other blockers. It must never overestimate it.
+This is deliberately weak. For a fixed blocker \(b\), every path of a decision-complete policy must contain some action sequence that discharges \(b\). The relaxed graph permits at least all such sequences and additionally relaxes preconditions and outcome constraints; its minimum path cost, using resource lower bounds, therefore cannot exceed the cost of the actual sequence. Taking the maximum of these per-blocker minima remains a lower bound on the worst-case policy cost. The relaxation can underestimate the true cost because it ignores prerequisites, adverse outcomes, action interactions and other blockers. It must never overestimate it.
+
+**Admissibility proof sketch:** Fix resource component \(r\) and blocker \(b\). For every outcome path \(\omega\) of a decision-complete policy, let \(P_{\omega,b}\) be the subsequence of actions on that path that causally discharges \(b\). By construction, this sequence is represented in the relaxed graph, whose edge costs are no greater than the corresponding actual action costs. Hence \(C_r^\uparrow(\pi,\omega)\ge C_r^\downarrow(P_{\omega,b})\ge d_r(b\mid S)\). Taking the supremum over \(\omega\) and then the maximum over \(b\) gives \(\overline C_r^\uparrow(\pi)\ge LB_r(S)\). This argument fails if the action-effect graph omits a valid discharge route or if a claimed cost lower bound exceeds actual cost; in either case the pruning rule must be disabled.
 
 Safe pruning rule:
 
@@ -466,7 +468,7 @@ DWAOP(spec, resource_budget):
         witnesses = generate_decision_reversing_witnesses(state.Q)
         decision = evaluate_robust_decision(state.Q, witnesses)
 
-        if decision.robust and obligations.all_satisfied:
+        if decision.robust and state.obligations.all_satisfied:
             return TERMINAL_DECISION(
                 decision,
                 independently_checked_certificate_bundle,
@@ -505,6 +507,9 @@ DWAOP(spec, resource_budget):
                 actual_cost
             )
 
+        if plan_frontier_has_multiple_incomparable_options and no_predeclared_operator_preference:
+            return PLAN_SELECTION_REQUIRED(plan_frontier)
+
         action = first_action(select_declared_preference_from_Pareto_frontier(plan_frontier))
         result = execute_and_record_actual_cost(action)
         actual_cost += result.measured_resource_cost
@@ -533,6 +538,8 @@ DWAOP(spec, resource_budget):
             return INCONCLUSIVE("ACTUAL_BUDGET_OVERRUN", state, actual_cost)
 
 ~~~
+
+If the Pareto frontier contains multiple incomparable plans and no preference was declared, the system must expose the frontier for operator selection; it must not invent a trade-off between resource types. \`PLAN_SELECTION_REQUIRED\` is a planning interaction state, not an engineering acceptance result.
 
 The controller may execute an exploratory action when no sound outcome cover exists only under an explicitly non-assured exploratory mode. Such an action cannot support a bounded terminal decision until its actual result has been converted into valid checked evidence. Search-depth exhaustion, state-space abstraction failure, or a heuristic witness-search timeout returns \`INCONCLUSIVE\`; it does not prove that no witness or plan exists.
 
