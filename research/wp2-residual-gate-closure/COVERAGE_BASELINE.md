@@ -13,7 +13,7 @@
   - `branch = true`
   - `source = ["src/gdec"]`
   - `omit = ["src/gdec/core/analyser.py", "src/gdec/runtime/*"]` (untracked user-owned files not present in git or CI)
-- **Locked CPU-only CI-equivalent baseline** (matching `ubuntu-latest` non-GPU CI runners using `uv sync --locked --extra test --extra amg` where `cupy-cuda12x` is not installed and 14 CUDA tests skip):
+- **Locked CPU-only CI-equivalent baseline** (matching `windows-latest` / Python 3.13 non-GPU CI runner using `uv sync --locked --extra test --extra amg` where `cupy-cuda12x` is not installed and 14 CUDA tests skip):
   - Command: `uv run --no-sync python -m pytest --cov=src/gdec --cov-branch --cov-report=json:coverage.json tests/`
   - Result: **452 passed, 14 skipped**, **1045 / 1678 branches covered = 62.2765%** (ratcheting floor set to **62.27%**).
 - **Local NVIDIA GPU-enabled measurement** (with `cupy-cuda12x` installed and operational GPU):
