@@ -1,0 +1,56 @@
+{
+  "schema_version": "dses_v0.6_comparative_benchmark",
+  "model_id": "dSES-correlated-regret-analytical-v06",
+  "depth": 12,
+  "domain": [
+    "0/1",
+    "1/1",
+    "0/1",
+    "1/1"
+  ],
+  "classification": {
+    "correlated_disk": {
+      "nodes": 2339,
+      "leaves": 1170,
+      "area_percent": {
+        "SELECT_A": 35.3271484375,
+        "SELECT_B": 37.9150390625,
+        "REFUSE_HIGH_REGRET": 2.490234375,
+        "UNRESOLVED": 24.267578125
+      },
+      "certificate_sha256": "b80b0eff86d5e0a300db06795dbad355e915390a8ffb7544d81fabe80ba2e7d9"
+    },
+    "independent_box_outer": {
+      "nodes": 2731,
+      "leaves": 1366,
+      "area_percent": {
+        "SELECT_A": 33.5693359375,
+        "SELECT_B": 36.1328125,
+        "REFUSE_HIGH_REGRET": 0,
+        "UNRESOLVED": 30.2978515625
+      },
+      "certificate_sha256": "e5d56a5af1ccec54b4f8f27b8abc4e927de1ae328a80de4c3b90017cd8400d79"
+    }
+  },
+  "uniform_grid_cells": 4096,
+  "timings_median_seconds": {
+    "disk_adaptive": 0.1155,
+    "disk_uniform": 0.1401,
+    "box_adaptive": 0.108,
+    "box_uniform": 0.1148
+  },
+  "tests": {
+    "passed": 10,
+    "failed": 0,
+    "environment": "local Python 3.13",
+    "command": "PYTHONPATH=src python -m pytest -q tests/test_dses_v06.py"
+  },
+  "limitations": [
+    "synthetic analytical model only",
+    "no FEM or physical validation",
+    "box comparator is not native IBEX",
+    "no external independent review",
+    "novelty unestablished",
+    "SHA-256 is not producer authentication"
+  ]
+}
