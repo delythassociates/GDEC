@@ -490,16 +490,39 @@ Do not claim:
 | Yang et al., 2024, active learning for RBDO under multiple simulation models | Active constraints, model selection and different simulation costs in reliability-based design optimisation | Do not claim novelty for cost-aware action/fidelity selection in reliability optimisation |
 | Solak et al., arXiv:2610.38582, 28 Oct 2026, MF-CAS preprint | Joint sample-location and fidelity selection using decomposed uncertainty intervals and model cost | Do not claim novelty for decomposed interval uncertainty plus joint cost-aware sampling/fidelity selection |
 | Zhao et al., Reliability Engineering & System Safety, online 20 Nov 2026, MF-PBALC | Posterior-mean failure-probability bounds, a stopping rule, a learning function and cost-aware joint evaluation-point/fidelity selection | Do not claim novelty for bound-based stopping or cost-aware joint fidelity selection in structural reliability |
-| CEGAR literature | Iterative counterexample generation, validation and guided refinement | Do not claim novelty for counterexample-guided refinement alone |
+| CEGAR literature | Counterexample generation, validation and guided abstraction refinement | Do not claim novelty for counterexample-guided refinement alone |
+| ACCESS, *Assurance Case Centric Engineering of Safety-critical Systems* (2024) | Model-based assurance-case/artifact management, traceability, automatic invocation of formal verification evidence, machine-checking assurance logic and change-impact analysis | Do not claim novelty for machine-readable assurance obligations, evidence graphs, or automatic verification evidence integration in isolation |
+| Automated assurance-case pattern selection for CPS (2022) | Formulates selection/coverage of assurance-case patterns with graph analytics and optimisation | Do not claim novelty for obligation coverage or minimising evidence-pattern sets alone |
+| NASA, *Guided Integration of Formal Verification in Assurance Cases* (2023) | Captures formal verification method constraints and evidence in assurance cases | Do not claim novelty for connecting verification-tool applicability constraints to assurance evidence alone |
 | US20240348663A1, “AI-enhanced simulation and modeling experimentation and control” | Broad published claims for an AI simulation/experimental-design decision platform with goals/constraints, targeted exploration, uncertainty reduction, model adjustment and planning/search features | Potential adjacent patent scope; requires patent-professional review. This document does not determine claim construction, infringement or freedom to operate |
 
-Primary links:
+### 11.1 Revised novelty boundary
+
+The following pieces are individually known or have close analogues: QoI adaptation, solver/mesh co-control, multi-fidelity cost-aware sampling, counterexample-guided refinement, assurance-case graphs, verification evidence integration, and resource-aware look-ahead planning.
+
+The narrower candidate hypothesis is therefore not any one of those components. It is their **specific coupling in a bounded numerical-engineering computation controller**:
+
+- the primary state is a sound joint QoI set, not a surrogate-only prediction;
+- unresolved decision alternatives are represented as explicit decision witnesses;
+- each computation action has a typed contract specifying the witnesses it can exclude, the assurance obligations it can discharge, the assumptions it shares and the exact evidence it emits;
+- a robust AND-OR planner searches contingent action sequences, with every outcome branch represented;
+- a vector-valued resource planner seeks a Pareto frontier of worst-case costs;
+- only independently checked, scope-valid evidence can alter the admissible set or close an obligation;
+- a terminal decision is permitted only when the witness set is empty (or minimax regret is within the declared tolerance) and every mandatory obligation is satisfied.
+
+This combination may still be obvious or already disclosed when compared with assurance-case planning, formal verification, robust optimisation and contingent planning. The literature search has not established a gap. A targeted search must now examine those combinations and their patent claims, not merely search the phrase “decision sufficiency”.
+
+### 11.2 Primary links
 
 - Becker et al. (2023), *Numerische Mathematik*: https://doi.org/10.1007/s00211-022-01334-8
 - Yang et al. (2024), *Structural Safety*: https://doi.org/10.1016/j.strusafe.2023.102426
 - Solak et al. (2026), MF-CAS preprint: https://arxiv.org/abs/2610.38582
 - Zhao et al. (2026), MF-PBALC: https://doi.org/10.1016/j.ress.2026.113871
-- CEGAR foundational paper: Clarke et al. (2000), CAV, https://doi.org/10.1007/10722167_15; expanded journal treatment (2003): https://doi.org/10.1145/876638.876643
+- Clarke et al. (2000), CEGAR, CAV: https://doi.org/10.1007/10722167_15
+- Clarke et al. (2003), CEGAR expanded journal treatment: https://doi.org/10.1145/876638.876643
+- ACCESS (2024), *Journal of Systems and Software*: https://doi.org/10.1016/j.jss.2024.112034
+- NASA, *Guided Integration of Formal Verification in Assurance Cases*: https://ntrs.nasa.gov/citations/20230007599
+- Automated assurance-case pattern selection for CPS (2022): https://doi.org/10.1007/978-3-031-14835-4_6
 - Patent publication: https://patents.google.com/patent/US20240348663A1/en
 
 The patent was located through a preliminary search. Google Patents lists this publication as pending and shows a long priority/family chain; its own page warns that legal status is not a legal conclusion. Claims 1, 8 and 12 explicitly discuss goal/constraint-driven simulation and uncertainty reduction, active-learning/targeted exploration, and adaptive look-ahead/branching subject to resources. This is a material adjacent disclosure to review with a patent professional; it does not establish whether any specific DWAOP claim is anticipated, obvious, infringing or free to operate.
