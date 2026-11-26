@@ -300,24 +300,40 @@ No single scalarisation is imposed when the owner has not supplied defensible re
 
 A policy that satisfies the planning constraints must resolve every covered outcome branch to an allowed terminal decision with all obligations met. A branch that ends INCONCLUSIVE or REFUSE is not counted as a successful feasible plan; it is reported as a safe failure of the plan and the controller must not issue ACCEPT. The planner cannot omit adverse outcomes to make a plan look feasible.
 
-### 7.2 AND-OR recursion
+### 7.2 AND-OR recursion with vector costs
 
-For a finite, sound abstraction of the evidence state and action outcomes, define the minimum worst-case scalarised cost recursion:
+For a finite, sound abstraction of the evidence state and action outcomes, define \(\mathcal J(S)\) as the Pareto frontier of worst-case resource vectors for robust decision-completing policies from state \(S\).
+
+For a terminal state with a satisfied decision gate and no open obligations:
 
 \[
-J(S)=
-\begin{cases}
-0,& \text{if the decision gate and all obligations are satisfied},\\
-+\infty,& \text{if the state is invalid or no admissible plan exists},\\
-\displaystyle\min_{a\in\mathcal A(S)}
-\left[
-c_a^\uparrow+
-\max_{y\in\mathcal Y_a(S)}J(T(S,a,y))
-\right],&\text{otherwise}.
-\end{cases}
+\mathcal J(S)=\{\mathbf 0\}.
 \]
 
-This recursion is written for a declared scalar cost. The actual multi-resource algorithm should propagate nondominated cost vectors and prune only when one partial plan is dominated in every resource while providing no better assurance/decision state.
+For a non-terminal state, consider an eligible action \(a\). For **every** covered outcome \(y\in\mathcal Y_a(S)\), select a feasible continuation vector \(\mathbf j_y\in\mathcal J(T(S,a,y))\). The worst-case resource vector for that contingent plan is:
+
+\[
+\mathbf v(a,\{\mathbf j_y\})
+=
+\mathbf c_a^\uparrow
++
+\operatorname{cmax}_{y\in\mathcal Y_a(S)}\mathbf j_y,
+\]
+
+where \(\operatorname{cmax}\) takes the componentwise maximum across all outcome branches. The state's plan-cost frontier is:
+
+\[
+\mathcal J(S)=
+\operatorname{ParetoMin}
+\left\{
+\mathbf v(a,\{\mathbf j_y\}):
+a\in\mathcal A(S),\mathbf j_y\in\mathcal J(T(S,a,y))\;\forall y
+\right\}.
+\]
+
+If an outcome branch has no feasible continuation, that action cannot be part of a guaranteed decision-completing policy. If no action yields a feasible vector, \(\mathcal J(S)=\varnothing\). A resource budget \(\mathbf B\) admits a plan only when at least one frontier vector satisfies \(\mathbf j\preceq\mathbf B\).
+
+This is the proposed multi-resource formulation. A scalarised version may be used for a separately declared single-objective experiment, but the core planner must not invent exchange rates between time, memory, energy or money.
 
 The action choice is an OR node. Its conservatively covered outcomes are AND branches: every branch must be handled.
 
