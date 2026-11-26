@@ -47,7 +47,7 @@ python -m unittest -v /tmp/dwaop_reference/dwaop_reference_harness_layered.py
 python -m py_compile /tmp/dwaop_reference/dwaop_reference_harness_final_candidate.py
 ~~~
 
-Python reported 3.13.5. The unit-test run completed with **26 passed, 0 failed**. Bytecode compilation completed without error.
+Python reported 3.13.5. The unit-test run completed with **27 passed, 0 failed**. Bytecode compilation completed without error.
 
 ## 3. Test results
 
