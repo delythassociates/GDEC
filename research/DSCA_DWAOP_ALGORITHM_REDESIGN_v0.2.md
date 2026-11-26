@@ -189,11 +189,13 @@ where:
 
 - \(P_a\): preconditions and applicability predicate;
 - \(T_a\): affected evidence channels and witness types;
-- \(C_a=(\mathbf c_a^\downarrow,\mathbf c_a^\uparrow)\): defensible lower/upper resource-cost vectors. The upper vector is used for hard-budget planning; the lower vector is used only for admissible search lower bounds. If a defensible lower bound is unavailable for a resource, use zero for that component;
+- \(C_a\): a resource record containing, for each declared resource \(r\), a lower/upper cost descriptor and its aggregation semantics. Cost lower bounds are used only by a compatible admissible search relaxation; cost upper bounds are used for hard-budget planning. If a defensible lower bound is unavailable, use zero or disable that resource-specific pruning rule;
 - \(Y_a\): conservative cover of possible action outcomes;
 - \(K_a\): evidence/certificate contract;
 - \(D_a\): dependencies and shared assumptions;
 - \(F_a\): failure, conflict, invalidation and timeout semantics.
+
+Resource lower/upper bounds must follow the resource-specific contract in Section 5.6. They are not universally additive. Peak-memory descriptors additionally identify retained outputs, releasable temporaries and simultaneously live buffers.
 
 A proof-producing action must return an artefact containing at least:
 
@@ -221,26 +223,6 @@ Actions may target different evidence channels:
 A mesh refinement cannot claim to resolve uncertain conductivity data. A second solver using the same equations cannot claim experimental validation. A GPU action that did not execute on the GPU cannot produce GPU performance evidence.
 
 ### 5.1 Evidence assurance type and checker status
-
-Evidence type and verification status are orthogonal fields. Do not flatten them into a single confidence score.
-
-| Evidence class | Permitted use | Not sufficient by itself for |
-|---|---|---|
-| Point estimate | Nominal reporting and exploratory guidance | A bounded acceptance claim or calibrated probability |
-| Heuristic indicator | Action targeting and prioritisation | A deterministic bound or calibrated probability |
-| Statistical estimate/bound | Probability statement within a declared model, sampling and calibration scope | Deterministic enclosure or out-of-domain guarantee |
-| Deterministic mathematical bound | Bounded claim under explicit theorem assumptions | Physical model validity or omitted uncertainty |
-| Formal proof/certificate | The proposition actually encoded and checked | Claims outside its formal scope |
-| Experimental validation evidence | Agreement/disagreement with measurements over a declared domain | Universal proof outside tested conditions |
-| Provenance/integrity evidence | Identity/integrity of inputs, executable, configuration and outputs | Numerical accuracy by itself |
-
-Independently record checker status, for example: \`PRODUCER_ASSERTED\`, \`AUTOMATICALLY_CHECKED\`, \`INDEPENDENTLY_CHECKED\`, \`CONFLICTED\`, or \`STALE\`. These labels do not replace the underlying artefact or proof.
-
-A statistical confidence interval is not a deterministic enclosure. A DWR asymptotic indicator is not a standard deviation. A running round-off estimate is not automatically a certified floating-point enclosure. A floating-point residual is not automatically a rigorous residual bound.
-
-A VWEC used to exclude a witness in bounded mode must be backed by a deterministic mathematical bound or formal proof whose assumptions cover the entire claimed region and action outcome. Statistical or heuristic evidence can guide a separately declared probabilistic or exploratory path, but cannot discharge a deterministic-bound obligation.
-
-### Evidence assurance type and checker status
 
 Evidence type and verification status are orthogonal fields. Do not flatten them into a single confidence score.
 
@@ -376,11 +358,65 @@ The independent DAPC checker must verify:
 5. every witness exclusion and obligation discharge is backed by a valid scoped certificate;
 6. evidence conflicts and model invalidations are not silently discarded;
 7. every terminal leaf satisfies its own decision and assurance predicates;
-8. worst-case resource upper bounds for every branch fit the declared budget.
+8. worst-case resource upper bounds for every branch fit the declared budget, using the exact aggregation operator and live-set/schedule semantics declared for each resource;
+9. peak-memory accounting includes all simultaneously live retained artefacts, workspaces, temporary buffers and release events;
+10. unsupported parallel execution or undefined resource aggregation is rejected rather than approximated.
 
 The DAPC does not certify the physical truth of the declared model. Its top-level proposition is conditional: all covered executions of the plan reach the stated terminal outcomes with evidence valid under the declared model, assumptions and assurance scope.
 
 A tree containing only a producer's asserted statuses is not a DAPC. A proof checker must validate the underlying artefacts and transition relations. Plan completeness is distinct from plan optimality: DWAOP may return a sound, decision-complete plan without proving it is globally minimum-cost. A Pareto-optimality claim requires its own search-completeness and optimality certificate; otherwise report only the nondominated frontier found within the declared search limits.
+
+### 5.6 Resource semantics and action-cost contract
+
+A resource vector is not a vector of values that can always be summed componentwise. Each resource dimension must declare its path-aggregation semantics before planning.
+
+| Resource class | Examples | Sequential path aggregation | Notes |
+|---|---|---|---|
+| Additive consumption | CPU time, accelerator execution time, energy, monetary cost, operation count | Sum of action consumption | Valid when all costs are measured consistently and each action's consumption is charged once |
+| Sequential elapsed time | Wall-clock duration in the first prototype | Sum of action upper durations | Requires an explicit no-overlap/sequential execution policy |
+| Peak/live-set resource | Peak RAM, peak device memory | Maximum live footprint over the execution timeline | Must account for retained evidence, action workspace, temporary buffers and releases; not the sum of every action's peak |
+| Parallel scheduled latency | Wall time with concurrent actions | Schedule makespan / critical-path and contention model | Unsupported in the first prototype; never approximate by summing or taking the maximum of action durations without a schedule model |
+
+Each resource declaration must contain:
+
+- stable resource identifier and physical unit;
+- aggregation class and composition operator;
+- upper-bound measurement/model method;
+- lower-bound method, if one is justified;
+- whether actions may overlap;
+- whether the resource is cumulative, instantaneous, or a high-water mark;
+- the accounting treatment of persistent outputs, caches and released temporaries.
+
+**First-prototype restriction:** actions execute sequentially. CPU time, device execution time, energy and monetary cost are additive. Wall elapsed time is additive because no actions overlap. Peak memory is tracked from a live-artifact state and a per-action workspace model. Parallel execution is out of scope until a schedule-aware resource algebra is defined and tested.
+
+For peak memory, the state must include the retained artefact set \(A_{\mathrm{live}}(S)\) and a conservative resident-memory bound \(M_{\mathrm{resident}}^\uparrow(S)\). For sequential action \(a\), define a peak upper bound:
+
+\[
+M_{\mathrm{during}}^\uparrow(a,S)
+=
+M_{\mathrm{resident}}^\uparrow(S)
++
+M_{\mathrm{workspace}}^\uparrow(a,S)
++
+M_{\mathrm{overlap}}^\uparrow(a,S),
+\]
+
+where \(M_{\mathrm{overlap}}^\uparrow\) bounds temporary output/buffer allocations that coexist with the resident set and workspace. The action transition specifies which output artefacts remain live and which temporary allocations are released. The upper bound may be conservative, but it must never omit simultaneously live allocations.
+
+For a sequential path \(\omega\):
+
+\[
+M_{\mathrm{peak}}^\uparrow(\omega)
+=
+\max_{a_t\in\omega}
+M_{\mathrm{during}}^\uparrow(a_t,S_t),
+\]
+
+where \(S_t\) carries the current retained artefacts and resident-memory bound. This is a high-water mark, not a cumulative sum of all action memory costs.
+
+A memory lower bound must also respect live-set semantics. A defensible per-action unavoidable peak lower bound \(m^\downarrow(a,S)\) can be used only when the action contract proves that amount must be simultaneously resident. If lifetime/overlap information is absent, use zero for the lower-bound calculation. Never sum per-action peak-memory lower bounds merely because the actions occur sequentially.
+
+The plan's resource envelope is computed per resource using its declared aggregation function. Componentwise comparison against a budget is allowed only after each component has been computed with the correct semantics.
 
 ## 6. Evidence-state transition
 
@@ -409,15 +445,26 @@ Every possible outcome of an action must be represented by \(\mathcal Y_a(S)\). 
 
 ### 7.1 The planning objective
 
-A policy \(\pi\) maps each reachable evidence state/history to an action and branches on the observed outcomes. Let \(\Omega(\pi)\) be the set of all outcome paths covered by the action contracts. Let the upper-bound resource vector for path \(\omega\) be
+A policy \(\pi\) maps each reachable evidence state/history to an action and branches on the observed outcomes. Let \(\Omega(\pi)\) be the set of all outcome paths covered by the action contracts.
 
-\[
-\mathbf C^\uparrow(\pi,\omega)
-=
-\sum_{a\in\pi(\omega)}\mathbf c_a^\uparrow.
-\]
+For each path \(\omega\), compute resource use by the semantics declared for that resource:
 
-Define the componentwise worst-case upper resource envelope:
+- for additive resources \(r\in\mathcal R_\Sigma\):
+  \[
+  C_r^\uparrow(\pi,\omega)
+  =
+  \sum_{a_t\in\omega}c_{a_t,r}^\uparrow;
+  \]
+- for peak/live-set resources \(r\in\mathcal R_{\max}\):
+  \[
+  C_r^\uparrow(\pi,\omega)
+  =
+  \max_{a_t\in\omega} C_{a_t,r,\mathrm{during}}^\uparrow(S_t),
+  \]
+  with \(S_t\) carrying the live retained-artifact set and the bound on resident memory;
+- for scheduled/parallel resources \(r\in\mathcal R_{\mathrm{sched}}\), use an explicit schedule makespan/critical-path and contention model. These resources are unsupported in the first sequential prototype.
+
+The componentwise worst-case upper envelope across all covered branches is:
 
 \[
 \overline{\mathbf C}^\uparrow(\pi)
@@ -427,11 +474,11 @@ Define the componentwise worst-case upper resource envelope:
 \right)_{r=1}^{R}.
 \]
 
-This envelope may combine maxima attained on different paths. It is a conservative per-resource summary, not necessarily the cost vector of one physically realised path.
+This envelope may combine maxima attained on different paths. It is a conservative per-resource summary, not necessarily the resource vector of one physically realised path.
 
 A policy is **decision-complete** only if every outcome branch covered by its contracts reaches a valid terminal decision (\`ACCEPT\` or \`REJECT\`) with all mandatory obligations satisfied and valid evidence integrity. Branches ending \`INCONCLUSIVE\` or \`REFUSE\` are safe non-acceptance outcomes, but they do not count as a completed decision plan.
 
-The planner returns the nondominated worst-case resource envelopes:
+The planner returns the nondominated worst-case upper resource envelopes:
 
 \[
 \Pi^*(S)=\operatorname{ParetoMin}
@@ -441,88 +488,95 @@ The planner returns the nondominated worst-case resource envelopes:
 \right\}.
 \]
 
-A plan fits hard budget \(\mathbf B\) only if \(\overline{\mathbf C}^\uparrow(\pi)\preceq\mathbf B\). If an owner preference is needed to select one plan from the Pareto frontier, it must be declared. The algorithm must not invent exchange rates between time, memory, energy or money.
+A plan fits hard budget \(\mathbf B\) only if \(\overline{\mathbf C}^\uparrow(\pi)\preceq\mathbf B\), where each component has first been computed using its declared aggregation semantics. The algorithm must not invent exchange rates between unlike resources.
 
-The optimization is over complete contingent policies, not the cost of the first action. A policy that covers only favourable outcomes is invalid.
+### 7.2 AND-OR recursion with resource-specific composition
 
-### 7.2 AND-OR recursion with vector costs
+For a finite, sound abstraction of the evidence state and action outcomes, define \(\mathcal J(S)\) as the Pareto frontier of worst-case upper resource states for robust decision-completing policies from state \(S\). A resource state includes both cumulative consumption and retained/live resources; it is not always a simple numeric cost vector.
 
-For a finite, sound abstraction of the evidence state and action outcomes, define \(\mathcal J(S)\) as the Pareto frontier of worst-case resource vectors for robust decision-completing policies from state \(S\).
+For a terminal state with a satisfied decision gate and no open obligations, the additional continuation cost is zero and the retained artefact state is the terminal retained set.
 
-For a terminal state with a satisfied decision gate and no open obligations:
+For a non-terminal state and eligible action \(a\), every covered outcome \(y\in\mathcal Y_a(S)\) must have a feasible continuation \(\mathbf j_y\). Compose action and child-plan costs separately for each resource class:
 
-\[
-\mathcal J(S)=\{\mathbf 0\}.
-\]
+- Additive sequential resource:
+  \[
+  v_r(a,S,\{\mathbf j_y\})
+  =
+  c_{a,r}^\uparrow+
+  \max_{y\in\mathcal Y_a(S)}j_{y,r}.
+  \]
+- Peak/live-set resource:
+  \[
+  v_r(a,S,\{\mathbf j_y\})
+  =
+  \max\left(
+  C_{a,r,\mathrm{during}}^\uparrow(S),
+  \max_{y\in\mathcal Y_a(S)}j_{y,r}
+  \right).
+  \]
+  The child state \(T(S,a,y)\) carries the artefacts retained after action \(a\); therefore the child continuation's peak already accounts for those live outputs. The action's during-peak accounts for parent-resident objects, workspace and temporary overlaps.
+- Scheduled/parallel resource: no recursion is defined for the first prototype. A future implementation must carry an explicit schedule/resource-occupancy state and a validated composition operator.
 
-For a non-terminal state, consider an eligible action \(a\). For **every** covered outcome \(y\in\mathcal Y_a(S)\), select a feasible continuation vector \(\mathbf j_y\in\mathcal J(T(S,a,y))\). The worst-case resource vector for that contingent plan is:
-
-\[
-\mathbf v(a,\{\mathbf j_y\})
-=
-\mathbf c_a^\uparrow
-+
-\operatorname{cmax}_{y\in\mathcal Y_a(S)}\mathbf j_y,
-\]
-
-where \(\operatorname{cmax}\) takes the componentwise maximum across all outcome branches. The state's plan-cost frontier is:
+Write the resource composition as \(\otimes_r\). The plan-cost frontier is:
 
 \[
 \mathcal J(S)=
 \operatorname{ParetoMin}
 \left\{
-\mathbf v(a,\{\mathbf j_y\}):
-a\in\mathcal A(S),\mathbf j_y\in\mathcal J(T(S,a,y))\;\forall y
-\right\}.
+\left(
+c_{a,r}^\uparrow\otimes_r
+\operatorname{cmax}_{y\in\mathcal Y_a(S)}j_{y,r}
+\right)_{r=1}^{R}
+:
+a\in\mathcal A(S),\
+\mathbf j_y\in\mathcal J(T(S,a,y))\;\forall y
+\right\},
 \]
 
-If an outcome branch has no feasible continuation, that action cannot be part of a guaranteed decision-completing policy. If no action yields a feasible vector, \(\mathcal J(S)=\varnothing\). A resource budget \(\mathbf B\) admits a plan only when at least one frontier vector satisfies \(\mathbf j\preceq\mathbf B\).
+where \(c_{a,r}^\uparrow\) is interpreted as additive consumption for \(r\in\mathcal R_\Sigma\) and as an action-during peak together with live-set state for \(r\in\mathcal R_{\max}\). This notation does not license addition for every resource.
 
-This is the proposed multi-resource formulation. A scalarised version may be used for a separately declared single-objective experiment, but the core planner must not invent exchange rates between time, memory, energy or money.
-
-The action choice is an OR node. Its conservatively covered outcomes are AND branches: every branch must be handled.
+If an outcome branch has no feasible continuation, that action cannot be part of a guaranteed decision-completing policy. If no action yields a feasible vector/state, \(\mathcal J(S)=\varnothing\). A budget admits a plan only when its worst-case resource envelope satisfies every hard componentwise limit.
 
 ### 7.3 Proof-preserving search accelerators
 
 The AND-OR search can be expensive. Two pruning mechanisms are proposed. Neither may remove a state or plan unless its lower-bound or dominance preconditions are checked.
 
-#### 7.3.1 Blocker-distance lower bound
+#### 7.3.1 Resource-specific blocker-distance lower bounds
 
-Let \(B(S)\) be the current unresolved blockers. For each blocker \(b\), construct an optimistic relaxed action graph that:
+Let \(B(S)\) be the current unresolved blockers. Construct a relaxed action graph that over-approximates every potentially valid route for discharging or partition-resolving each blocker. It may relax prerequisites and choose favourable outcomes, but it must not omit any valid route. Uncertain routes are included with zero lower-bound cost or the affected pruning rule is disabled.
 
-- over-approximates all actions that could possibly discharge \(b\) under their declared contracts; any uncertain or incompletely characterised route is included with zero lower-bound cost, or the pruning rule is disabled;
-- relaxes action prerequisites;
-- chooses the most favourable covered outcome;
-- ignores conflicts with other blockers;
-- ignores the need to satisfy other obligations.
-
-Let \(d_r(b\mid S)\) be the shortest possible resource-\(r\) cost from \(b\) to a state where that blocker is discharged in this relaxed graph. To make this a valid lower bound, action descriptors must supply a defensible resource **lower bound** \(c_{a,r}^{\downarrow}\), distinct from the upper bound used for budget safety. If no positive lower bound is known, that action contributes zero to this lower-bound calculation.
-
-Define:
+**Additive resource \(r\in\mathcal R_\Sigma\).** Let \(d_r^\Sigma(b\mid S)\) be the shortest relaxed-path sum of defensible action lower bounds \(c_{a,r}^\downarrow\). Then:
 
 \[
-LB_r(S)=\max_{b\in B(S)}d_r(b\mid S).
+LB_r^\Sigma(S)=\max_{b\in B(S)}d_r^\Sigma(b\mid S).
 \]
 
-This is deliberately weak. For a fixed blocker \(b\), every path of a decision-complete policy must contain some action sequence that discharges \(b\). The relaxed graph permits at least all such sequences and additionally relaxes preconditions and outcome constraints; its minimum path cost, using resource lower bounds, therefore cannot exceed the cost of the actual sequence. Taking the maximum of these per-blocker minima remains a lower bound on the worst-case policy cost. The relaxed graph must be a supergraph of every potentially valid blocker-discharge route. It can underestimate the true cost because it ignores prerequisites, adverse outcomes, action interactions and other blockers. It must never overestimate it. If the effect map is incomplete, the computed bound is not admissible and must not be used to prune.
+This is a lower bound on worst-case additive resource consumption, provided every complete outcome path necessarily resolves each blocker and the relaxed graph is a supergraph of all valid discharge routes.
 
-**Admissibility proof sketch:** Fix resource component \(r\) and blocker \(b\). For every outcome path \(\omega\) of a decision-complete policy, let \(P_{\omega,b}\) be the subsequence of actions on that path that causally discharges \(b\). By construction, this sequence is represented in the relaxed graph, whose edge costs are no greater than the corresponding actual action costs. Hence \(C_r^\uparrow(\pi,\omega)\ge C_r^\downarrow(P_{\omega,b})\ge d_r(b\mid S)\). Taking the supremum over \(\omega\) and then the maximum over \(b\) gives \(\overline C_r^\uparrow(\pi)\ge LB_r(S)\). This argument fails if the action-effect graph omits a valid discharge route or if a claimed cost lower bound exceeds actual cost; in either case the pruning rule must be disabled.
-
-Safe pruning rule:
+**Peak/live-set resource \(m\in\mathcal R_{\max}\).** Do not sum per-action peak-memory bounds. Let \(m^\downarrow(a,S)\) be a defensible lower bound on the unavoidable live-memory peak while action \(a\) executes from state \(S\), including retained inputs that must remain resident. For blocker \(b\), define the minimax path lower bound:
 
 \[
-C_{r,\mathrm{spent}}(S)+LB_r(S)>B_{r,\mathrm{total}}
-\quad\Longrightarrow\quad
-\text{no decision-complete policy fits the remaining budget}.
+d_m^{\max}(b\mid S)
+=
+\min_{p\in\mathcal P_b^{\mathrm{relaxed}}(S)}
+\max_{(a,S')\in p}m^\downarrow(a,S').
 \]
 
-Apply this test independently to each resource dimension. Do not sum individual blocker distances: one action may resolve multiple blockers, and different branches may use different actions. If the relaxed graph or resource lower bounds are not sound, disable this pruning rule.
+Then:
 
-#### 7.3.2 Blocker-cover LP relaxation
+\[
+LB_m^{\max}(S)=\max_{b\in B(S)}d_m^{\max}(b\mid S).
+\]
 
-A stronger optional lower bound can be obtained from a relaxed blocker-cover problem. Let \(\bar M_{ba}=1\) when action \(a\) has any potentially valid route to blocker \(b\), including route uncertainty and outcome-conditional effects. The relation must be an over-approximation: false-positive edges weaken the bound, but a missing valid edge can make it inadmissible.
+This is admissible only if every complete branch must follow a route represented in the relaxed graph and each \(m^\downarrow\) is a genuine lower bound on simultaneously live memory. If retained-artifact lifetimes or necessary residency cannot be established, use zero for the affected lower bound and do not prune on that component.
 
-For each resource component \(r\), solve:
+**Safe pruning rule.** For additive resources, compare spent cumulative consumption plus the admissible remaining lower bound to the hard total budget. For peak memory, compare the maximum already observed/committed high-water mark and the admissible lower bound for future unavoidable peaks to the peak-memory limit. Never add action peak-memory estimates as if memory were cumulative.
+
+#### 7.3.2 Blocker-cover LP relaxation (additive resources only)
+
+The blocker-cover LP is a lower bound only for additive resource dimensions. It is not a valid peak-memory or parallel-wall-time bound.
+
+Let \(\bar M_{ba}=1\) when action \(a\) has any potentially valid route to blocker \(b\), including outcome-conditional effects; the relation must over-approximate all valid routes. For each additive resource \(r\in\mathcal R_\Sigma\), solve:
 
 \[
 LB_r^{\mathrm{cover}}(S)=
@@ -533,22 +587,20 @@ LB_r^{\mathrm{cover}}(S)=
 \quad\forall b\in B(S).
 \]
 
-The variables are continuous and unbounded above; this is an optimistic fractional relaxation of action multiplicities. For any complete policy path, its action-count vector is feasible for this relaxation if every current blocker is necessarily acted upon (discharged, partitioned into child blockers or otherwise resolved) on every path. Hence the LP optimum cannot exceed the lower-bound cost of any such path. It can therefore be used as a lower bound on worst-case plan cost.
+The variables are continuous and unbounded above, giving an optimistic fractional relaxation of action multiplicities. This is admissible only if every current blocker must be addressed on every complete path, the action-effect relation includes every potentially valid discharge route, and costs are defensible lower bounds. False-positive edges weaken the bound; missing a valid edge can make it inadmissible.
 
 Use:
 
 \[
 LB_r^{\mathrm{combined}}(S)=
 \max\left\{
-LB_r(S),LB_r^{\mathrm{cover}}(S)
+LB_r^\Sigma(S),LB_r^{\mathrm{cover}}(S)
 \right\}.
 \]
 
-If a blocker can be discharged by a deterministic inference/check over already available evidence without an additional resource-consuming action, represent that inference as an explicit zero-cost action so the relaxation remains complete.
+Do not apply this LP to peak memory: summing action-memory lower bounds can overestimate the minimum peak live set and could prune a feasible policy. Peak memory uses the minimax-path bound in Section 7.3.1 or zero if a sound live-set lower bound is unavailable. Parallel latency requires a schedule-aware relaxation and is out of scope.
 
-This LP bound is not admissible if a path can terminate without affecting a blocker counted in \(B(S)\), if the blocker-effect map omits a valid route, or if action costs lack defensible lower bounds. In those cases, omit the affected blocker or disable this relaxation; do not infer infeasibility from an invalid LP.
-
-This is a search relaxation, not a new engineering computation or assurance certificate. Its practical value must be measured against its setup/solve overhead and the simpler blocker-distance bound.
+If a blocker can be discharged by deterministic inference over already available evidence without resource-consuming computation, represent that as an explicit zero-cost action so the relaxation remains complete.
 
 #### 7.3.3 Proof-preserving state dominance
 
@@ -557,7 +609,7 @@ A search state \(S_1\) may dominate \(S_2\) only when all of the following are e
 1. both states refer to the identical canonical specification, model scope and assurance mode;
 2. \(\mathcal Q_1\subseteq\mathcal Q_2\), with both sets sound under the same model assumptions;
 3. \(S_1\) has no more open, blocked or conflicted obligations than \(S_2\), and all evidence used by \(S_1\) has valid provenance;
-4. the resource vector already consumed in \(S_1\) is componentwise no greater than in \(S_2\);
+4. cumulative additive consumption in \(S_1\) is componentwise no greater than in \(S_2\), and its peak resources already committed are no greater; its retained/live-artifact set and release semantics are no harder for every continuation;
 5. every continuation action/policy available from \(S_2\) has a corresponding valid continuation from \(S_1\), with outcome coverage and proof obligations no harder.
 
 Condition 5 is essential. A smaller QoI set alone does not guarantee that a solver, estimator or verifier remains applicable.
@@ -925,7 +977,7 @@ Once the existing GDEC WP0–WP7 reliability campaign is formally closed and the
 - one pass/fail constraint;
 - three actions: solver tightening, mesh refinement and independent certificate check;
 - one non-tradeable verification obligation;
-- two resource dimensions: wall time and peak memory;
+- two resource dimensions: sequential wall time (additive) and peak memory (live-set high-water mark); execute actions sequentially and explicitly prohibit concurrency;
 - finite sound action outcome abstractions;
 - bounded AND-OR search depth of at most three actions;
 - an independent checker for state transitions and terminal decision;
@@ -936,9 +988,9 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 ## 14. Research status and next gate
 
 - **RESEARCHED:** constrained goal-oriented AFEM, goal-oriented flow verification, stochastic/parametric and nonlinear QoI adaptivity, model/discretisation/sampling error control, Bayesian inverse-FEM, adaptive RBDO under probability and interval uncertainty, PDE branch-and-bound with safe numerical bounds, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, running FE-kernel error analysis, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
-- **FORMULATED:** decision-witness state, obligation state, typed branch-conditional action effects, VWEC and DAPC certificate layers, robust AND-OR planning objective, vector budgets, blocker-distance/LP-cover lower bounds and proof-preserving state dominance.
+- **FORMULATED:** decision-witness state, obligation state, typed branch-conditional action effects, VWEC and DAPC certificate layers, robust AND-OR planning objective, resource-specific aggregation semantics, additive-only blocker-cover LP, peak-memory live-set accounting, blocker-distance lower bounds and proof-preserving state dominance.
 - **CONDITIONALLY JUSTIFIED:** terminal soundness proposition under explicit enclosure, transition and checker assumptions.
-- **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate.
+- **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate. Resource-specific upper/lower aggregation must be validated for every supported backend before implementation.
 - **NOT IMPLEMENTED:** no production or research controller code.
 - **NOT TESTED:** no controller benchmark or adversarial implementation test run.
 - **NOT INDEPENDENTLY VERIFIED:** no external mathematical review.
