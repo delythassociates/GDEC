@@ -1,0 +1,433 @@
+{
+  "$defs": {
+    "CompactProblemFeatureVector": {
+      "additionalProperties": false,
+      "description": "Compact problem-feature vector per Session 2 Owner Directive for future learning.",
+      "properties": {
+        "domain_width": {
+          "exclusiveMinimum": 0.0,
+          "title": "Domain Width",
+          "type": "number"
+        },
+        "domain_height": {
+          "exclusiveMinimum": 0.0,
+          "title": "Domain Height",
+          "type": "number"
+        },
+        "aspect_ratio": {
+          "exclusiveMinimum": 0.0,
+          "title": "Aspect Ratio",
+          "type": "number"
+        },
+        "num_loads": {
+          "minimum": 0,
+          "title": "Num Loads",
+          "type": "integer"
+        },
+        "num_fixed_boundaries": {
+          "minimum": 0,
+          "title": "Num Fixed Boundaries",
+          "type": "integer"
+        },
+        "youngs_modulus": {
+          "exclusiveMinimum": 0.0,
+          "title": "Youngs Modulus",
+          "type": "number"
+        },
+        "poissons_ratio": {
+          "exclusiveMaximum": 0.5,
+          "exclusiveMinimum": -1.0,
+          "title": "Poissons Ratio",
+          "type": "number"
+        },
+        "constitutive_assumption": {
+          "enum": [
+            "plane_stress",
+            "plane_strain"
+          ],
+          "title": "Constitutive Assumption",
+          "type": "string"
+        },
+        "refinement_strategy": {
+          "minLength": 1,
+          "title": "Refinement Strategy",
+          "type": "string"
+        },
+        "initial_dofs": {
+          "minimum": 0,
+          "title": "Initial Dofs",
+          "type": "integer"
+        },
+        "max_dofs_budget": {
+          "exclusiveMinimum": 0,
+          "title": "Max Dofs Budget",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "domain_width",
+        "domain_height",
+        "aspect_ratio",
+        "num_loads",
+        "num_fixed_boundaries",
+        "youngs_modulus",
+        "poissons_ratio",
+        "constitutive_assumption",
+        "refinement_strategy",
+        "initial_dofs",
+        "max_dofs_budget"
+      ],
+      "title": "CompactProblemFeatureVector",
+      "type": "object"
+    },
+    "EstimatorClassification": {
+      "description": "Explicit scientific classification of an error estimator or indicator.",
+      "enum": [
+        "heuristic",
+        "dwr_asymptotic_estimate",
+        "reference_based_estimate",
+        "mathematically_established_bound"
+      ],
+      "title": "EstimatorClassification",
+      "type": "string"
+    },
+    "OutcomeMetrics": {
+      "additionalProperties": false,
+      "description": "Compact outcome metrics per Session 2 Owner Directive.",
+      "properties": {
+        "final_dofs": {
+          "minimum": 0,
+          "title": "Final Dofs",
+          "type": "integer"
+        },
+        "refinement_steps": {
+          "minimum": 0,
+          "title": "Refinement Steps",
+          "type": "integer"
+        },
+        "wall_time_sec": {
+          "minimum": 0.0,
+          "title": "Wall Time Sec",
+          "type": "number"
+        },
+        "estimator_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimator Value"
+        }
+      },
+      "required": [
+        "final_dofs",
+        "refinement_steps",
+        "wall_time_sec"
+      ],
+      "title": "OutcomeMetrics",
+      "type": "object"
+    },
+    "ParentArtifactRef": {
+      "additionalProperties": false,
+      "description": "Provenance link to an upstream artifact.",
+      "properties": {
+        "artifact_id": {
+          "minLength": 1,
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "artifact_type": {
+          "minLength": 1,
+          "title": "Artifact Type",
+          "type": "string"
+        },
+        "sha256_hash": {
+          "maxLength": 64,
+          "minLength": 64,
+          "title": "Sha256 Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "artifact_type",
+        "sha256_hash"
+      ],
+      "title": "ParentArtifactRef",
+      "type": "object"
+    },
+    "RefusalRuleEvaluation": {
+      "additionalProperties": false,
+      "description": "Structured result of evaluating a single deterministic refusal rule.",
+      "properties": {
+        "rule_id": {
+          "minLength": 1,
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "triggered": {
+          "title": "Triggered",
+          "type": "boolean"
+        },
+        "reason": {
+          "default": "",
+          "title": "Reason",
+          "type": "string"
+        },
+        "diagnostic_context": {
+          "additionalProperties": true,
+          "title": "Diagnostic Context",
+          "type": "object"
+        }
+      },
+      "required": [
+        "rule_id",
+        "version",
+        "triggered"
+      ],
+      "title": "RefusalRuleEvaluation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Versioned, machine-checkable Engineering Evidence Record (schema v1.0.0).",
+  "properties": {
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "record_id": {
+      "minLength": 1,
+      "title": "Record Id",
+      "type": "string"
+    },
+    "canonical_eir_hash": {
+      "maxLength": 64,
+      "minLength": 64,
+      "title": "Canonical Eir Hash",
+      "type": "string"
+    },
+    "mesh_identity": {
+      "minLength": 1,
+      "title": "Mesh Identity",
+      "type": "string"
+    },
+    "mesh_hash": {
+      "maxLength": 64,
+      "minLength": 64,
+      "title": "Mesh Hash",
+      "type": "string"
+    },
+    "material_identity": {
+      "minLength": 1,
+      "title": "Material Identity",
+      "type": "string"
+    },
+    "boundary_conditions_identity": {
+      "minLength": 1,
+      "title": "Boundary Conditions Identity",
+      "type": "string"
+    },
+    "solver_identity": {
+      "minLength": 1,
+      "title": "Solver Identity",
+      "type": "string"
+    },
+    "solver_version": {
+      "minLength": 1,
+      "title": "Solver Version",
+      "type": "string"
+    },
+    "solver_config": {
+      "additionalProperties": true,
+      "title": "Solver Config",
+      "type": "object"
+    },
+    "backend": {
+      "minLength": 1,
+      "title": "Backend",
+      "type": "string"
+    },
+    "numerical_precision": {
+      "minLength": 1,
+      "title": "Numerical Precision",
+      "type": "string"
+    },
+    "dependency_versions": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Dependency Versions",
+      "type": "object"
+    },
+    "dof_count": {
+      "minimum": 0,
+      "title": "Dof Count",
+      "type": "integer"
+    },
+    "mesh_metadata": {
+      "additionalProperties": true,
+      "title": "Mesh Metadata",
+      "type": "object"
+    },
+    "qoi_id": {
+      "minLength": 1,
+      "title": "Qoi Id",
+      "type": "string"
+    },
+    "qoi_name": {
+      "minLength": 1,
+      "title": "Qoi Name",
+      "type": "string"
+    },
+    "qoi_units": {
+      "minLength": 1,
+      "title": "Qoi Units",
+      "type": "string"
+    },
+    "qoi_value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Qoi Value"
+    },
+    "estimator_identity": {
+      "minLength": 1,
+      "title": "Estimator Identity",
+      "type": "string"
+    },
+    "estimator_classification": {
+      "$ref": "#/$defs/EstimatorClassification"
+    },
+    "error_estimate": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Estimate"
+    },
+    "error_estimate_interpretation": {
+      "minLength": 1,
+      "title": "Error Estimate Interpretation",
+      "type": "string"
+    },
+    "effectivity_evidence": {
+      "default": "NONE",
+      "title": "Effectivity Evidence"
+    },
+    "model_applicability_status": {
+      "enum": [
+        "established",
+        "unestablished",
+        "invalidated"
+      ],
+      "title": "Model Applicability Status",
+      "type": "string"
+    },
+    "verification_validation_status": {
+      "minLength": 1,
+      "title": "Verification Validation Status",
+      "type": "string"
+    },
+    "problem_features": {
+      "$ref": "#/$defs/CompactProblemFeatureVector"
+    },
+    "outcome_metrics": {
+      "$ref": "#/$defs/OutcomeMetrics"
+    },
+    "refusal_evaluations": {
+      "items": {
+        "$ref": "#/$defs/RefusalRuleEvaluation"
+      },
+      "title": "Refusal Evaluations",
+      "type": "array"
+    },
+    "refused": {
+      "title": "Refused",
+      "type": "boolean"
+    },
+    "refusal_reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Refusal Reasons",
+      "type": "array"
+    },
+    "resource_consumption": {
+      "additionalProperties": true,
+      "title": "Resource Consumption",
+      "type": "object"
+    },
+    "parent_artifacts": {
+      "items": {
+        "$ref": "#/$defs/ParentArtifactRef"
+      },
+      "title": "Parent Artifacts",
+      "type": "array"
+    },
+    "evidence_stale": {
+      "default": false,
+      "title": "Evidence Stale",
+      "type": "boolean"
+    },
+    "evidence_invalidated": {
+      "default": false,
+      "title": "Evidence Invalidated",
+      "type": "boolean"
+    },
+    "canonical_result_hash": {
+      "maxLength": 64,
+      "minLength": 64,
+      "title": "Canonical Result Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "record_id",
+    "canonical_eir_hash",
+    "mesh_identity",
+    "mesh_hash",
+    "material_identity",
+    "boundary_conditions_identity",
+    "solver_identity",
+    "solver_version",
+    "backend",
+    "numerical_precision",
+    "dof_count",
+    "qoi_id",
+    "qoi_name",
+    "qoi_units",
+    "estimator_identity",
+    "estimator_classification",
+    "error_estimate_interpretation",
+    "model_applicability_status",
+    "verification_validation_status",
+    "problem_features",
+    "outcome_metrics",
+    "refused",
+    "canonical_result_hash"
+  ],
+  "title": "EngineeringEvidenceRecord",
+  "type": "object"
+}

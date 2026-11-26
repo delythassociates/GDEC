@@ -119,7 +119,33 @@ def cmd_run(args):
     print(f"Final QoI:        {trace.final_qoi_mm:.5f} mm")
     print(f"Final DOFs:       {trace.final_dofs:,}")
     print(f"Stop Reason:      {trace.stop_reason}")
+    if trace.evidence_record is not None:
+        rec = trace.evidence_record
+        print(f"Estimator Class:  {rec.estimator_classification.value}")
+        print(f"Result Hash:      {rec.canonical_result_hash}")
+        if rec.refused:
+            print(f"Refusal Status:   REFUSED ({'; '.join(rec.refusal_reasons)})")
+        else:
+            print("Refusal Status:   QUALIFIED (0 refusal rules triggered)")
+        if getattr(args, "output", None):
+            out_path = Path(args.output)
+            out_path.write_text(rec.to_canonical_json(), encoding="utf-8")
+            print(f"Evidence written to {out_path}")
     return 0
+
+
+def cmd_verify(args):
+    from gdec.dse.verifier import verify_evidence_file
+
+    report = verify_evidence_file(args.file)
+    print(f"Verification Valid: {report.valid}")
+    print(f"Record ID:          {report.record_id}")
+    print(f"Schema Version:     {report.schema_version}")
+    print(f"Refused:            {report.refused}")
+    print(f"Diagnostic Codes:   {', '.join(report.diagnostic_codes)}")
+    for d in report.diagnostics:
+        print(f"  [{d.code}] {d.message}")
+    return 0 if report.valid else 1
 
 
 def cmd_benchmark(args):
@@ -190,7 +216,13 @@ def main():
     p_run = subparsers.add_parser("run", help="Run simulation using specified strategy.")
     p_run.add_argument("file", help="Path to .gdc file")
     p_run.add_argument("--strategy", choices=["goal_aware", "recovery", "uniform"], default=None, help="Strategy override")
+    p_run.add_argument("-o", "--output", help="Optional output JSON path for EngineeringEvidenceRecord")
     p_run.set_defaults(func=cmd_run)
+
+    # verify
+    p_ver = subparsers.add_parser("verify", help="Independently verify an EngineeringEvidenceRecord JSON file.")
+    p_ver.add_argument("file", help="Path to evidence result JSON file")
+    p_ver.set_defaults(func=cmd_verify)
 
     # benchmark
     p_bm = subparsers.add_parser("benchmark", help="Run comparative benchmark of all 3 strategies.")

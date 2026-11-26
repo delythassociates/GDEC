@@ -7,7 +7,7 @@ from __future__ import annotations
 import time
 import psutil
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -71,6 +71,8 @@ class ExecutionTrace:
     stop_reason: str
     total_wall_time_sec: float
     iterations: List[IterationRecord] = field(default_factory=list)
+    evidence_record: Optional[Any] = None
+    refusal_result: Optional[Any] = None
 
     @property
     def final_qoi_mm(self) -> float:

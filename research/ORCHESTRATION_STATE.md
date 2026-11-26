@@ -11,7 +11,7 @@ Test baseline: 452 passed / 14 skipped / 0 failed in the recorded Windows/Python
 | WP0 | done | `research/wp0-repo-integrity` | 4 / 4 | `research/wp0/` |
 | WP1 | done | `research/wp1-eir-adversarial-hardening` | 4 / 4 | `research/wp1/` |
 | WP2 | done — OWNER ACCEPTED WITH SPECIFIED CONDITIONS (2026-11-27); limitations retained | `research/wp2-residual-gate-closure` | 17 / 17 technical/evidence gates; formal owner acceptance recorded | `research/wp2-residual-gate-closure/` |
-| WP3 | authorized — Antigravity may begin WP3; implementation not yet verified | `research/wp3-evidence-refusal-engine` | 0 / 4 | `research/wp3-evidence-refusal-engine/` |
+| WP3 | active — technical implementation & independent review complete; CI & owner acceptance pending | `research/wp3-evidence-refusal-engine` | 9 / 10 technical gates (CI pending) | `research/wp3-evidence-refusal-engine/` |
 | WP4 | todo | pending | 0 / 2 | pending |
 | WP5 | todo | pending | 0 / 3 | pending |
 | WP6 | todo | pending | 0 / 2 | pending |

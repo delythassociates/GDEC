@@ -36,6 +36,31 @@ from gdec.dse.evidence import (
     EvidenceEligibility,
     RecordEvaluationReport,
 )
+from gdec.dse.evidence_graph import (
+    EVIDENCE_SCHEMA_VERSION,
+    EstimatorClassification,
+    ParentArtifactRef,
+    CompactProblemFeatureVector,
+    OutcomeMetrics,
+    RefusalRuleEvaluation,
+    EngineeringEvidenceRecord,
+    canonical_json_dumps,
+    compute_canonical_hash,
+    build_evidence_record_with_hash,
+)
+from gdec.dse.refusal import (
+    RefusalContext,
+    RefusalRule,
+    RefusalResult,
+    RefusalEngine,
+    REFUSAL_RULES,
+)
+from gdec.dse.verifier import (
+    VerificationDiagnostic,
+    VerificationReport,
+    verify_evidence_payload,
+    verify_evidence_file,
+)
 from gdec.dse.scaling import (
     RestrictedLinearElasticScaling,
     ScalingAssumptions,
