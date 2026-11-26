@@ -20,6 +20,7 @@ Test baseline: 452 passed / 14 skipped / 0 failed in the recorded Windows/Python
 ## WP2 latest recorded verification
 
 - GitHub Actions run [45876161338](https://github.com/delythassociates/GDEC/actions/runs/45876161338): **15/15 jobs successful** on implementation commit `20baa84cbb4ec305450e715a6a2b000a35ca0d3e`.
+- GitHub Actions run [45886957789](https://github.com/delythassociates/GDEC/actions/runs/45886957789): **15/15 jobs successful** on documentation closeout commit `d64a488d9e52851095ef9ec530b2f1ada74fec66` (closes `RISK-WP2-R05`).
 - Windows/Python 3.13 mutation-and-coverage gate job: 452 passed, 14 skipped; branch coverage 1044/1678 = 62.22% against a 62.15% floor; targeted mutation 20/20 killed.
 - Calibration reference remains 1043/1678 = 62.16%; it is distinct from the latest observed CI job measurement.
 - The DWR adaptive QoI regression remains non-certified.
