@@ -242,7 +242,7 @@ A statistical confidence interval is not a deterministic enclosure. A DWR asympt
 
 A VWEC used to exclude a witness in bounded mode must be backed by a deterministic mathematical bound or formal proof whose assumptions cover the entire claimed region and action outcome. Statistical or heuristic evidence can guide a separately declared probabilistic or exploratory path, but cannot discharge a deterministic-bound obligation.
 
-### 5.1 Verified Witness-Exclusion Certificates (VWEC)
+### 5.2 Verified Witness-Exclusion Certificates (VWEC)
 
 The key numerical evidence object proposed for DWAOP is a **Verified Witness-Exclusion Certificate (VWEC)**. This is a scoped proof artefact, not a confidence score.
 
@@ -278,7 +278,7 @@ An action's declared effect is only a candidate capability. The actual VWEC is c
 
 The checker should be a separately specified, minimal verification component whose trusted computing base is substantially smaller than the solver/planner stack. It should validate proof artefacts and set relations, not re-run the same estimator through the same code path and then call that result independent. Independence is an architectural target that must itself be reviewed and tested; it is not established merely by using a different function or process.
 
-### 5.2 Witness/action/obligation effect map
+### 5.3 Witness/action/obligation effect map
 
 At each state, construct the blocker set:
 
@@ -931,7 +931,7 @@ This is not yet a demonstrated gap. It may still be obvious to a skilled reader 
 
 The patent publication is listed as pending by Google Patents, which explicitly warns that its legal-status display is not a legal conclusion. The publication has a long priority/family chain. Its published claims include uncertainty reduction and active-learning scenario selection, and look-ahead/branching depth adapted to objectives and resources. It is an adjacent disclosure requiring professional review; it does not establish anticipation, obviousness, infringement or freedom to operate for DWAOP.
 
-## 12. Required novelty experiments## 12. Required novelty experiments
+## 12. Required novelty experiments
 
 The central experiment is not merely “does DWAOP use fewer DOFs?” It is whether proof-obligation-aware planning gives a better cost/assurance frontier than a strong combination of existing methods.
 
@@ -1021,12 +1021,14 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 
 - **RESEARCHED:** constrained goal-oriented AFEM, goal-oriented flow verification, stochastic/parametric and nonlinear QoI adaptivity, model/discretisation/sampling error control, Bayesian inverse-FEM, adaptive RBDO under probability and interval uncertainty, PDE branch-and-bound with safe numerical bounds, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, running FE-kernel error analysis, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
 - **FORMULATED:** decision-witness state, obligation state, typed branch-conditional action effects, VWEC and DAPC certificate layers, robust AND-OR planning objective, resource-specific aggregation semantics, additive-only blocker-cover LP, peak-memory live-set accounting, blocker-distance lower bounds and proof-preserving state dominance.
+- **REFERENCE HARNESS IMPLEMENTED (RESEARCH ONLY):** standalone finite-state planner/oracle in [`research/prototypes/dwaop_reference_harness.py`](prototypes/dwaop_reference_harness.py). It is not imported by GDEC and does not change production/runtime behaviour.
+- **EXECUTED:** 12 Python unittest cases passed on Python 3.13.5. The harness compares pruned and unpruned feasibility over 25 additive-budget values, checks the simple blocker lower bound over 2,401 small action-cover families, validates a complete two-outcome policy tree, and exercises additive/peak resource aggregation. `py_compile` also passed.
+- **HAND-CHECKED:** sequential additive totals, peak/live-set memory and contingent branch aggregation in the separate resource-algebra note.
 - **CONDITIONALLY JUSTIFIED:** terminal soundness proposition under explicit enclosure, transition and checker assumptions.
-- **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate. Resource-specific upper/lower aggregation must be validated for every supported backend before implementation.
-- **NOT IMPLEMENTED:** no production or research controller code.
-- **HAND-CHECKED:** sequential additive totals, peak/live-set memory and contingent branch aggregation in the separate resource-algebra note; not an executable test.
-- **NOT TESTED:** no controller benchmark, exhaustive finite-graph pruning comparison or adversarial implementation test run.
-- **NOT INDEPENDENTLY VERIFIED:** no external mathematical review.
+- **NOT IMPLEMENTED:** no GDEC DWAOP controller, VWEC generator, production resource ledger, or independent DAPC checker. The harness includes only a small test-specific plan-tree validator.
+- **NOT TESTED:** no FEM/CFD solve, no GDEC runtime integration, no numerical certificate generation, no blocker-cover LP implementation, no state-dominance pruning implementation, and no measured performance advantage.
+- **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate. The tested lower bound is the weak max-of-cheapest-resolver bound, not the optional blocker-cover LP.
+- **NOT INDEPENDENTLY VERIFIED:** no external numerical-analysis, formal-methods or planning review.
 - **NOT APPROVED:** no production implementation authorisation.
 
-**Next gate:** independent review of the formal state/action/resource model and soundness assumptions; then implement an offline finite-state reference harness (not the GDEC runtime) to compare pruned and unpruned planning, verify lower-bound admissibility, and test the resource aggregation rules. The contingent greedy comparison already exists as a hand-constructed example, but no algorithmic benchmark has run. Only after these checks should the GDEC research prototype be proposed.
+**Next gate:** broaden the finite-state harness to generated contingent graphs, validate state-dominance pruning against exhaustive unpruned search, then obtain an independent review of the action contracts and proof obligations. The GDEC runtime remains out of scope until that gate and owner approval are complete.
