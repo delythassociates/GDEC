@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from itertools import product
+from math import isfinite
 from typing import FrozenSet, Mapping, Optional, Sequence, Tuple
 import unittest
 
@@ -138,8 +139,18 @@ class PolicySummary:
 
 
 def _nonnegative(value: float, field_name: str) -> None:
-    if value < 0:
-        raise ContractError(f"{field_name} must be non-negative")
+    """Require a finite, non-negative resource quantity or upper bound."""
+    try:
+        finite = isfinite(value)
+    except (TypeError, OverflowError) as exc:
+        raise ContractError(f"{field_name} must be a finite numeric value") from exc
+    if not finite or value < 0:
+        raise ContractError(f"{field_name} must be finite and non-negative")
+
+
+def validate_resource_budget(budget: ResourceBudget) -> None:
+    _nonnegative(budget.ru_upper, "budget.ru_upper")
+    _nonnegative(budget.peak_memory_gb_upper, "budget.peak_memory_gb_upper")
 
 
 def validate_oracle(oracle: WorldOracle) -> None:
@@ -258,6 +269,9 @@ def verify_action_contract(oracle: WorldOracle, contract: ActionContract) -> Non
     if contract.failure_semantics != spec.failure_semantics:
         raise ContractError("Failure semantics mismatch")
 
+    _nonnegative(contract.ru_upper, f"{contract.action_id}.contract.ru_upper")
+    _nonnegative(contract.workspace_gb_upper, f"{contract.action_id}.contract.workspace_gb_upper")
+    _nonnegative(contract.overlap_gb_upper, f"{contract.action_id}.contract.overlap_gb_upper")
     if contract.ru_upper + 1e-12 < spec.ru_upper:
         raise ContractError("RU upper bound understates trusted action cost")
     if contract.workspace_gb_upper + 1e-12 < spec.workspace_gb_upper:
@@ -300,10 +314,14 @@ def verify_action_contract(oracle: WorldOracle, contract: ActionContract) -> Non
             raise ContractError(f"Unjustified obligation discharge in {cell.label}")
         if cell.gained_capabilities != expected_capabilities:
             raise ContractError(f"Unjustified capability gain in {cell.label}")
+        _nonnegative(cell.retained_output_gb_upper,
+                     f"{contract.action_id}.{cell.label}.contract.retained_memory")
         if cell.retained_output_gb_upper + 1e-12 < expected_retained:
             raise ContractError(f"Retained-memory upper bound understates {cell.label}")
 
         cert = cell.certificate
+        _nonnegative(cert.retained_output_gb_upper,
+                     f"{contract.action_id}.{cell.label}.certificate.retained_memory")
         if cert.specification_id != oracle.specification_id or cert.model_id != oracle.model_id:
             raise ContractError(f"Certificate scope mismatch in {cell.label}")
         if cert.action_id != contract.action_id or cert.outcome_label != cell.label:
@@ -470,6 +488,7 @@ def enumerate_complete_policies(
     maximum over mutually exclusive branches. Peak memory uses a high-water
     maximum, never a sum of action workspaces.
     """
+    validate_resource_budget(budget)
     if depth_left < 0 or not state.worlds:
         return ()
     if state.peak_memory_gb_upper > budget.peak_memory_gb_upper + 1e-12:
@@ -641,6 +660,7 @@ def enumerate_action_policy_summaries(
     depth_left: int = 10,
 ) -> Tuple[PolicySummary, ...]:
     """Enumerate complete policies rooted at one action and all its outcomes."""
+    validate_resource_budget(budget)
     contract = contracts.get(action_id)
     if contract is None:
         return ()
@@ -757,6 +777,7 @@ def prune_by_refinement_cover(
     deliberately does not prune a broad state merely because one narrower
     state simulates its continuation.
     """
+    validate_resource_budget(budget)
     ids = tuple(candidates)
     removed = set()
     for coarse_id in ids:
@@ -931,6 +952,19 @@ class OutcomeContractTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             verify_action_contract(self.oracle, replace(contract, ru_upper=0.5))
 
+    def test_nonfinite_action_resource_bound_is_rejected(self) -> None:
+        contract = self.contracts["cert_full"]
+        with self.assertRaises(ContractError):
+            verify_action_contract(self.oracle, replace(contract, ru_upper=float("nan")))
+
+    def test_nonfinite_outcome_memory_bound_is_rejected(self) -> None:
+        contract = self.contracts["cert_full"]
+        cell = contract.outcomes[0]
+        bad_cell = replace(cell, retained_output_gb_upper=float("nan"))
+        bad = replace(contract, outcomes=(bad_cell,) + contract.outcomes[1:])
+        with self.assertRaises(ContractError):
+            verify_action_contract(self.oracle, bad)
+
     def test_contract_must_not_understate_retained_memory(self) -> None:
         contract = self.contracts["cert_full"]
         cell = contract.outcomes[0]
@@ -1032,6 +1066,13 @@ class RefinementAndPolicyTests(unittest.TestCase):
         self.assertEqual(enumerate_complete_policies(
             refined, self.contracts, self.oracle, too_small
         ), ())
+
+    def test_nonfinite_resource_budget_is_rejected(self) -> None:
+        bad_budget = ResourceBudget(ru_upper=float("nan"), peak_memory_gb_upper=2.0)
+        with self.assertRaises(ContractError):
+            enumerate_complete_policies(
+                self.initial, self.contracts, self.oracle, bad_budget
+            )
 
     def test_coarse_outcome_cannot_map_across_two_finer_cells(self) -> None:
         # Left has one outcome cell spanning both worlds; right separates them.
