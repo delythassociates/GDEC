@@ -125,34 +125,23 @@ For multiple alternatives, the witness set may be partitioned by the alternative
 
 ### 3.2 Constraint decision as a special case
 
-For a pass/fail requirement:
+Let the joint admissible QoI set be \(\mathcal Q\), and let the complete feasible decision region be:
 
 \[
-g_j(q)\le0,\qquad j=1,\ldots,p,
+\mathcal F=\{q:g_j(q)\le0\;\forall j=1,\ldots,p\}.
 \]
 
-the violation witness set for constraint \(j\) is:
+The three-way robust decision is:
 
-\[
-\mathcal W_j^+(\mathcal Q)
-=
-\{q\in\mathcal Q:g_j(q)>0\}.
-\]
+- **Robustly acceptable:** \(\mathcal Q\subseteq\mathcal F\), equivalently \(\sup_{q\in\mathcal Q}g_j(q)\le0\) for every mandatory constraint \(j\).
+- **Robustly rejectable:** \(\mathcal Q\cap\mathcal F=\varnothing\), equivalently every admissible QoI state violates at least one mandatory constraint.
+- **Inconclusive:** \(\mathcal Q\cap\mathcal F\ne\varnothing\) and \(\mathcal Q\setminus\mathcal F\ne\varnothing\).
 
-Robust acceptance requires:
+For a single constraint, robust rejection reduces to \(\inf_{q\in\mathcal Q}g(q)>0\). For multiple constraints, it is not sufficient to show that each constraint can be violated somewhere; those violations might occur at different admissible states while another state satisfies all constraints.
 
-\[
-\sup_{q\in\mathcal Q}g_j(q)\le0
-\quad\text{for every mandatory constraint }j.
-\]
+A verified point \(q^*\in\mathcal Q\setminus\mathcal F\) is a **violation witness**. It disproves robust acceptance, but does not by itself establish robust rejection. Robust rejection requires proving \(\mathcal Q\cap\mathcal F=\varnothing\).
 
-Robust rejection of a particular constraint requires:
-
-\[
-\inf_{q\in\mathcal Q}g_j(q)>0.
-\]
-
-Otherwise the constraint remains unresolved. A feasible violating witness is sufficient to refute robust acceptance; absence of a witness is not established by a local optimiser failing to find one. It requires a valid global upper bound, exhaustive method or sound outer approximation.
+Absence of a violation witness is not established by a local optimiser failing to find one. Robust acceptance requires a valid global upper bound, exhaustive method or sound outer approximation for every mandatory constraint.
 
 ### 3.3 Witness certificates
 
@@ -231,6 +220,68 @@ Actions may target different evidence channels:
 
 A mesh refinement cannot claim to resolve uncertain conductivity data. A second solver using the same equations cannot claim experimental validation. A GPU action that did not execute on the GPU cannot produce GPU performance evidence.
 
+### 5.1 Verified Witness-Exclusion Certificates (VWEC)
+
+The key numerical evidence object proposed for DWAOP is a **Verified Witness-Exclusion Certificate (VWEC)**. This is a scoped proof artefact, not a confidence score.
+
+For a current sound outer set \(\mathcal Q_t\), let \(W_t\subseteq\mathcal Q_t\) be a decision-reversing witness region. A VWEC claims that a specified part \(R\subseteq W_t\) is impossible under a declared action outcome and model scope.
+
+A certificate must bind:
+
+1. canonical problem/specification identity and all input/configuration hashes;
+2. model, QoI, constraint and operating-envelope scope;
+3. the exact witness region \(R\) and its representation;
+4. the exact post-action admissible set \(\mathcal Q_{t+1}\);
+5. the mathematical implication used to exclude the region;
+6. all estimator, solver, quadrature, data and dependency assumptions;
+7. the proof/checker artefact and independent checker version/result;
+8. the consumed and measured resource record.
+
+The checker must establish, as applicable:
+
+- **scope identity:** the certificate refers to the active specification and model;
+- **outer-set soundness:** every model-consistent QoI under the declared outcome remains in \(\mathcal Q_{t+1}\);
+- **exclusion soundness:** \(\mathcal Q_{t+1}\cap R=\varnothing\);
+- **obligation validity:** any assurance obligation marked satisfied meets its exact acceptance predicate;
+- **dependency integrity:** evidence sources and shared assumptions are recorded and not counted as independent without justification.
+
+There are two importantly different certificate directions:
+
+- **Violation-witness certificate:** proves that at least one admissible point violates a requirement. This refutes robust acceptance, but does not prove that all admissible points fail.
+- **Witness-exclusion certificate:** proves that an entire region of possible violations is excluded. This may contribute to robust acceptance only when every decision-reversing region has been soundly excluded.
+
+A heuristic optimiser may propose a candidate violation point. A standard floating-point solver result or residual is not automatically a violation certificate. Likewise, a local search failing to find a violating point is not a witness-exclusion certificate.
+
+An action's declared effect is only a candidate capability. The actual VWEC is checked after the action runs. No admissible region may be removed from \(\mathcal Q_t\) merely because an action was expected to reduce it.
+
+### 5.2 Witness/action/obligation effect map
+
+At each state, construct the blocker set:
+
+\[
+B(S)=W_1\cup\cdots\cup W_n\cup O_1\cup\cdots\cup O_m,
+\]
+
+where \(W_i\) are unresolved witness regions and \(O_j\) are open assurance obligations. The planner builds a typed effect map from action contracts to blockers:
+
+\[
+M_{ba}=
+\begin{cases}
+1,&\text{action }a\text{ has a potentially applicable, typed route to blocker }b,\\
+0,&\text{otherwise.}
+\end{cases}
+\]
+
+This map is used only for candidate filtering and lower-bound construction. It is not proof that an action will resolve a blocker. Conditional outcomes, prerequisites and certificate checking remain explicit in the AND-OR planner.
+
+The map must distinguish:
+- action can produce evidence relevant to blocker;
+- action can guarantee blocker closure under every covered outcome;
+- action can only provide heuristic guidance;
+- action is inapplicable.
+
+Only the second category can be used as a guaranteed effect in a terminal plan. The first may be included in an optimistic lower-bound relaxation but never in the terminal acceptance test.
+
 ## 6. Evidence-state transition
 
 For state \(S\), action \(a\) and an outcome cell \(y\in\mathcal Y_a(S)\), define:
@@ -258,47 +309,35 @@ Every possible outcome of an action must be represented by \(\mathcal Y_a(S)\). 
 
 ### 7.1 The planning objective
 
-A policy \(\pi\) chooses an action at each reachable state and branches on the observed, conservatively covered outcomes.
+A policy \(\pi\) maps each reachable evidence state/history to an action and branches on the observed outcomes. Let \(\Omega(\pi)\) be the set of all outcome paths covered by the action contracts. Let \(\mathbf C(\pi,\omega)\) be the resource vector consumed on path \(\omega\).
 
-The objective is to find a policy that resolves all mandatory decision witnesses and obligations at minimum worst-case cost:
-
-For each policy, define its worst-case resource vector by taking the componentwise supremum over all covered outcome paths:
+Define the componentwise worst-case resource envelope:
 
 \[
-\overline{\mathbf C}(\pi)
+\overline{\mathbf C}_r(\pi)
 =
-\sup_{\omega\in\Omega(\pi)}^{\mathrm{componentwise}}
-\sum_{a\in\pi(\omega)}\mathbf c_a^\uparrow.
+\sup_{\omega\in\Omega(\pi)}
+C_r(\pi,\omega)
+\quad\text{for every resource component }r.
 \]
 
-The feasible-policy set contains only policies whose every covered branch reaches a terminal decision with all obligations satisfied and whose worst-case resource vector fits the hard budget. The planner returns the nondominated set:
+This envelope may combine maxima attained on different paths. It is a conservative per-resource summary, not necessarily the cost vector of one physically realised path.
+
+A policy is **decision-complete** only if every outcome branch covered by its contracts reaches a valid terminal decision (\`ACCEPT\` or \`REJECT\`) with all mandatory obligations satisfied and valid evidence integrity. Branches ending \`INCONCLUSIVE\` or \`REFUSE\` are safe non-acceptance outcomes, but they do not count as a completed decision plan.
+
+The planner returns the nondominated worst-case resource envelopes:
 
 \[
 \Pi^*(S)=\operatorname{ParetoMin}
 \left\{
 \overline{\mathbf C}(\pi):
-\pi\text{ is feasible from }S
+\pi\text{ is decision-complete from }S
 \right\}.
 \]
 
-If an owner-specified preference is needed to select one plan from this Pareto set, the preference must be explicit. The algorithm does not invent weights for unlike resources.
+A plan fits hard budget \(\mathbf B\) only if \(\overline{\mathbf C}(\pi)\preceq\mathbf B\). If an owner preference is needed to select one plan from the Pareto frontier, it must be declared. The algorithm must not invent exchange rates between time, memory, energy or money.
 
-subject to, for every reachable terminal branch \(\omega\):
-
-\[
-\begin{aligned}
-&\text{DecisionGate}(S_\omega)=\text{true},\\
-&\mathcal O_\omega=\varnothing,\\
-&\text{EvidenceIntegrity}(S_\omega)=\text{valid},\\
-&\mathbf C(\pi,\omega)\preceq\mathbf B.
-\end{aligned}
-\]
-
-Here \(\Omega(\pi)\) is the set of all outcome branches covered by the policy. \(\preceq\) is componentwise resource comparison. Resource dimensions can include wall-clock time, CPU time, accelerator time, peak memory, energy and monetary cost.
-
-No single scalarisation is imposed when the owner has not supplied defensible resource weights. The planner retains a Pareto set of feasible cost vectors.
-
-A policy that satisfies the planning constraints must resolve every covered outcome branch to an allowed terminal decision with all obligations met. A branch that ends INCONCLUSIVE or REFUSE is not counted as a successful feasible plan; it is reported as a safe failure of the plan and the controller must not issue ACCEPT. The planner cannot omit adverse outcomes to make a plan look feasible.
+The optimization is over complete contingent policies, not the cost of the first action. A policy that covers only favourable outcomes is invalid.
 
 ### 7.2 AND-OR recursion with vector costs
 
@@ -337,69 +376,68 @@ This is the proposed multi-resource formulation. A scalarised version may be use
 
 The action choice is an OR node. Its conservatively covered outcomes are AND branches: every branch must be handled.
 
-### 7.3 Receding-horizon controller
+### 7.3 Proof-preserving search accelerators
 
-The first practical policy should use bounded look-ahead and recompute after each verified outcome:
+The AND-OR search can be expensive. Two pruning mechanisms are proposed. Neither may remove a state or plan unless its lower-bound or dominance preconditions are checked.
 
-~~~text
-DWAOP(spec, resource_budget):
-    validate_specification_and_decision_rules(spec)
-    obligations = compile_mandatory_obligations(spec)
-    state = establish_initial_sound_QoI_set_and_provenance(spec)
+#### 7.3.1 Blocker-distance lower bound
 
-    if specification_invalid_or_claim_inapplicable:
-        return REFUSE(reason, state)
+Let \(B(S)\) be the current unresolved blockers. For each blocker \(b\), construct an optimistic relaxed action graph that:
 
-    repeat:
-        verify_state_integrity_and_model_identity(state)
-        witnesses = generate_decision_reversing_witnesses(state.Q)
-        decision = evaluate_robust_decision(state.Q, witnesses)
+- retains only actions that could possibly affect \(b\) under their declared contracts;
+- relaxes action prerequisites;
+- chooses the most favourable covered outcome;
+- ignores conflicts with other blockers;
+- ignores the need to satisfy other obligations.
 
-        if decision.robust and obligations.all_satisfied:
-            return TERMINAL_DECISION(decision, certificate_bundle, cost_trace)
+Let \(d_r(b\mid S)\) be the shortest possible resource-\(r\) cost from \(b\) to a state where that blocker is discharged in this relaxed graph. To make this a valid lower bound, action descriptors must supply a defensible resource **lower bound** \(c_{a,r}^{\downarrow}\), distinct from the upper bound used for budget safety. If no positive lower bound is known, that action contributes zero to this lower-bound calculation.
 
-        blockers = witnesses + obligations.open_or_conflicted
-        actions = enumerate_supported_actions(state)
+Define:
 
-        for action in actions:
-            validate_preconditions_and_evidence_contract(action, blockers)
-            derive_sound_outcome_cover(action)
-            calculate_upper_resource_cost(action)
+\[
+LB_r(S)=\max_{b\in B(S)}d_r(b\mid S).
+\]
 
-        plan = bounded_AND_OR_search(
-            state,
-            eligible_actions,
-            hard_resource_budget,
-            mandatory_obligations,
-            terminal_decision_gate
-        )
+This is deliberately weak. Every decision-complete policy must resolve every current blocker on every covered branch, so its worst-case resource consumption must be at least the minimum relaxed cost of resolving each individual blocker; taking the maximum preserves a lower bound. The relaxation can underestimate the true cost because it ignores prerequisites, adverse outcomes, action interactions and other blockers. It must never overestimate it.
 
-        if plan is absent:
-            if specification_or_required_claim_is_invalid:
-                return REFUSE(reason, state)
-            return INCONCLUSIVE(blockers, budget, rejected_action_reasons)
+Safe pruning rule:
 
-        action = first_action(plan)
-        result = execute_and_record_actual_cost(action)
+\[
+C_{r,\mathrm{spent}}(S)+LB_r(S)>B_{r,\mathrm{total}}
+\quad\Longrightarrow\quad
+\text{no decision-complete policy fits the remaining budget}.
+\]
 
-        if result.failed_or_timed_out:
-            charge_actual_cost(result)
-            update_failure_state_and_replan()
-            continue
+Apply this test independently to each resource dimension. Do not sum individual blocker distances: one action may resolve multiple blockers, and different branches may use different actions. If the relaxed graph or resource lower bounds are not sound, disable this pruning rule.
 
-        proposed_state = apply_typed_evidence_transition(state, result)
-        checker_result = independently_check_transition(proposed_state)
+#### 7.3.2 Proof-preserving state dominance
 
-        if checker_result != VERIFIED:
-            preserve_artifacts_and_mark_conflict_or_incomplete()
-            state = fail_closed_state()
-        else:
-            state = proposed_state
-~~~ 
+A search state \(S_1\) may dominate \(S_2\) only when all of the following are established:
 
-The pseudo-code intentionally does not specify executable APIs or a current GDEC runtime implementation.
+1. both states refer to the identical canonical specification, model scope and assurance mode;
+2. \(\mathcal Q_1\subseteq\mathcal Q_2\), with both sets sound under the same model assumptions;
+3. \(S_1\) has no more open, blocked or conflicted obligations than \(S_2\), and all evidence used by \(S_1\) has valid provenance;
+4. the resource vector already consumed in \(S_1\) is componentwise no greater than in \(S_2\);
+5. every continuation action/policy available from \(S_2\) has a corresponding valid continuation from \(S_1\), with outcome coverage and proof obligations no harder.
 
-### 7.4 Terminal outcomes
+Condition 5 is essential. A smaller QoI set alone does not guarantee that a solver, estimator or verifier remains applicable. The implementation must establish an action-simulation relation or decline to use dominance pruning.
+
+Under these conditions, any feasible continuation from \(S_2\) can be simulated from \(S_1\) without a worse assurance state or greater resource use. The planner may retain \(S_1\) and prune \(S_2\). This is a conditional dominance argument, not a proof that a generic subset test is safe.
+
+#### 7.3.3 Action-equivalence reduction
+
+Actions may be merged or one removed only if a checked equivalence relation establishes identical:
+- applicability/preconditions;
+- possible outcome coverage;
+- witness and obligation effects;
+- evidence dependencies and checker semantics;
+- failure/invalidation behaviour.
+
+If these are equivalent and one action has no greater upper resource cost in every component (and is strictly cheaper in at least one), the more expensive action is dominated. Otherwise retain both. General action-equivalence reduction is established in AI planning; the research task is to test whether numerical proof-effect signatures provide a useful, sound abstraction for GDEC's computation portfolio.
+
+### 7.4 Receding-horizon controller
+
+### 7.5 Terminal outcomes
 
 - `ACCEPT`: every required constraint/decision condition is robust over the sound admissible set; regret is within tolerance; all mandatory obligations are satisfied.
 - `REJECT`: valid evidence robustly establishes violation or a decision rule selects rejection across the admissible set.
@@ -482,52 +520,65 @@ Do not claim:
 - first evidence graph or assurance case;
 - patentability or freedom to operate.
 
-## 11. Prior-art and patent landscape (initial search, not exhaustive)
+## 11. Prior-art and patent landscape (expanded, still not exhaustive)
 
 | Prior work | What it already covers | Consequence for DWAOP |
 |---|---|---|
-| Becker et al., 2023, goal-oriented AFEM | QoI-oriented mesh refinement and iterative-solver steering; convergence and optimal rates with respect to total computational cost under stated assumptions | Do not claim novelty for solver/mesh co-steering or total-cost-aware QoI adaptivity |
-| Yang et al., 2024, active learning for RBDO under multiple simulation models | Active constraints, model selection and different simulation costs in reliability-based design optimisation | Do not claim novelty for cost-aware action/fidelity selection in reliability optimisation |
-| Solak et al., arXiv:2610.38582, 28 Oct 2026, MF-CAS preprint | Joint sample-location and fidelity selection using decomposed uncertainty intervals and model cost | Do not claim novelty for decomposed interval uncertainty plus joint cost-aware sampling/fidelity selection |
-| Zhao et al., Reliability Engineering & System Safety, online 20 Nov 2026, MF-PBALC | Posterior-mean failure-probability bounds, a stopping rule, a learning function and cost-aware joint evaluation-point/fidelity selection | Do not claim novelty for bound-based stopping or cost-aware joint fidelity selection in structural reliability |
-| CEGAR literature | Counterexample generation, validation and guided abstraction refinement | Do not claim novelty for counterexample-guided refinement alone |
-| ACCESS, *Assurance Case Centric Engineering of Safety-critical Systems* (2024) | Model-based assurance-case/artifact management, traceability, automatic invocation of formal verification evidence, machine-checking assurance logic and change-impact analysis | Do not claim novelty for machine-readable assurance obligations, evidence graphs, or automatic verification evidence integration in isolation |
-| Automated assurance-case pattern selection for CPS (2022) | Formulates selection/coverage of assurance-case patterns with graph analytics and optimisation | Do not claim novelty for obligation coverage or minimising evidence-pattern sets alone |
-| NASA, *Guided Integration of Formal Verification in Assurance Cases* (2023) | Captures formal verification method constraints and evidence in assurance cases | Do not claim novelty for connecting verification-tool applicability constraints to assurance evidence alone |
-| US20240348663A1, “AI-enhanced simulation and modeling experimentation and control” | Broad published claims for an AI simulation/experimental-design decision platform with goals/constraints, targeted exploration, uncertainty reduction, model adjustment and planning/search features | Potential adjacent patent scope; requires patent-professional review. This document does not determine claim construction, infringement or freedom to operate |
+| Oden & Prudhomme (2001), goal-oriented FEM | QoI-based a posteriori estimates and goal-oriented mesh adaptivity, including upper/lower bounds for classes of elliptic problems | Do not claim novelty for QoI-centric error estimation or mesh adaptation |
+| Becker et al. (2023), goal-oriented AFEM | Joint mesh-refinement and iterative-solver steering, with convergence and optimal rates in total computational cost under assumptions | Do not claim novelty for solver/mesh co-steering |
+| NASA Nemec & Aftosmis (2014/2015), automatic verification of goal-oriented flow simulations | Adjoint-weighted error estimates and automatic control of discretisation error in practical Euler simulations | Do not claim novelty for automated goal-oriented verification and mesh control |
+| Yang et al. (2024), active learning for RBDO under multiple simulation models | Active constraints, model selection and differing simulation costs in reliability-based design optimisation | Do not claim novelty for cost-aware fidelity/action selection in reliability optimisation |
+| Vayanos et al. (2023), robust optimisation with decision-dependent information discovery | Decisions control when uncertain information is revealed through costly exploratory investments; develops multistage robust formulations and a solution method | Do not claim novelty for planning costly queries that reveal information before a decision |
+| Ley et al. (2026), optimisation under elementwise controllable uncertainty | Decision maker can pay to shrink bounded uncertainty intervals element by element and optimise under the remaining uncertainty | Do not claim novelty for paid computation/measurement reducing an uncertainty set |
+| Solak et al. (2026), MF-CAS preprint | Joint sample-location and fidelity selection using decomposed uncertainty intervals and model cost | Do not claim novelty for cost-aware interval-based sampling/fidelity selection |
+| Zhao et al. (2026), MF-PBALC | Posterior-mean failure-probability bounds, a stopping rule, and cost-aware joint evaluation-point/fidelity selection for structural reliability | Do not claim novelty for bounded stopping or cost-aware joint fidelity selection |
+| Minimax-regret robust optimisation (e.g. Ning & You, 2018) | Minimax-regret objectives and algorithms in adaptive robust optimisation | Do not claim novelty for the regret objective or worst-case regret formulation |
+| Hill, Komendantskaya & Petrick (2020), Proof-Carrying Plans | Resource logic and typed pre/postconditions for checking AI plans, with formal soundness proof and Agda formalisation | Do not claim novelty for resource-aware plans carrying machine-checkable proofs |
+| Gardiol & Kaelbling, action equivalence for planning | Runtime partitioning of actions into approximate equivalence classes to reduce planning search | Do not claim novelty for action-signature compression in generic planning |
+| CEGAR literature | Counterexample generation, abstraction refinement and validation loops | Do not claim novelty for counterexample-guided refinement alone |
+| ACCESS (2024), assurance-case-centric engineering | Model-based assurance-case/artifact traceability, automated formal-method evidence invocation, logical checking and change-impact analysis | Do not claim novelty for assurance graphs or automated evidence integration in isolation |
+| NASA (2023), formal verification in assurance cases | Tool preconditions, postconditions and assurance constraints integrated into machine-supported assurance arguments | Do not claim novelty for verifier applicability contracts alone |
+| Automated assurance-case pattern selection for CPS (2022) | Coverage and optimisation of assurance-case patterns | Do not claim novelty for obligation coverage or evidence-pattern selection alone |
+| Yang et al. (2023), RL for adaptive mesh refinement | AMR formulated as sequential decision-making under a computational budget; policy compared with greedy ZZ refinement | Do not claim novelty for framing refinement as sequential budgeted decisions |
+| US20240348663A1, AI-enhanced simulation and modeling experimentation and control | Published claims describe simulation goals/constraints, uncertainty reduction, active-learning scenario selection, and look-ahead/branching adapted to resources | Material adjacent patent disclosure; requires patent-professional claim analysis. This is not a legal opinion |
 
-### 11.1 Revised novelty boundary
+### 11.1 What this does to the novelty hypothesis
 
-The following pieces are individually known or have close analogues: QoI adaptation, solver/mesh co-control, multi-fidelity cost-aware sampling, counterexample-guided refinement, assurance-case graphs, verification evidence integration, and resource-aware look-ahead planning.
+The research must now treat all the following as established ingredients: robust regret, paid information discovery, QoI adaptivity, cost-aware multi-fidelity selection, resource-aware proof-carrying plans, action equivalence, counterexample-guided refinement, assurance-case obligation management, and budgeted sequential mesh refinement.
 
-The narrower candidate hypothesis is therefore not any one of those components. It is their **specific coupling in a bounded numerical-engineering computation controller**:
+The remaining candidate is narrower:
 
-- the primary state is a sound joint QoI set, not a surrogate-only prediction;
-- unresolved decision alternatives are represented as explicit decision witnesses;
-- each computation action has a typed contract specifying the witnesses it can exclude, the assurance obligations it can discharge, the assumptions it shares and the exact evidence it emits;
-- a robust AND-OR planner searches contingent action sequences, with every outcome branch represented;
-- a vector-valued resource planner seeks a Pareto frontier of worst-case costs;
-- only independently checked, scope-valid evidence can alter the admissible set or close an obligation;
-- a terminal decision is permitted only when the witness set is empty (or minimax regret is within the declared tolerance) and every mandatory obligation is satisfied.
+**A numerical-engineering-specific, certificate-first computation planner in which (i) each action emits a scoped, independently checkable set-transition or witness-exclusion artefact, (ii) action contracts explicitly describe the numerical assumptions and QoI regions to which that artefact applies, and (iii) a contingent planner uses those contracts to construct a complete decision-and-assurance proof path, with proof-preserving pruning and explicit fail-closed outcomes.**
 
-This combination may still be obvious or already disclosed when compared with assurance-case planning, formal verification, robust optimisation and contingent planning. The literature search has not established a gap. A targeted search must now examine those combinations and their patent claims, not merely search the phrase “decision sufficiency”.
+The specific algorithmic mechanism proposed for evaluation is the pairing of:
+- **Verified Witness-Effect Certificates (VWEC):** proof objects for excluding a defined decision-reversing QoI region under an identified model/action outcome; and
+- **Blocker-distance lower bounds plus proof-preserving state dominance:** search accelerators that prune only when their admissibility conditions are checked.
+
+This is not yet a demonstrated gap. It may still be obvious to a skilled reader as an application-specific combination of proof-carrying planning, robust optimisation, certified numerical analysis and assurance cases. The novelty claim is therefore **OPEN / UNPROVEN**. A full literature, dissertation, standards and patent-family search is needed before public claims or an invention disclosure.
 
 ### 11.2 Primary links
 
-- Becker et al. (2023), *Numerische Mathematik*: https://doi.org/10.1007/s00211-022-01334-8
-- Yang et al. (2024), *Structural Safety*: https://doi.org/10.1016/j.strusafe.2023.102426
-- Solak et al. (2026), MF-CAS preprint: https://arxiv.org/abs/2610.38582
+- Oden & Prudhomme (2001), goal-oriented FEM: https://doi.org/10.1016/S0898-1221(00)00317-5
+- Becker et al. (2023), GOAFEM: https://doi.org/10.1007/s00211-022-01334-8
+- NASA Nemec & Aftosmis, automatic goal-oriented flow verification: https://ntrs.nasa.gov/citations/20150000864
+- Yang et al. (2024), multi-model active learning for RBDO: https://doi.org/10.1016/j.strusafe.2023.102426
+- Vayanos et al., decision-dependent information discovery: https://doi.org/10.1287/mnsc.2021.00160
+- Ley et al. (2026), elementwise controllable uncertainty: https://doi.org/10.1007/s00291-026-00856-z
+- Solak et al. (2026), MF-CAS: https://arxiv.org/abs/2610.38582
 - Zhao et al. (2026), MF-PBALC: https://doi.org/10.1016/j.ress.2026.113871
-- Clarke et al. (2000), CEGAR, CAV: https://doi.org/10.1007/10722167_15
-- Clarke et al. (2003), CEGAR expanded journal treatment: https://doi.org/10.1145/876638.876643
-- ACCESS (2024), *Journal of Systems and Software*: https://doi.org/10.1016/j.jss.2024.112034
-- NASA, *Guided Integration of Formal Verification in Assurance Cases*: https://ntrs.nasa.gov/citations/20230007599
+- Ning & You (2018), adaptive robust optimisation with minimax regret: https://doi.org/10.1016/j.compchemeng.2017.09.026
+- Hill et al. (2020), Proof-Carrying Plans: https://doi.org/10.1145/3414080.3414094
+- Gardiol & Kaelbling, computing action equivalences for planning: https://people.csail.mit.edu/nhg/papers/gardiol_icaps_consortium.pdf
+- Clarke et al. (2000), CEGAR: https://doi.org/10.1007/10722167_15
+- ACCESS (2024): https://doi.org/10.1016/j.jss.2024.112034
+- NASA, formal verification in assurance cases: https://ntrs.nasa.gov/citations/20230007599
 - Automated assurance-case pattern selection for CPS (2022): https://doi.org/10.1007/978-3-031-14835-4_6
+- Yang et al. (2023), RL for AMR: https://proceedings.mlr.press/v206/yang23e.html
 - Patent publication: https://patents.google.com/patent/US20240348663A1/en
 
-The patent was located through a preliminary search. Google Patents lists this publication as pending and shows a long priority/family chain; its own page warns that legal status is not a legal conclusion. Claims 1, 8 and 12 explicitly discuss goal/constraint-driven simulation and uncertainty reduction, active-learning/targeted exploration, and adaptive look-ahead/branching subject to resources. This is a material adjacent disclosure to review with a patent professional; it does not establish whether any specific DWAOP claim is anticipated, obvious, infringing or free to operate.
+The patent publication is listed as pending by Google Patents, which explicitly warns that its legal-status display is not a legal conclusion. The publication has a long priority/family chain. Its published claims include uncertainty reduction and active-learning scenario selection, and look-ahead/branching depth adapted to objectives and resources. It is an adjacent disclosure requiring professional review; it does not establish anticipation, obviousness, infringement or freedom to operate for DWAOP.
 
-## 12. Required novelty experiments
+## 12. Required novelty experiments## 12. Required novelty experiments
 
 The central experiment is not merely “does DWAOP use fewer DOFs?” It is whether proof-obligation-aware planning gives a better cost/assurance frontier than a strong combination of existing methods.
 
@@ -612,8 +663,8 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 
 ## 14. Research status and next gate
 
-- **RESEARCHED:** selected recent GOAFEM, active-learning, multi-fidelity reliability and CEGAR literature; one adjacent patent publication identified.
-- **FORMULATED:** decision-witness state, obligation state, typed action contracts, robust AND-OR planning objective, vector budgets.
+- **RESEARCHED:** GOAFEM, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
+- **FORMULATED:** decision-witness state, obligation state, typed action contracts, verified witness-exclusion certificates, robust AND-OR planning objective, vector budgets, blocker-distance lower bound and proof-preserving state dominance.
 - **CONDITIONALLY JUSTIFIED:** terminal soundness proposition under explicit enclosure, transition and checker assumptions.
 - **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate.
 - **NOT IMPLEMENTED:** no production or research controller code.
