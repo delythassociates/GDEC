@@ -254,12 +254,16 @@ A heuristic optimiser may propose a candidate violation point. A standard floati
 
 An action's declared effect is only a candidate capability. The actual VWEC is checked after the action runs. No admissible region may be removed from \(\mathcal Q_t\) merely because an action was expected to reduce it.
 
+The checker should be a separately specified, minimal verification component whose trusted computing base is substantially smaller than the solver/planner stack. It should validate proof artefacts and set relations, not re-run the same estimator through the same code path and then call that result independent. Independence is an architectural target that must itself be reviewed and tested; it is not established merely by using a different function or process.
+
 ### 5.2 Witness/action/obligation effect map
 
 At each state, construct the blocker set:
 
 \[
-B(S)=W_1\cup\cdots\cup W_n\cup O_1\cup\cdots\cup O_m,
+B(S)=\{(W_i,\mathrm{witness})\}_{i=1}^{n}
+\;\cup\;
+\{(O_j,\mathrm{obligation})\}_{j=1}^{m},
 \]
 
 where \(W_i\) are unresolved witness regions and \(O_j\) are open assurance obligations. The planner builds a typed effect map from action contracts to blockers:
@@ -309,15 +313,21 @@ Every possible outcome of an action must be represented by \(\mathcal Y_a(S)\). 
 
 ### 7.1 The planning objective
 
-A policy \(\pi\) maps each reachable evidence state/history to an action and branches on the observed outcomes. Let \(\Omega(\pi)\) be the set of all outcome paths covered by the action contracts. Let \(\mathbf C(\pi,\omega)\) be the resource vector consumed on path \(\omega\).
-
-Define the componentwise worst-case resource envelope:
+A policy \(\pi\) maps each reachable evidence state/history to an action and branches on the observed outcomes. Let \(\Omega(\pi)\) be the set of all outcome paths covered by the action contracts. Let the upper-bound resource vector for path \(\omega\) be
 
 \[
-\overline{\mathbf C}_r(\pi)
+\mathbf C^\uparrow(\pi,\omega)
+=
+\sum_{a\in\pi(\omega)}\mathbf c_a^\uparrow.
+\]
+
+Define the componentwise worst-case upper resource envelope:
+
+\[
+\overline{C}_r^\uparrow(\pi)
 =
 \sup_{\omega\in\Omega(\pi)}
-C_r(\pi,\omega)
+C_r^\uparrow(\pi,\omega)
 \quad\text{for every resource component }r.
 \]
 
@@ -330,7 +340,7 @@ The planner returns the nondominated worst-case resource envelopes:
 \[
 \Pi^*(S)=\operatorname{ParetoMin}
 \left\{
-\overline{\mathbf C}(\pi):
+\overline{\mathbf C}^\uparrow(\pi):
 \pi\text{ is decision-complete from }S
 \right\}.
 \]
@@ -436,6 +446,95 @@ Actions may be merged or one removed only if a checked equivalence relation esta
 If these are equivalent and one action has no greater upper resource cost in every component (and is strictly cheaper in at least one), the more expensive action is dominated. Otherwise retain both. General action-equivalence reduction is established in AI planning; the research task is to test whether numerical proof-effect signatures provide a useful, sound abstraction for GDEC's computation portfolio.
 
 ### 7.4 Receding-horizon controller
+
+The planner constructs a bounded contingent plan, executes only its first action, verifies the result, and then replans from the updated state. This prevents a long predicted plan from being executed blindly after its assumptions have changed.
+
+~~~text
+DWAOP(spec, resource_budget):
+    validate_specification_and_decision_rules(spec)
+    obligations = compile_mandatory_obligations(spec)
+    state = establish_initial_sound_QoI_set_and_provenance(spec)
+    actual_cost = zero_resource_vector()
+
+    if specification_invalid_or_claim_inapplicable:
+        return REFUSE(reason, state)
+
+    repeat:
+        verify_state_integrity_and_model_identity(state)
+
+        blockers = construct_tagged_witness_and_obligation_blockers(state)
+        witnesses = generate_decision_reversing_witnesses(state.Q)
+        decision = evaluate_robust_decision(state.Q, witnesses)
+
+        if decision.robust and obligations.all_satisfied:
+            return TERMINAL_DECISION(
+                decision,
+                independently_checked_certificate_bundle,
+                actual_cost
+            )
+
+        actions = enumerate_supported_actions(state)
+        contracts = validate_action_preconditions_and_effect_contracts(
+            actions,
+            blockers
+        )
+
+        apply_blocker_distance_lower_bound_pruning(
+            state,
+            contracts,
+            actual_cost,
+            resource_budget
+        )
+        apply_proof_preserving_state_dominance()
+
+        plan_frontier = bounded_vector_cost_AND_OR_search(
+            state,
+            eligible_contracts,
+            hard_resource_budget = resource_budget - actual_cost,
+            mandatory_obligations = obligations,
+            terminal_decision_gate = decision_gate
+        )
+
+        if no_complete_plan_fits(plan_frontier):
+            if required_claim_is_invalid_or_unsupported:
+                return REFUSE(reason, blockers, actual_cost)
+            return INCONCLUSIVE(
+                blockers,
+                remaining_budget,
+                rejected_action_and_pruning_reasons,
+                actual_cost
+            )
+
+        action = first_action(select_declared_preference_from_Pareto_frontier(plan_frontier))
+        result = execute_and_record_actual_cost(action)
+        actual_cost += result.measured_resource_cost
+
+        if result.failed_or_timed_out:
+            preserve_failure_artifacts_and_update_state(state, result)
+            if actual_cost_exceeds_budget:
+                return INCONCLUSIVE("ACTUAL_BUDGET_EXHAUSTED", blockers, actual_cost)
+            continue
+
+        proposed_state = apply_typed_evidence_transition(state, result)
+        checker_result = independent_checker.verify_transition_and_certificates(
+            old_state = state,
+            action = action,
+            result = result,
+            proposed_state = proposed_state
+        )
+
+        if checker_result != VERIFIED:
+            preserve_all_artifacts()
+            state = mark_conflicted_or_incomplete(state, proposed_state, checker_result)
+        else:
+            state = proposed_state
+
+        if actual_cost_exceeds_budget:
+            return INCONCLUSIVE("ACTUAL_BUDGET_OVERRUN", state, actual_cost)
+
+~~~
+
+The controller may execute an exploratory action when no sound outcome cover exists only under an explicitly non-assured exploratory mode. Such an action cannot support a bounded terminal decision until its actual result has been converted into valid checked evidence. Search-depth exhaustion, state-space abstraction failure, or a heuristic witness-search timeout returns \`INCONCLUSIVE\`; it does not prove that no witness or plan exists.
 
 ### 7.5 Terminal outcomes
 
