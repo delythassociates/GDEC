@@ -65,7 +65,7 @@ The final interval and its provenance must be independently checked before eithe
 - Upper resource cost:
 
 \[
-\mathbf c_A^\uparrow=(4.0\;\mathrm{min},\;0.8\;\mathrm{GB}).
+c_A^\uparrow=4.0\;\mathrm{RU}.
 \]
 
 Possible outcomes:
@@ -94,7 +94,7 @@ The two outcome cells cover \(\mathcal Q_0\) exactly:
 - Upper resource cost:
 
 \[
-\mathbf c_B^\uparrow=(1.0\;\mathrm{min},\;0.2\;\mathrm{GB}).
+c_B^\uparrow=1.0\;\mathrm{RU}.
 \]
 
 The checker verifies a computational claim under the stated model. It does not validate the physical model against reality.
@@ -106,19 +106,17 @@ The checker verifies a computational claim under the stated model. It does not v
 ## 4. Resource budget
 
 \[
-\mathbf B=(6.0\;\mathrm{min},\;1.5\;\mathrm{GB}).
+B=6.0\;\mathrm{RU}.
 \]
 
 The total upper-bound cost of the contingent plan is:
 
 \[
-\mathbf c_A^\uparrow+\mathbf c_B^\uparrow
-=(5.0\;\mathrm{min},\;1.0\;\mathrm{GB})
-\preceq
-(6.0\;\mathrm{min},\;1.5\;\mathrm{GB}).
+c_A^\uparrow+c_B^\uparrow=5.0\;\mathrm{RU}
+\le6.0\;\mathrm{RU}.
 \]
 
-The plan fits both resource dimensions. No scalar exchange rate between time and memory is required.
+The plan fits both resource dimensions. This example has exactly one additive resource dimension (RU). It makes no claim about peak memory or parallel execution.
 
 ## 5. AND-OR plan
 
@@ -200,13 +198,13 @@ This is the specific behaviour the prototype must compare against a greedy selec
 Change only the resource budget:
 
 \[
-\mathbf B'=(4.5\;\mathrm{min},\;1.5\;\mathrm{GB}).
+B'=4.5\;\mathrm{RU}.
 \]
 
 Action A fits, but the complete plan does not:
 
 \[
-5.0\;\mathrm{min}>4.5\;\mathrm{min}.
+5.0\;\mathrm{RU}>4.5\;\mathrm{RU}.
 \]
 
 The planner must not execute Action A and then pretend that the decision is finished. Because the mandatory verifier cannot be budgeted after scenario resolution, there is no feasible complete plan.
