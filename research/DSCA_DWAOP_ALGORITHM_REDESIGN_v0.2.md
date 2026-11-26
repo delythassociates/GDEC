@@ -770,12 +770,19 @@ Do not claim:
 | Prior work | What it already covers | Consequence for DWAOP |
 |---|---|---|
 | Oden & Prudhomme (2001), goal-oriented FEM | QoI-based a posteriori estimates and goal-oriented mesh adaptivity, including upper/lower bounds for classes of elliptic problems | Do not claim novelty for QoI-centric error estimation or mesh adaptation |
+| Vexler & Wollner (2008), adaptive FEM for elliptic optimisation with control constraints | A posteriori estimates for both cost functionals and QoIs with pointwise inequality constraints; adaptive mesh refinement | Do not claim novelty for QoI-driven mesh adaptation in constrained optimisation |
 | Becker et al. (2023), goal-oriented AFEM | Joint mesh-refinement and iterative-solver steering, with convergence and optimal rates in total computational cost under assumptions | Do not claim novelty for solver/mesh co-steering |
 | NASA Nemec & Aftosmis (2014/2015), automatic verification of goal-oriented flow simulations | Adjoint-weighted error estimates and automatic control of discretisation error in practical Euler simulations | Do not claim novelty for automated goal-oriented verification and mesh control |
+| Bespalov et al. (2019), goal-oriented stochastic Galerkin FEM | Joint spatial and parametric adaptive refinement for QoIs under uncertain inputs, with a reliable and efficient two-level a posteriori estimate | Do not claim novelty for spatial/parametric goal-oriented adaptivity or reliable QoI error estimation |
+| Mohite & Upadhyay (2012), adaptive FEM for laminated plates | Goal-based discretisation adaptivity plus a modelling-error indicator and automatic selection of local plate-model fidelity | Do not claim novelty for coupled model/discretisation adaptivity |
+| Bespalov, Praetorius & Ruggeri (2026), nonlinear goal-oriented stochastic Galerkin FEM | Goal-oriented adaptivity for continuously Gâteaux-differentiable nonlinear QoIs under countably many uncertain parameters | Do not claim novelty for extending goal-oriented adaptivity to nonlinear QoIs under parametric uncertainty |
 | Kerfriden, Kundu & Claus (2019), Bayesian inverse FEM adaptivity | Simultaneous control of goal-oriented FEM discretisation error and statistical sampling error in Bayesian parameter identification, with stopping and mesh-refinement decisions | Do not claim novelty for coupling sampling sufficiency and FEM discretisation-error control |
 | Bonilla-Villalba et al. (2020), stochastic elastodynamics model adaptivity | Joint control of spatial discretisation, surrogate-model and Monte Carlo sampling errors for QoI statistics at minimum cost | Do not claim novelty for coordinating these numerical approximation and sampling errors |
 | Goal-oriented adaptive modelling of random heterogeneous media / model-based MLMC (2019) | QoI-driven adaptive surrogate/model resolution and multilevel Monte Carlo for stochastic heat conduction and elastostatics | Do not claim novelty for QoI-driven model-resolution plus sampling-cost control |
 | Yang et al. (2024), active learning for RBDO under multiple simulation models | Active constraints, model selection and differing simulation costs in reliability-based design optimisation | Do not claim novelty for cost-aware fidelity/action selection in reliability optimisation |
+| Ma et al. (2023), adaptive Kriging RBDO | Active-constraint-focused local/global enrichment in augmented reliability space for single- and double-loop reliability-based design optimisation | Do not claim novelty for targeted sampling near active probabilistic constraints |
+| Liu et al. (2026), interval-uncertainty RBDO | Ensemble surrogate modelling and global learning for non-probabilistic reliability under interval uncertainty | Do not claim novelty for interval-uncertainty RBDO with adaptive surrogate enrichment |
+| Buchheim, Grütering & Meyer (2025), PDE branch-and-bound with adaptive refinement | Global branch-and-bound with a posteriori safe dual bounds and adaptive temporal-grid refinement for parabolic optimal control | Do not claim novelty for branch-and-bound coupled to safe numerical bounds and discretisation refinement |
 | Vayanos et al. (2023), robust optimisation with decision-dependent information discovery | Decisions control when uncertain information is revealed through costly exploratory investments; develops multistage robust formulations and a solution method | Do not claim novelty for planning costly queries that reveal information before a decision |
 | Ley et al. (2026), optimisation under elementwise controllable uncertainty | Decision maker can pay to shrink bounded uncertainty intervals element by element and optimise under the remaining uncertainty | Do not claim novelty for paid computation/measurement reducing an uncertainty set |
 | Solak et al. (2026), MF-CAS preprint | Joint sample-location and fidelity selection using decomposed uncertainty intervals and model cost | Do not claim novelty for cost-aware interval-based sampling/fidelity selection |
@@ -794,7 +801,7 @@ Do not claim:
 
 ### 11.1 What this does to the novelty hypothesis
 
-The research must now treat all the following as established ingredients: robust regret, paid information discovery, QoI adaptivity, cost-aware multi-fidelity selection, resource-aware proof-carrying plans, action equivalence, counterexample-guided refinement, assurance-case obligation management, and budgeted sequential mesh refinement.
+The research must now treat all the following as established ingredients: QoI-focused error control; constrained optimisation with adaptive FEM; joint spatial, parametric, surrogate, sampling and model-error control; adaptive reliability-based design optimisation under probabilistic and interval uncertainty; branch-and-bound with safe numerical bounds and adaptive discretisation; robust regret; paid information discovery; cost-aware multi-fidelity selection; resource-aware proof-carrying plans; action equivalence; counterexample-guided refinement; and assurance-case obligation management.
 
 The remaining candidate is narrower:
 
@@ -808,6 +815,13 @@ This is not yet a demonstrated gap. It may still be obvious to a skilled reader 
 
 ### 11.2 Primary links
 
+- Vexler & Wollner (2008), adaptive FEM for elliptic optimisation with control constraints: https://doi.org/10.1137/070683416
+- Bespalov et al. (2019), goal-oriented stochastic Galerkin FEM: https://doi.org/10.1016/j.cma.2018.10.041
+- Mohite & Upadhyay (2012), adaptive FEM for laminated plates: https://doi.org/10.1016/j.compstruc.2012.08.002
+- Bespalov, Praetorius & Ruggeri (2026), nonlinear goal-oriented stochastic Galerkin FEM: https://doi.org/10.1137/23M1597678
+- Ma et al. (2023), adaptive Kriging RBDO: https://doi.org/10.1016/j.ress.2023.109386
+- Liu et al. (2026), interval-uncertainty RBDO: https://doi.org/10.1016/j.apm.2026.117029
+- Buchheim, Grütering & Meyer (2025), PDE branch-and-bound with adaptive refinement: https://doi.org/10.1007/s10589-025-00654-3
 - Oden & Prudhomme (2001), goal-oriented FEM: https://doi.org/10.1016/S0898-1221(00)00317-5
 - Becker et al. (2023), GOAFEM: https://doi.org/10.1007/s00211-022-01334-8
 - NASA Nemec & Aftosmis, automatic goal-oriented flow verification: https://ntrs.nasa.gov/citations/20150000864
@@ -842,10 +856,13 @@ The central experiment is not merely “does DWAOP use fewer DOFs?” It is whet
 1. uniform refinement / fixed solver tolerances;
 2. conventional goal-oriented AFEM;
 3. GOAFEM-like joint mesh/solver steering where applicable;
-4. cost-aware multi-fidelity active learning for problems with fidelity levels;
-5. a greedy action selector using the same action contracts but no look-ahead;
-6. DWAOP with witness/obligation planning;
-7. offline oracle policy for retrospective lower-bound comparison only.
+4. goal-oriented spatial/parametric or stochastic model-adaptivity baselines for uncertain-input cases;
+5. adaptive Kriging / multi-fidelity reliability-learning baselines for probabilistic or interval reliability cases;
+6. branch-and-bound with safe numerical bounds and adaptive discretisation for finite decision abstractions where applicable;
+7. a greedy action selector using the same action contracts but no look-ahead;
+8. an obligation-aware prerequisite planner without numerical witness certificates;
+9. DWAOP with witness/obligation planning and DAPC;
+10. offline oracle policy for retrospective lower-bound comparison only.
 
 ### Benchmark stages
 
@@ -918,7 +935,7 @@ No GPU, probabilistic reliability or full multi-physics scope in the first proto
 
 ## 14. Research status and next gate
 
-- **RESEARCHED:** GOAFEM, stochastic FEM error control, Bayesian inverse-FEM adaptivity, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, running FE-kernel error analysis, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
+- **RESEARCHED:** constrained goal-oriented AFEM, goal-oriented flow verification, stochastic/parametric and nonlinear QoI adaptivity, model/discretisation/sampling error control, Bayesian inverse-FEM, adaptive RBDO under probability and interval uncertainty, PDE branch-and-bound with safe numerical bounds, multi-fidelity/active learning, decision-dependent information discovery, controllable uncertainty, running FE-kernel error analysis, minimax regret, proof-carrying plans, action equivalence, CEGAR, assurance cases, sequential AMR and one adjacent patent publication.
 - **FORMULATED:** decision-witness state, obligation state, typed branch-conditional action effects, VWEC and DAPC certificate layers, robust AND-OR planning objective, vector budgets, blocker-distance/LP-cover lower bounds and proof-preserving state dominance.
 - **CONDITIONALLY JUSTIFIED:** terminal soundness proposition under explicit enclosure, transition and checker assumptions.
 - **NOT PROVEN:** global optimality, tractability at scale, novelty, patentability or freedom to operate.
