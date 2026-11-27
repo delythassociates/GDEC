@@ -316,3 +316,135 @@ def test_mutant_14_allow_clairvoyant_world_branching() -> None:
     clairvoyant = replace(oracle, allow_clairvoyant_world_branching=True)
     with pytest.raises(ContractError):
         validate_oracle(clairvoyant)
+
+
+def test_mutant_15_incorrect_dominance_direction(monkeypatch: pytest.MonkeyPatch) -> None:
+    oracle, budget = _fixture_oracle()
+    exact = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=4)
+
+    def reversed_dom(left, right):
+        return left.resource_vector.strictly_dominates(right.resource_vector) and False or (
+            right.resource_vector.dominates_or_equal(left.resource_vector)
+            and right.world_verdict_map == left.world_verdict_map
+        )
+
+    monkeypatch.setattr(planner_mod, "_policy_dominates", reversed_dom)
+    res_mut = plan_policies(oracle, budget, max_horizon=4, prune=True)
+    assert res_mut.pareto_frontier != exact
+
+
+def test_mutant_16_omitted_resource_dimension(monkeypatch: pytest.MonkeyPatch) -> None:
+    universe = frozenset({"w0", "w1"})
+    decisions = {"w0": "ACCEPT", "w1": "REJECT"}
+    a1 = make_action("a1", "op", universe, {"w0": "l0", "w1": "l1"}, ru_upper=1.0, energy_ticks=10.0)
+    a2 = make_action("a2", "op", universe, {"w0": "l0", "w1": "l1"}, ru_upper=2.0, energy_ticks=1.0)
+    oracle = WorldOracle(
+        specification_id="spec_m16",
+        model_id="m_m16",
+        assurance_scope="m16_scope",
+        universe=universe,
+        decision_by_world=decisions,
+        actions={"a1": a1, "a2": a2},
+    )
+    budget = ResourceBudget(ru_upper=10.0, cpu_ticks=100.0, energy_ticks=50.0, peak_memory_gb=8.0)
+    exact = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=3)
+    assert len(exact) == 2
+
+    def ignore_energy_dom(left, right):
+        return (
+            left.world_verdict_map == right.world_verdict_map
+            and left.resource_vector.ru_upper <= right.resource_vector.ru_upper
+            and left.resource_vector.cpu_ticks <= right.resource_vector.cpu_ticks
+            and left.resource_vector.peak_memory_gb <= right.resource_vector.peak_memory_gb
+            and left.resource_vector.ru_upper < right.resource_vector.ru_upper
+        )
+
+    monkeypatch.setattr(planner_mod, "_policy_dominates", ignore_energy_dom)
+    res_mut = plan_policies(oracle, budget, max_horizon=3, prune=True)
+    assert res_mut.pareto_frontier != exact
+
+
+def test_mutant_17_incorrect_budget_comparison(monkeypatch: pytest.MonkeyPatch) -> None:
+    oracle, _ = _fixture_oracle()
+    tight_budget = ResourceBudget(ru_upper=0.5, cpu_ticks=10.0, energy_ticks=5.0, peak_memory_gb=2.0)
+    exact = enumerate_exact_pareto_frontier(oracle, tight_budget, max_horizon=4)
+    assert exact == ()
+
+    monkeypatch.setattr(ResourceBudget, "allows", lambda self, vec, tol=0.0: True)
+    res_mut = plan_policies(oracle, tight_budget, max_horizon=4, prune=True)
+    assert res_mut.pareto_frontier != exact
+
+
+def test_mutant_18_missing_terminal_verdict(monkeypatch: pytest.MonkeyPatch) -> None:
+    oracle, budget = _fixture_oracle()
+    exact = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=4)
+
+    def missing_reject(state, orc):
+        if not state.worlds or state.open_obligations:
+            return None
+        if not state.model_valid or state.evidence_stale:
+            return "REFUSE"
+        decs = {orc.decision_by_world[w] for w in state.worlds}
+        if decs == {"ACCEPT"}:
+            return "ACCEPT"
+        return None
+
+    monkeypatch.setattr(planner_mod, "terminal_verdict", missing_reject)
+    res_mut = plan_policies(oracle, budget, max_horizon=4, prune=True)
+    assert res_mut.pareto_frontier != exact
+
+
+def test_mutant_19_frontier_identity_omission(monkeypatch: pytest.MonkeyPatch) -> None:
+    universe = frozenset({"w0", "w1"})
+    decisions = {"w0": "ACCEPT", "w1": "REJECT"}
+    a1 = make_action("a1", "op", universe, {"w0": "l0", "w1": "l1"}, ru_upper=1.0, energy_ticks=10.0)
+    a2 = make_action("a2", "op", universe, {"w0": "l0", "w1": "l1"}, ru_upper=2.0, energy_ticks=1.0)
+    oracle = WorldOracle(
+        specification_id="spec_m19",
+        model_id="m_m19",
+        assurance_scope="m19_scope",
+        universe=universe,
+        decision_by_world=decisions,
+        actions={"a1": a1, "a2": a2},
+    )
+    budget = ResourceBudget(ru_upper=10.0, cpu_ticks=100.0, energy_ticks=50.0, peak_memory_gb=8.0)
+    exact = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=3)
+
+    def bad_dedup(policies):
+        by_map = {p.world_verdict_map: p for p in policies}
+        return tuple(by_map.values())
+
+    monkeypatch.setattr(planner_mod, "_canonical_dedup", bad_dedup)
+    res_mut = plan_policies(oracle, budget, max_horizon=3, prune=True)
+    assert res_mut.pareto_frontier != exact
+
+
+def test_mutant_20_incorrect_transition_update(monkeypatch: pytest.MonkeyPatch) -> None:
+    oracle, budget = _fixture_oracle()
+    exact = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=4)
+    orig_apply = planner_mod.apply_action_outcome
+
+    def drop_discharge(state, contract, orc):
+        transitions = orig_apply(state, contract, orc)
+        return tuple(
+            replace(t, state=replace(t.state, open_obligations=state.open_obligations))
+            for t in transitions
+        )
+
+    monkeypatch.setattr(planner_mod, "apply_action_outcome", drop_discharge)
+    res_mut = plan_policies(oracle, budget, max_horizon=4, prune=True)
+    assert res_mut.pareto_frontier != exact
+
+
+def test_mutant_21_off_by_one_horizon(monkeypatch: pytest.MonkeyPatch) -> None:
+    oracle, budget = build_refinement_ladder_for_mut()
+    exact_h3 = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=3)
+    assert len(exact_h3) > 0
+    # Off-by-one (horizon 2 instead of 3) yields empty frontier -> diverges from exact_h3
+    res_h2 = plan_policies(oracle, budget, max_horizon=2, prune=True)
+    assert res_h2.pareto_frontier != exact_h3
+
+
+def build_refinement_ladder_for_mut():
+    from research.prototypes.dwaop_horizon_ladder import build_refinement_ladder
+    return build_refinement_ladder(2)

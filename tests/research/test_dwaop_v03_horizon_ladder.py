@@ -92,3 +92,62 @@ def test_exhaustive_oracle_does_not_call_planner_pareto_reducer(monkeypatch):
     monkeypatch.setattr(planner_module, "pareto_reduce", forbidden)
     frontier = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=4)
     assert frontier
+
+
+def test_adversarial_exact_arithmetic_budget_ties_and_horizon_cutoffs():
+    from research.prototypes.dwaop_integrated_planner import (
+        ContractError,
+        NormalizedPolicy,
+        pareto_reduce,
+        plan_policies,
+    )
+
+    # 1. Repeated fractional accumulation & mixed int/Fraction/float
+    acc = ResourceVector()
+    for _ in range(10):
+        acc = acc.add_sequential(ResourceVector(ru_upper=0.1, cpu_ticks=1, energy_ticks=Fraction(1, 3)))
+    assert acc.ru_upper == Fraction(1, 1)
+    assert acc.cpu_ticks == Fraction(10, 1)
+    assert acc.energy_ticks == Fraction(10, 3)
+
+    # 2. Exact budget equality vs 1e-50 rational excess
+    budget = ResourceBudget(ru_upper=1, cpu_ticks=10.0, energy_ticks=Fraction(10, 3), peak_memory_gb=0.0)
+    assert budget.allows(acc) is True
+    over = ResourceVector(ru_upper=Fraction(1, 1) + Fraction(1, 10**50))
+    assert budget.allows(over) is False
+
+    # 3. Invalid inputs rejected by ContractError
+    for bad in (-0.1, float("nan"), float("inf"), True):
+        with pytest.raises(ContractError):
+            ResourceVector(ru_upper=bad)
+
+    # 4. Pareto ties deduplicated to minimum max_actions_on_path
+    p_long = NormalizedPolicy(
+        world_verdict_map=(("w0", "ACCEPT"),),
+        resource_vector=ResourceVector(ru_upper=0.5),
+        terminal_verdicts=frozenset({"ACCEPT"}),
+        max_actions_on_path=4,
+    )
+    p_short = NormalizedPolicy(
+        world_verdict_map=(("w0", "ACCEPT"),),
+        resource_vector=ResourceVector(ru_upper=0.5),
+        terminal_verdicts=frozenset({"ACCEPT"}),
+        max_actions_on_path=2,
+    )
+    reduced = pareto_reduce([p_long, p_short])
+    assert len(reduced) == 1
+    assert reduced[0].max_actions_on_path == 2
+
+    # 5. Empty frontier (impossible budget) & horizon-dependent cutoff on 2-stage ladder
+    oracle, full_budget = build_refinement_ladder(2)
+    zero_budget = ResourceBudget(ru_upper=0.0, cpu_ticks=0.0, energy_ticks=0.0, peak_memory_gb=0.0)
+    assert plan_policies(oracle, zero_budget, max_horizon=3, prune=True).pareto_frontier == ()
+    assert enumerate_exact_pareto_frontier(oracle, zero_budget, max_horizon=3) == ()
+    # Horizon 2 is insufficient for 2 stages + final_decision (requires horizon 3)
+    assert plan_policies(oracle, full_budget, max_horizon=2, prune=True).pareto_frontier == ()
+    assert enumerate_exact_pareto_frontier(oracle, full_budget, max_horizon=2) == ()
+    # Horizon 3 succeeds and matches oracle
+    pruned_h3 = plan_policies(oracle, full_budget, max_horizon=3, prune=True)
+    exact_h3 = enumerate_exact_pareto_frontier(oracle, full_budget, max_horizon=3)
+    assert len(exact_h3) >= 1
+    assert pruned_h3.pareto_frontier == exact_h3
