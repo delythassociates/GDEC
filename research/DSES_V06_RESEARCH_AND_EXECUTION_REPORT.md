@@ -11,7 +11,7 @@ DSES v0.6 compares a correlated unit-disk uncertainty set against its conservati
 
 The certificate verifier recomputes each leaf's interval, support bound and classification; checks that split children exactly cover their parents; verifies total domain area; and recomputes the digest. A tamper test modifies certificate structure and recomputes the digest, demonstrating that semantic checks—not just the digest—detect the inconsistency.
 
-**Focused test result:** 10 passed, 0 failed (local Python 3.13 container, \`PYTHONPATH=src python -m pytest -q tests/research/test_dses_v06.py tests/research/test_dses_v06_certificate_hardening.py\`). This is not repository CI.
+**CI result:** 16 passed, 0 failed on each of Python 3.10, 3.11, 3.12 and 3.13 (64 test executions total). GitHub Actions run [45966199112](https://github.com/delythassociates/GDEC/actions/runs/45966199112), head commit `27504b268a648662f2613aaa7493a3e9e5982072`. The earlier local pre-hardening result of 10 tests is superseded by this CI evidence.
 
 ## 2. Mathematical contract
 
@@ -95,7 +95,7 @@ v0.6 shows a small exact-rational correlation-aware analytical partitioner. It d
 
 - SPECIFIED: joint disk/box uncertainty model, robust-regret contract, whole-cell classification.
 - IMPLEMENTED: exact-rational enclosure, adaptive partition, uniform comparator, certificate and semantic verifier.
-- EXECUTED & TESTED: 10/10 focused tests passed locally.
+- EXECUTED & TESTED: the focused baseline and certificate-hardening suites passed in the four-version CI matrix (16/16 for each Python version).
 - NUMERICALLY VERIFIED: exact-rational outer enclosures for the declared synthetic model; partition coverage and certificate invariants recomputed.
 - INDEPENDENTLY REVIEWED: not externally reviewed.
 - NATIVE IBEX: not executed.
