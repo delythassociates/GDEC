@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import Enum
+from fractions import Fraction
 from itertools import product
 from math import isfinite
 import time
@@ -26,11 +27,11 @@ class ContractError(ValueError):
     """An action contract, resource bound, oracle, or outcome certificate is invalid."""
 
 
-def _nonnegative(value: float, field_name: str) -> float:
-    """Require a finite, non-negative numeric value (rejecting bool, NaN, inf, -inf)."""
+def _nonnegative(value: float, field_name: str) -> Fraction:
+    """Convert a finite non-negative decimal resource input to exact rational units."""
     if isinstance(value, bool):
         raise ContractError(f"{field_name} must be numeric, not bool")
-    if not isinstance(value, (int, float)):
+    if not isinstance(value, (int, float, Fraction)):
         raise ContractError(f"{field_name} must be numeric")
     try:
         finite = isfinite(value)
@@ -38,7 +39,10 @@ def _nonnegative(value: float, field_name: str) -> float:
         raise ContractError(f"{field_name} must be a finite numeric value") from exc
     if not finite or value < 0:
         raise ContractError(f"{field_name} must be finite and non-negative")
-    return float(value)
+    exact = value if isinstance(value, Fraction) else Fraction(str(value))
+    if exact < 0:
+        raise ContractError(f"{field_name} must be finite and non-negative")
+    return exact
 
 
 class OutcomeKind(str, Enum):
@@ -78,10 +82,10 @@ class ResourceVector:
     peak_memory_gb: float = 0.0
 
     def __post_init__(self) -> None:
-        _nonnegative(self.ru_upper, "ru_upper")
-        _nonnegative(self.cpu_ticks, "cpu_ticks")
-        _nonnegative(self.energy_ticks, "energy_ticks")
-        _nonnegative(self.peak_memory_gb, "peak_memory_gb")
+        object.__setattr__(self, "ru_upper", _nonnegative(self.ru_upper, "ru_upper"))
+        object.__setattr__(self, "cpu_ticks", _nonnegative(self.cpu_ticks, "cpu_ticks"))
+        object.__setattr__(self, "energy_ticks", _nonnegative(self.energy_ticks, "energy_ticks"))
+        object.__setattr__(self, "peak_memory_gb", _nonnegative(self.peak_memory_gb, "peak_memory_gb"))
 
     def add_sequential(
         self,
@@ -122,7 +126,8 @@ class ResourceVector:
         )
 
     def dominates_or_equal(self, other: "ResourceVector", tol: float = 0.0) -> bool:
-        """True if every component of self is <= other + tol (exact <= when tol=0.0)."""
+        """True if every component is <= the other vector plus an exact tolerance."""
+        tol = _nonnegative(tol, "dominance tolerance")
         return (
             self.ru_upper <= other.ru_upper + tol
             and self.cpu_ticks <= other.cpu_ticks + tol
@@ -164,12 +169,13 @@ class ResourceBudget:
     peak_memory_gb: float
 
     def __post_init__(self) -> None:
-        _nonnegative(self.ru_upper, "budget.ru_upper")
-        _nonnegative(self.cpu_ticks, "budget.cpu_ticks")
-        _nonnegative(self.energy_ticks, "budget.energy_ticks")
-        _nonnegative(self.peak_memory_gb, "budget.peak_memory_gb")
+        object.__setattr__(self, "ru_upper", _nonnegative(self.ru_upper, "budget.ru_upper"))
+        object.__setattr__(self, "cpu_ticks", _nonnegative(self.cpu_ticks, "budget.cpu_ticks"))
+        object.__setattr__(self, "energy_ticks", _nonnegative(self.energy_ticks, "budget.energy_ticks"))
+        object.__setattr__(self, "peak_memory_gb", _nonnegative(self.peak_memory_gb, "budget.peak_memory_gb"))
 
     def allows(self, vec: ResourceVector, tol: float = 0.0) -> bool:
+        tol = _nonnegative(tol, "budget tolerance")
         return (
             vec.ru_upper <= self.ru_upper + tol
             and vec.cpu_ticks <= self.cpu_ticks + tol
@@ -287,6 +293,10 @@ class ActionContract:
     workspace_gb_upper: float
     overlap_gb_upper: float
     outcomes: Tuple[OutcomeCell, ...]
+
+    def __post_init__(self) -> None:
+        for field_name in ("ru_upper", "cpu_ticks", "energy_ticks", "workspace_gb_upper", "overlap_gb_upper"):
+            object.__setattr__(self, field_name, _nonnegative(getattr(self, field_name), f"contract.{field_name}"))
 
 
 @dataclass(frozen=True)
@@ -673,15 +683,11 @@ def apply_action_outcome(
             raise ContractError("Enabled action outcome cells overlap the current state")
         covered.update(child_worlds)
 
-        during_peak = (
-            state.resident_memory_gb
-            + contract.workspace_gb_upper
-            + contract.overlap_gb_upper
-        )
-        resident_after = max(
-            0.0,
-            state.resident_memory_gb + cell.retained_output_gb_upper - cell.released_memory_gb,
-        )
+        resident_before = _nonnegative(state.resident_memory_gb, "state.resident_memory_gb")
+        retained = _nonnegative(cell.retained_output_gb_upper, "outcome.retained_output_gb_upper")
+        released = _nonnegative(cell.released_memory_gb, "outcome.released_memory_gb")
+        during_peak = resident_before + contract.workspace_gb_upper + contract.overlap_gb_upper
+        resident_after = max(Fraction(0), resident_before + retained - released)
         action_cost = ResourceVector(
             ru_upper=contract.ru_upper,
             cpu_ticks=contract.cpu_ticks,
