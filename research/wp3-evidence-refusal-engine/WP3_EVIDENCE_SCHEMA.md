@@ -1,7 +1,12 @@
 # WP3 Evidence Schema Specification (`v1.1.0`, preserving `v1.0.0`)
 
 - **Model:** `gdec.dse.evidence_graph.EngineeringEvidenceRecord` (Pydantic v2, `frozen=True`, `extra="forbid"`, `StrictInt`, `allow_inf_nan=False`)
-- **Exported JSON Schemas:** `schemas/engineering_evidence_record_v1.1.0.json` (active), `schemas/engineering_evidence_record_v1.0.0.json` (preserved)
+- **Exported JSON Schemas:** `schemas/engineering_evidence_record_v1.1.0.json` (active), `schemas/engineering_evidence_record_v1.0.0.json` (retained historical schema artifact)
+- **Compatibility & Migration Policy:**
+  - `1.1.0` is the active schema version (`EVIDENCE_SCHEMA_VERSION = "1.1.0"`).
+  - The current verifier (`verify_evidence_payload`) **rejects** `v1.0.0` payloads with `VER-SCHEMA-INVALID` (verified by `test_aud_01_v1_0_0_schema_rejected`).
+  - `schemas/engineering_evidence_record_v1.0.0.json` is retained solely as a historical schema artifact; retaining it does **not** provide backward compatibility.
+  - No automatic `v1.0.0`-to-`v1.1.0` migration is currently provided. Old `v1.0.0` evidence records must not be relabeled as `v1.1.0`, nor are their semantics equivalent.
 - **Canonical Serialization:** Sorted-key compact JSON (`allow_nan=False`, UTF-8) with SHA-256 `canonical_result_hash` computed over the normalized payload excluding `canonical_result_hash`.
 - **Non-Claim:** A canonical SHA-256 hash verifies structural/byte integrity only; it does not prove scientific correctness, physical validity, authorship, or cryptographic authenticity.
 

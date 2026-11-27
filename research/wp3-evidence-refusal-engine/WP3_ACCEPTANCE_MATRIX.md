@@ -10,5 +10,5 @@
 | **WP3-06** | Existing WP2 baseline tests remain passing | Full suite: `488 passed, 14 skipped, 0 failed`; branch coverage `64.48% (1238/1920)` >= `62.15%` floor; `20/20` targeted mutants killed | **PASS** |
 | **WP3-07** | No solver or estimator mathematics changed | `git diff -- src/gdec/fem/` is empty | **PASS** |
 | **WP3-08** | No unsupported certification claims introduced | DWR classified `dwr_asymptotic_estimate`; `SUPPORTED_CERT_CHECKERS` empty (fail-closed); `REF-002` & `verifier.py` block `mathematically_established_bound` for DWR | **PASS** |
-| **WP3-09** | CI passes on supported Python matrix | Pending final CI run on pushed commit | **IN PROGRESS** |
+| **WP3-09** | CI passes on supported Python matrix | GitHub Actions run [`45964259196`](https://github.com/delythassociates/GDEC/actions/runs/45964259196) on `8e43d0129a89dd00a3e3a89df7f7d94b376cbbf2`: `15/15` jobs succeeded (`12` OS/Python matrix + `status-register-traceability` + `upstream-dependency-drift` + `coverage-and-mutation`). Note: CI pass does not independently prove physical validity; new closure commits require a fresh CI run. | **PASS** |
 | **WP3-10** | Independent reviews completed | Two independent reviews (`WP3 Adversarial Semantics Reviewer` & `WP3 CLI & Benchmark Reviewer`) completed; 3 semantics/verifier findings resolved and regression-tested | **PASS** |

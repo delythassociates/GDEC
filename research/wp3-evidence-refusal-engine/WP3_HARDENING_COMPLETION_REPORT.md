@@ -2,7 +2,10 @@
 
 **Repository:** `delythassociates/GDEC`  
 **Branch:** `research/wp3-evidence-refusal-engine`  
-**Base Commit:** `31190c18ece1cebd12982ac966ad5262e0bfc25d`  
+**Commit Ancestry:**
+- `053ca59dd516bce42f841cd58a34301b55c2a8b1`: WP2 owner-authorization / WP3 governance starting point
+- `31190c18ece1cebd12982ac966ad5262e0bfc25d`: initial WP3 implementation and hardening baseline
+- `8e43d0129a89dd00a3e3a89df7f7d94b376cbbf2`: reported WP3 hardening commit
 **Owner Acceptance:** **PENDING**  
 
 ## 1. Hardening Scope Completed (Findings A–G)
@@ -16,5 +19,7 @@
 ## 2. Verification & Independent Review Status
 - **WP3 Adversarial Semantics Review:** Completed; 3 findings (`ExecutionTrace.qualified_qoi_mm` fail-closed on missing evidence, `QUALIFIED` `target_tolerance_met`/`verification_validation_status` checks, and `REF-007` finite-QoI non-finite-estimator handling) resolved and regression-tested.
 - **WP3 CLI & Benchmark Review:** Completed (`NO BLOCKING FINDINGS`).
-- **Observed Post-Final-Edit Suite:** `488 passed, 14 skipped, 0 failed` (`109.93s`); branch coverage `64.48% (1238/1920)` >= `62.15%`; targeted mutation `20/20 killed (100.0%)`; `git diff -- src/gdec/fem/` empty.
+- **Historical Reported Suite (at `8e43d01`):** `488 passed, 14 skipped, 0 failed` (`109.93s`); branch coverage `64.48% (1238/1920)` >= `62.15%`; targeted mutation `20/20 killed (100.0%)`; `git diff -- src/gdec/fem/` empty.
+- **Independently Reproduced Audit Suite (at `8e43d01`, Windows 11 / Python 3.13.14, `uv run --no-sync python -m pytest -rs --cov=src/gdec --cov-branch`):** `488 passed, 14 skipped, 0 failed` in `167.72s`; `64.48% (1238/1920)` branch coverage; `20/20` targeted mutants killed.
+- **Post-Residual-Audit Closure Suite (with `AUD-01`/`AUD-02`/`AUD-03` tests, Windows 11 / Python 3.13.14):** `490 passed, 14 skipped, 0 failed` in `128.44s`; `64.58% (1240/1920)` branch coverage; `20/20` targeted mutants killed.
 - **Preserved WP2 Limitations:** DWR remains an asymptotic error indicator (never a certified bound); `20/20` targeted mutation is not whole-repository mutation coverage; `14` CUDA tests skip on non-GPU runners.

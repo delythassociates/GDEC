@@ -23,6 +23,10 @@ def test_cli_compile(monkeypatch, tmp_path):
     assert out.exists()
 
 
-def test_cli_run(monkeypatch):
-    monkeypatch.setattr(sys, "argv", ["gdec", "run", "examples/cantilever.gdc", "--strategy", "goal_aware"])
+def test_cli_run(monkeypatch, tmp_path):
+    out = tmp_path / "cantilever_evidence.json"
+    monkeypatch.setattr(
+        sys, "argv", ["gdec", "run", "examples/cantilever.gdc", "--strategy", "goal_aware", "-o", str(out)]
+    )
     assert main() == 0
+    assert out.is_file()

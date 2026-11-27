@@ -436,3 +436,83 @@ def test_review_fixes_epistemic_and_ref007(tmp_path: Path, monkeypatch):
     bad_qual["resource_consumption"]["target_tolerance_met"] = False
     with pytest.raises(Exception):
         EngineeringEvidenceRecord(**bad_qual)
+
+
+def test_aud_02_direct_verifier_finite_qoi_nonfinite_estimator(tmp_path: Path, monkeypatch):
+    from gdec.dse.evidence_graph import build_evidence_record_with_hash
+
+    base = _produce_valid_record_dict(tmp_path, monkeypatch)
+    assert base["qoi_value"] is not None
+
+    # 1. Inject non-finite estimator values while keeping qoi_value finite -> must fail closed
+    for bad_val in (float("nan"), float("inf")):
+        tampered = copy.deepcopy(base)
+        tampered["error_estimate"] = bad_val
+        tampered["outcome_metrics"]["estimator_value"] = bad_val
+        report = verify_evidence_payload(tampered)
+        assert report.valid is False
+        assert report.qualification_status != "QUALIFIED"
+        assert "VER-NONFINITE" in report.diagnostic_codes
+
+    # 2. Valid refused REF-007 record (finite QoI, nonfinite_detected=True, error_estimate=None)
+    ref_rec_dict = copy.deepcopy(base)
+    ref_rec_dict["error_estimate"] = None
+    ref_rec_dict["outcome_metrics"]["estimator_value"] = None
+    ref_rec_dict["refused"] = True
+    ref_rec_dict["qualification_status"] = "REFUSED"
+    ref_rec_dict["qoi_epistemic_role"] = "unavailable"
+    sc = ref_rec_dict["solver_config"]
+    mm = ref_rec_dict["mesh_metadata"]
+    rc = ref_rec_dict["resource_consumption"]
+    ctx = RefusalContext(
+        budget_exhausted=rc["budget_exhausted"],
+        target_tolerance_met=rc["target_tolerance_met"],
+        estimator_identity=ref_rec_dict["estimator_identity"],
+        estimator_classification=ref_rec_dict["estimator_classification"],
+        problem_class=sc["problem_class"],
+        reference_required=sc["reference_required"],
+        qoi_boundary=sc["qoi_boundary"],
+        fixed_boundaries=sc["fixed_boundaries"],
+        dof_count=ref_rec_dict["dof_count"],
+        free_dof_count=mm["free_dofs"],
+        interior_node_count=mm["interior_nodes"],
+        interior_facet_count=mm["interior_facets"],
+        min_required_dofs=sc["min_required_dofs"],
+        solver_converged=sc["solver_converged"],
+        adjoint_converged=sc["adjoint_converged"],
+        qoi_value=ref_rec_dict["qoi_value"],
+        residual_norm=sc["residual_norm"],
+        adjoint_residual_norm=sc["adjoint_residual_norm"],
+        error_estimate=None,
+        nonfinite_detected=True,
+        mesh_valid=mm["mesh_valid"],
+        mesh_element_count=mm["nelements"],
+        model_applicability_status=ref_rec_dict["model_applicability_status"],
+        parent_artifacts=ref_rec_dict["parent_artifacts"],
+        problem_ir_hash=ref_rec_dict["problem_ir_hash"],
+        canonical_eir_hash=ref_rec_dict["canonical_eir_hash"],
+        execution_plan_hash=ref_rec_dict["execution_plan_hash"],
+        mesh_hash=ref_rec_dict["mesh_hash"],
+        mandatory_evidence_present=sc["mandatory_evidence_present"],
+        evidence_stale=ref_rec_dict["evidence_stale"],
+        evidence_invalidated=ref_rec_dict["evidence_invalidated"],
+    )
+    ref_res = RefusalEngine().evaluate(ctx)
+    assert "REF-007" in ref_res.triggered_rule_ids
+    ref_rec_dict["refusal_evaluations"] = [ev.model_dump(mode="json") for ev in ref_res.evaluations]
+    ref_rec_dict["refusal_reasons"] = list(ref_res.reasons)
+    rebuilt = build_evidence_record_with_hash(ref_rec_dict).model_dump(mode="json")
+    ok_rep = verify_evidence_payload(rebuilt)
+    assert ok_rep.valid is True
+    assert ok_rep.refused is True
+    assert ok_rep.qualification_status == "REFUSED"
+
+
+def test_aud_01_v1_0_0_schema_rejected(tmp_path: Path, monkeypatch):
+    base = _produce_valid_record_dict(tmp_path, monkeypatch)
+    legacy = copy.deepcopy(base)
+    legacy["schema_version"] = "1.0.0"
+    legacy["canonical_result_hash"] = compute_canonical_hash(legacy)
+    report = verify_evidence_payload(legacy)
+    assert report.valid is False
+    assert "VER-SCHEMA-INVALID" in report.diagnostic_codes
