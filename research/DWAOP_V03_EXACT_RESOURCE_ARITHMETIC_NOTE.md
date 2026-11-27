@@ -37,5 +37,4 @@ The exhaustive evaluator does not call the planner's pruning or Pareto-reduction
 - ARTIFACT GENERATION: that workflow then failed at the separate H6/H8 metrics-generation command because direct script invocation could not import the repository `research` package. This was an invocation-path defect before the benchmark executed, not an H6/H8 frontier mismatch.
 - CORRECTION: commit `494b26646215e55b68be036397a5838a9271a8e8` adds the repository root to `sys.path` for direct invocation. Replacement four-version workflow [45966924603](https://github.com/delythassociates/GDEC/actions/runs/45966924603) is the required confirmation; its metrics-generation result is pending.
 - FORMAL STATUS: finite-horizon theorem remains a proof sketch, not machine-checked.
-- FORMAL STATUS: finite-horizon theorem remains a proof sketch, not machine-checked.
 - DOMAIN STATUS: no cyclic, stochastic, continuous, PDE/FEM, or physical certificate soundness is established.
