@@ -16,6 +16,8 @@ REGRET_OFFSET = Q(1, 2)
 MARGIN = REGRET_OFFSET - TAU
 SQRT_SCALE = 10**6
 MODEL_ID = "dSES-correlated-regret-analytical-v06"
+ASSURANCE_CLASS = "ANALYTICAL_EXACT_RATIONAL_ENCLOSURE"
+PROOF_RULE_VERSION = "v0.6.1"
 DOMAIN = (Q(0), Q(1), Q(0), Q(1))
 
 
@@ -140,13 +142,13 @@ def build_certificate(uncertainty="correlated_disk",max_depth=12,scale:Q=Q(1)):
     payload={
         "schema_version":"dses_certificate_v0.6",
         "model_id":MODEL_ID,
-        "assurance_class":"ANALYTICAL_EXACT_RATIONAL_ENCLOSURE",
+        "assurance_class":ASSURANCE_CLASS,
         "uncertainty_set":uncertainty,
         "uncertainty_scale":_f(scale),
         "design_domain":_rect_json(DOMAIN),
         "regret_contract":{"tau":_f(TAU),"offset":_f(REGRET_OFFSET),
           "selection_margin":_f(MARGIN),"R_A":"max(0, D + 1/2)","R_B":"max(0, 1/2 - D)"},
-        "proof_rule_version":"v0.6.1","sqrt_upper_scale":SQRT_SCALE,
+        "proof_rule_version":PROOF_RULE_VERSION,"sqrt_upper_scale":SQRT_SCALE,
         "max_depth":max_depth,"node_count":nodes,"leaf_count":leaves,"tree":tree,
         "hash_non_claim":"SHA-256 detects payload changes relative to this digest; it does not authenticate the producer or establish physical-model validity."
     }
@@ -167,11 +169,18 @@ def verify_certificate(cert: Dict[str,Any]) -> Dict[str,Any]:
     if cert.get("certificate_sha256")!=digest: errors.append("CERT-HASH-MISMATCH")
     if cert.get("schema_version")!="dses_certificate_v0.6": errors.append("CERT-SCHEMA-UNSUPPORTED")
     if cert.get("model_id")!=MODEL_ID: errors.append("CERT-MODEL-MISMATCH")
+    if cert.get("assurance_class")!=ASSURANCE_CLASS: errors.append("CERT-ASSURANCE-CLASS-UNSUPPORTED")
+    if cert.get("proof_rule_version")!=PROOF_RULE_VERSION: errors.append("CERT-PROOF-RULE-UNSUPPORTED")
+    if cert.get("sqrt_upper_scale")!=SQRT_SCALE or isinstance(cert.get("sqrt_upper_scale"),bool):
+        errors.append("CERT-SQRT-SCALE-UNSUPPORTED")
     uncertainty=cert.get("uncertainty_set")
     if uncertainty not in {"correlated_disk","independent_box_outer"}:
         errors.append("CERT-UNCERTAINTY-UNSUPPORTED")
     try:
-        depth=int(cert["max_depth"])
+        raw_depth=cert["max_depth"]
+        if isinstance(raw_depth,bool) or not isinstance(raw_depth,int):
+            raise ValueError("max_depth must be an integer")
+        depth=raw_depth
         if depth<0 or depth>24: errors.append("CERT-DEPTH-LIMIT-EXCEEDED")
         if len(canonical_json(cert))>20_000_000: errors.append("CERT-SIZE-LIMIT-EXCEEDED")
         scale=_parse(cert["uncertainty_scale"])
@@ -185,7 +194,13 @@ def verify_certificate(cert: Dict[str,Any]) -> Dict[str,Any]:
         node_count,leaf_count=_count_nodes(cert["tree"])
         if node_count!=int(cert["node_count"]) or leaf_count!=int(cert["leaf_count"]):
             errors.append("CERT-NODE-COUNT-MISMATCH")
-        def check_node(n,expected):
+        def check_node(n,expected,expected_depth):
+            if not isinstance(n,dict):
+                errors.append("CERT-TREE-NODE-INVALID"); return
+            if n.get("depth")!=expected_depth or isinstance(n.get("depth"),bool):
+                errors.append("CERT-NODE-DEPTH-MISMATCH")
+            if expected_depth>depth:
+                errors.append("CERT-TREE-DEPTH-EXCEEDED")
             if tuple(_parse(v) for v in n["rect"])!=expected:
                 errors.append("CERT-RECTANGLE-PARTITION-MISMATCH"); return
             if n["kind"]=="leaf":
@@ -204,8 +219,8 @@ def verify_certificate(cert: Dict[str,Any]) -> Dict[str,Any]:
                 a=(x0,x1,y0,mid); b=(x0,x1,mid,y1)
             else:
                 errors.append("CERT-SPLIT-INVALID"); return
-            check_node(n["children"][0],a); check_node(n["children"][1],b)
-        check_node(cert["tree"],DOMAIN)
+            check_node(n["children"][0],a,expected_depth+1); check_node(n["children"][1],b,expected_depth+1)
+        check_node(cert["tree"],DOMAIN,0)
         areas={}
         for leaf in leaves:
             x0,x1,y0,y1=(_parse(v) for v in leaf["rect"])
