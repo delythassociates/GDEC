@@ -16,7 +16,7 @@ def test_certificate_round_trip_and_exact_area_coverage(uncertainty):
 
 
 def test_disk_support_is_tighter_than_independent_outer_box():
-    from dses_v06 import support_upper
+    from research.prototypes.dses_v06 import support_upper
     rect=(Q(1,3),Q(2,3),Q(1,4),Q(3,4))
     assert support_upper(*rect,"correlated_disk") < support_upper(*rect,"independent_box_outer")
 
