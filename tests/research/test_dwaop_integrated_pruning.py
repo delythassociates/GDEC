@@ -128,7 +128,7 @@ def oracle_hash(oracle: WorldOracle, budget: ResourceBudget) -> str:
         "init_ob": sorted(oracle.initial_obligations),
         "init_cap": sorted(oracle.initial_capabilities),
         "init_retries": oracle.initial_retries,
-        "budget": [budget.ru_upper, budget.cpu_ticks, budget.energy_ticks, budget.peak_memory_gb],
+        "budget": [str(budget.ru_upper), str(budget.cpu_ticks), str(budget.energy_ticks), str(budget.peak_memory_gb)],
         "actions": [
             {
                 "id": aid,
