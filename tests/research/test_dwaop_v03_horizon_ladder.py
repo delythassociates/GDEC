@@ -50,6 +50,11 @@ def test_resource_budget_boundary_is_exact_for_decimal_inputs():
     assert budget.allows(exact) is True
     assert budget.allows(over) is False
 
+def test_strict_dominance_does_not_round_tiny_rational_differences():
+    left = ResourceVector(ru_upper=Fraction(1, 10**400))
+    right = ResourceVector(ru_upper=Fraction(2, 10**400))
+    assert left.strictly_dominates(right) is True
+
 
 def test_frontier_comparison_rejects_right_only_entries():
     comparison = {
