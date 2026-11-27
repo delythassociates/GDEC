@@ -21,7 +21,7 @@ Adversarial tests alter each metadata field and recompute the digest before veri
 - IMPLEMENTED: verifier metadata and actual-tree-depth checks.
 - TESTS ADDED: unsupported assurance class, unsupported proof-rule version, unsupported square-root scale, overstated tree depth, altered node depth, and boolean maximum depth.
 - CI: a branch-scoped Python 3.10–3.13 workflow was added.
-- EXECUTED / TESTED: pending the new workflow result; no passing result is claimed here.
+- CI EXECUTED & PASSED: workflow [45966199112](https://github.com/delythassociates/GDEC/actions/runs/45966199112), commit `27504b268a648662f2613aaa7493a3e9e5982072`; Python 3.10, 3.11, 3.12 and 3.13 each report 16 passed, 0 failed (64 test executions total).
 - NATIVE IBEX: still not built or executed.
 - FEM / physical validation: not performed.
 - Assurance boundary: this remains an exact-rational analytical certificate for the declared synthetic model. It does not authenticate the producer or validate physical model applicability.
