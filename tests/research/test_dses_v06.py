@@ -2,7 +2,7 @@ from __future__ import annotations
 import copy
 from hashlib import sha256
 import pytest
-from dses_v06 import (Q,build_certificate,canonical_json,classify_regret_interval,
+from research.prototypes.dses_v06 import (Q,build_certificate,canonical_json,classify_regret_interval,
                       summarize_certificate,uniform_grid,verify_certificate)
 
 
