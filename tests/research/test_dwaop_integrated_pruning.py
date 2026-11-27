@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 from itertools import product
+from fractions import Fraction
 from pathlib import Path
 import random
 import sys
@@ -30,6 +31,13 @@ from research.prototypes.dwaop_integrated_planner import (
     plan_policies,
     verify_action_contract,
 )
+
+
+def _json_default(value: Any) -> Any:
+    """Serialize exact rational resources without converting them to floats."""
+    if isinstance(value, Fraction):
+        return f"{value.numerator}/{value.denominator}"
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
 def make_action(
@@ -760,7 +768,7 @@ def run_generated_fixture_campaign(output_path: Optional[Path] = None) -> Dict[s
 
     if output_path is not None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        output_path.write_text(json.dumps(report, indent=2, default=_json_default), encoding="utf-8")
 
     return report
 
