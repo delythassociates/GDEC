@@ -108,10 +108,13 @@ def run_ladder_benchmark(n_stages: int) -> Dict[str, object]:
     pruned_vs_unpruned = compare_frontiers(pruned.pareto_frontier, unpruned.pareto_frontier)
     unpruned_vs_oracle = compare_frontiers(unpruned.pareto_frontier, exact)
     pruned_vs_oracle = compare_frontiers(pruned.pareto_frontier, exact)
-    equal = (
-        pruned_vs_unpruned["left_only_count"] == 0
-        and unpruned_vs_oracle["left_only_count"] == 0
-        and pruned_vs_oracle["left_only_count"] == 0
+    # Equality requires set equality in BOTH directions. Checking only
+    # left_only_count can silently miss policies present only on the right.
+    equal = all(
+        comparison["left_only_count"] == 0
+        and comparison["right_only_count"] == 0
+        and comparison["left_size"] == comparison["right_size"]
+        for comparison in (pruned_vs_unpruned, unpruned_vs_oracle, pruned_vs_oracle)
     )
     debug = {
         "pruned_vs_unpruned": pruned_vs_unpruned,
