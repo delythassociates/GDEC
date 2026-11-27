@@ -13,6 +13,7 @@ class ControllerDecision:
     should_stop: bool
     converged: bool
     reason: str
+    budget_exhausted: bool = False
 
 
 class RuntimeController:
@@ -60,6 +61,7 @@ class RuntimeController:
                 should_stop=True,
                 converged=False,
                 reason="Budget limit prevents further refinement: no elements affordable within remaining budget.",
+                budget_exhausted=True,
             )
 
         # 3. Check hard DOF budget
@@ -68,6 +70,7 @@ class RuntimeController:
                 should_stop=True,
                 converged=False,
                 reason=f"Budget exhausted: current DOFs ({current_dofs:,}) reached limit ({self.max_dofs:,}). Target accuracy not achieved.",
+                budget_exhausted=True,
             )
 
         if predicted_next_dofs > self.max_dofs:
@@ -75,6 +78,7 @@ class RuntimeController:
                 should_stop=True,
                 converged=False,
                 reason=f"Budget constraint: next planned refinement ({predicted_next_dofs:,} DOFs) would exceed budget ({self.max_dofs:,}). Stopping execution.",
+                budget_exhausted=True,
             )
 
         # 4. Check iteration limit
@@ -83,6 +87,7 @@ class RuntimeController:
                 should_stop=True,
                 converged=False,
                 reason=f"Iteration limit reached ({self.max_iterations} iterations). Accuracy target not achieved within budget.",
+                budget_exhausted=True,
             )
 
         # Continue refinement

@@ -44,6 +44,9 @@ class BenchmarkReporter:
 
         md = []
         md.append(f"# GDEC v0.2 — Research Validation & Scientific Benchmark Report")
+        md.append("")
+        md.append("> **RESEARCH BENCHMARK — NOT A QUALIFIED ENGINEERING DECISION**")
+        md.append("")
         md.append(f"**Problem Name**: `{suite_res.problem_name}`  ")
         md.append(f"**Execution Timestamp**: `{suite_res.timestamp}`  ")
         md.append(f"**Report Schema Version**: `gdec_report_v0.2`  ")
@@ -234,6 +237,7 @@ class BenchmarkReporter:
                 }
                 for comp in suite_res.equal_accuracy_comparisons
             ],
+            "classification": "RESEARCH_BENCHMARK_ONLY",
             "strategies": {
                 k: {
                     "converged": bool(v.target_achieved),
@@ -241,6 +245,11 @@ class BenchmarkReporter:
                     "total_time_sec": float(v.total_execution_time_sec),
                     "final_reference_error_pct": float(v.final_reference_error_pct),
                     "iterations_count": int(len(v.iterations)),
+                    "refused": v.refused,
+                    "refusal_reasons": list(v.refusal_reasons),
+                    "qualification_status": v.qualification_status,
+                    "estimator_classification": v.estimator_classification,
+                    "canonical_result_hash": v.canonical_result_hash,
                 }
                 for k, v in suite_res.strategies.items()
             },

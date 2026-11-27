@@ -39,7 +39,11 @@ from gdec.dse.evidence import (
 from gdec.dse.evidence_graph import (
     EVIDENCE_SCHEMA_VERSION,
     EstimatorClassification,
+    QualificationStatus,
+    QoIEpistemicRole,
     ParentArtifactRef,
+    ReferenceEffectivityEvidence,
+    BoundCertificateEvidence,
     CompactProblemFeatureVector,
     OutcomeMetrics,
     RefusalRuleEvaluation,

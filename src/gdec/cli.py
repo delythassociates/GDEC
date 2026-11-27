@@ -115,37 +115,89 @@ def cmd_run(args):
     trace = runtime.execute(callback=iter_cb)
     print("-" * 80)
     print(f"Execution finished in {trace.total_wall_time_sec:.3f} s.")
-    print(f"Target Converged: {trace.converged}")
-    print(f"Final QoI:        {trace.final_qoi_mm:.5f} mm")
     print(f"Final DOFs:       {trace.final_dofs:,}")
     print(f"Stop Reason:      {trace.stop_reason}")
+
     if trace.evidence_record is not None:
         rec = trace.evidence_record
-        print(f"Estimator Class:  {rec.estimator_classification.value}")
+        out_arg = getattr(args, "output", None)
+        if out_arg:
+            out_path = Path(out_arg)
+        else:
+            out_dir = Path("results") / "evidence"
+            stem = Path(args.file).stem
+            short_hash = rec.canonical_result_hash[:12]
+            out_path = out_dir / f"{stem}_{short_hash}.json"
+            idx = 1
+            while out_path.exists():
+                out_path = out_dir / f"{stem}_{short_hash}_{idx}.json"
+                idx += 1
+        try:
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(rec.to_canonical_json(), encoding="utf-8")
+        except OSError as exc:
+            print(f"ERROR: Failed to persist evidence record to {out_path}: {exc}", file=sys.stderr)
+            return 1
+
+        def _ev(v) -> str:
+            return str(v.value if hasattr(v, "value") else v)
+
+        print(f"Evidence Path:    {out_path}")
+        print(f"Record ID:        {rec.record_id}")
+        print(f"Schema Version:   {rec.schema_version}")
         print(f"Result Hash:      {rec.canonical_result_hash}")
+        print(f"Estimator Class:  {_ev(rec.estimator_classification)}")
         if rec.refused:
             print(f"Refusal Status:   REFUSED ({'; '.join(rec.refusal_reasons)})")
         else:
-            print("Refusal Status:   QUALIFIED (0 refusal rules triggered)")
-        if getattr(args, "output", None):
-            out_path = Path(args.output)
-            out_path.write_text(rec.to_canonical_json(), encoding="utf-8")
-            print(f"Evidence written to {out_path}")
+            print("Refusal Status:   NOT REFUSED (0 refusal rules triggered)")
+        print(f"Target Converged: {trace.converged}")
+        print(f"Numerical Conv:   {_ev(rec.numerical_convergence_status)}")
+        print(f"Model Applicab.:  {_ev(rec.model_applicability_status)}")
+        print(f"Verification:     {_ev(rec.verification_status)}")
+        print(f"Validation:       {_ev(rec.validation_status)}")
+        print(f"Qualification:    {_ev(rec.qualification_status)}")
+
+        qual_val = _ev(rec.qualification_status)
+        role_val = _ev(rec.qoi_epistemic_role)
+        if rec.refused:
+            qoi_str = f"{trace.final_qoi_mm:.5f} mm" if trace.final_qoi_mm is not None else "UNAVAILABLE"
+            print(f"Final QoI:        REFUSED ({qoi_str} — {role_val})")
+        elif trace.final_qoi_mm is None:
+            print("Final QoI:        UNAVAILABLE")
+        elif qual_val == "QUALIFIED":
+            print(f"Final QoI:        {trace.final_qoi_mm:.5f} mm ({role_val})")
+        else:
+            print(f"Final QoI:        {trace.final_qoi_mm:.5f} mm (NUMERICAL OBSERVATION — NOT VALIDATED)")
+    else:
+        print(f"Target Converged: {trace.converged}")
+        qoi_str = f"{trace.final_qoi_mm:.5f} mm" if trace.final_qoi_mm is not None else "UNAVAILABLE"
+        print(f"Final QoI:        {qoi_str} (UNVALIDATED — NO EVIDENCE RECORD)")
     return 0
 
 
 def cmd_verify(args):
+    from dataclasses import asdict
     from gdec.dse.verifier import verify_evidence_file
 
     report = verify_evidence_file(args.file)
-    print(f"Verification Valid: {report.valid}")
-    print(f"Record ID:          {report.record_id}")
-    print(f"Schema Version:     {report.schema_version}")
-    print(f"Refused:            {report.refused}")
-    print(f"Diagnostic Codes:   {', '.join(report.diagnostic_codes)}")
-    for d in report.diagnostics:
-        print(f"  [{d.code}] {d.message}")
-    return 0 if report.valid else 1
+    if getattr(args, "json", False):
+        print(json.dumps(asdict(report), indent=2))
+    else:
+        print(f"Verification Valid: {report.valid}")
+        print(f"Record ID:          {report.record_id}")
+        print(f"Schema Version:     {report.schema_version}")
+        print(f"Refused:            {report.refused}")
+        print(f"Qualification:      {report.qualification_status}")
+        print(f"Diagnostic Codes:   {', '.join(report.diagnostic_codes)}")
+        for d in report.diagnostics:
+            print(f"  [{d.code}] {d.message}")
+    if not report.valid:
+        return 1
+    if getattr(args, "require_qualified", False):
+        if report.refused or report.qualification_status != "QUALIFIED":
+            return 2
+    return 0
 
 
 def cmd_benchmark(args):
@@ -215,13 +267,24 @@ def main():
     # run
     p_run = subparsers.add_parser("run", help="Run simulation using specified strategy.")
     p_run.add_argument("file", help="Path to .gdc file")
-    p_run.add_argument("--strategy", choices=["goal_aware", "recovery", "uniform"], default=None, help="Strategy override")
+    p_run.add_argument(
+        "--strategy",
+        choices=["goal_aware", "dwr", "goal_oriented_dwr", "recovery", "uniform"],
+        default=None,
+        help="Strategy override",
+    )
     p_run.add_argument("-o", "--output", help="Optional output JSON path for EngineeringEvidenceRecord")
     p_run.set_defaults(func=cmd_run)
 
     # verify
     p_ver = subparsers.add_parser("verify", help="Independently verify an EngineeringEvidenceRecord JSON file.")
     p_ver.add_argument("file", help="Path to evidence result JSON file")
+    p_ver.add_argument("--json", action="store_true", help="Output verification report as JSON")
+    p_ver.add_argument(
+        "--require-qualified",
+        action="store_true",
+        help="Exit with code 2 if the record is valid but refused or not QUALIFIED",
+    )
     p_ver.set_defaults(func=cmd_verify)
 
     # benchmark

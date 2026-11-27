@@ -75,8 +75,19 @@ class ExecutionTrace:
     refusal_result: Optional[Any] = None
 
     @property
-    def final_qoi_mm(self) -> float:
-        return self.iterations[-1].qoi_mm if self.iterations else 0.0
+    def final_qoi_mm(self) -> Optional[float]:
+        return self.iterations[-1].qoi_mm if self.iterations else None
+
+    @property
+    def qualified_qoi_mm(self) -> Optional[float]:
+        if self.evidence_record is None:
+            return None
+        if getattr(self.evidence_record, "refused", True):
+            return None
+        qstatus = getattr(self.evidence_record, "qualification_status", None)
+        if getattr(qstatus, "value", qstatus) != "QUALIFIED":
+            return None
+        return self.final_qoi_mm
 
     @property
     def final_dofs(self) -> int:

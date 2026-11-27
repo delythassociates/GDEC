@@ -12,13 +12,17 @@ import hashlib
 import json
 import math
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Any, Dict, List, Literal, Optional, Union
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
+
+from gdec.dse.evidence import ValidationStatus
 
 
-EVIDENCE_SCHEMA_VERSION = "1.0.0"
+EVIDENCE_SCHEMA_VERSION = "1.1.0"
+LEGACY_EVIDENCE_SCHEMA_VERSION = "1.0.0"
 
 SUPPORTED_QOI_UNITS = frozenset({"m", "mm", "Pa", "MPa", "N", "dimensionless", "pct"})
+SUPPORTED_CERT_CHECKERS: frozenset[str] = frozenset()
 
 
 class EstimatorClassification(str, Enum):
@@ -29,6 +33,25 @@ class EstimatorClassification(str, Enum):
     MATHEMATICALLY_ESTABLISHED_BOUND = "mathematically_established_bound"
 
 
+class QualificationStatus(str, Enum):
+    """Explicit separation of refusal/integrity from engineering decision qualification."""
+    REFUSED = "REFUSED"
+    NOT_QUALIFIED_UNASSESSED_VV = "NOT_QUALIFIED_UNASSESSED_VV"
+    NOT_QUALIFIED_APPLICABILITY = "NOT_QUALIFIED_APPLICABILITY"
+    NOT_QUALIFIED_NOT_CONVERGED = "NOT_QUALIFIED_NOT_CONVERGED"
+    QUALIFIED = "QUALIFIED"
+
+
+class QoIEpistemicRole(str, Enum):
+    """Explicit epistemic role of the reported QoI / error value."""
+    NUMERICAL_OBSERVATION = "numerical_observation"
+    HEURISTIC_ESTIMATE = "heuristic_estimate"
+    ASYMPTOTIC_INDICATOR = "asymptotic_indicator"
+    REFERENCE_BASED_ESTIMATE = "reference_based_estimate"
+    CERTIFIED_BOUND = "certified_bound"
+    UNAVAILABLE = "unavailable"
+
+
 class ParentArtifactRef(BaseModel):
     """Provenance link to an upstream artifact."""
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -37,39 +60,65 @@ class ParentArtifactRef(BaseModel):
     artifact_type: str = Field(..., min_length=1)
     sha256_hash: str = Field(..., min_length=64, max_length=64)
 
+    @field_validator("artifact_id", "artifact_type")
+    @classmethod
+    def _non_whitespace(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("ParentArtifactRef identifiers must not be whitespace-only.")
+        return v
+
+
+class ReferenceEffectivityEvidence(BaseModel):
+    """Typed effectivity evidence from a reference mesh comparison."""
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Literal["reference_effectivity"] = "reference_effectivity"
+    adequate: bool
+    reference_dofs: StrictInt = Field(..., gt=0)
+    reference_qoi: float = Field(..., allow_inf_nan=False)
+    effectivity_index: Optional[float] = Field(default=None, allow_inf_nan=False)
+    discretization_uncertainty_pct: Optional[float] = Field(default=None, allow_inf_nan=False)
+
+
+class BoundCertificateEvidence(BaseModel):
+    """Typed certificate reference required for mathematically_established_bound claims."""
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    kind: Literal["bound_certificate"] = "bound_certificate"
+    checker_identity: str = Field(..., min_length=1)
+    checker_version: str = Field(..., min_length=1)
+    estimator_identity: str = Field(..., min_length=1)
+    model_identity: str = Field(..., min_length=1)
+    certificate_hash: str = Field(..., min_length=64, max_length=64)
+    proof_obligations_satisfied: bool
+    assumptions: List[str] = Field(..., min_length=1)
+
 
 class CompactProblemFeatureVector(BaseModel):
     """Compact problem-feature vector per Session 2 Owner Directive for future learning."""
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    domain_width: float = Field(..., gt=0.0)
-    domain_height: float = Field(..., gt=0.0)
-    aspect_ratio: float = Field(..., gt=0.0)
-    num_loads: int = Field(..., ge=0)
-    num_fixed_boundaries: int = Field(..., ge=0)
-    youngs_modulus: float = Field(..., gt=0.0)
-    poissons_ratio: float = Field(..., gt=-1.0, lt=0.5)
+    domain_width: float = Field(..., gt=0.0, allow_inf_nan=False)
+    domain_height: float = Field(..., gt=0.0, allow_inf_nan=False)
+    aspect_ratio: float = Field(..., gt=0.0, allow_inf_nan=False)
+    num_loads: StrictInt = Field(..., ge=0)
+    num_fixed_boundaries: StrictInt = Field(..., ge=0)
+    youngs_modulus: float = Field(..., gt=0.0, allow_inf_nan=False)
+    poissons_ratio: float = Field(..., gt=-1.0, lt=0.5, allow_inf_nan=False)
     constitutive_assumption: Literal["plane_stress", "plane_strain"]
     refinement_strategy: str = Field(..., min_length=1)
-    initial_dofs: int = Field(..., ge=0)
-    max_dofs_budget: int = Field(..., gt=0)
+    initial_dofs: StrictInt = Field(..., ge=0)
+    max_dofs_budget: StrictInt = Field(..., gt=0)
 
 
 class OutcomeMetrics(BaseModel):
     """Compact outcome metrics per Session 2 Owner Directive."""
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    final_dofs: int = Field(..., ge=0)
-    refinement_steps: int = Field(..., ge=0)
-    wall_time_sec: float = Field(..., ge=0.0)
-    estimator_value: Optional[float] = Field(default=None)
-
-    @field_validator("wall_time_sec", "estimator_value")
-    @classmethod
-    def _check_finite_outcome(cls, v: Optional[float]) -> Optional[float]:
-        if v is not None and not math.isfinite(v):
-            raise ValueError(f"Non-finite numeric value in OutcomeMetrics: {v}")
-        return v
+    final_dofs: StrictInt = Field(..., ge=0)
+    refinement_steps: StrictInt = Field(..., ge=0)
+    wall_time_sec: float = Field(..., ge=0.0, allow_inf_nan=False)
+    estimator_value: Optional[float] = Field(default=None, allow_inf_nan=False)
 
 
 class RefusalRuleEvaluation(BaseModel):
@@ -85,36 +134,49 @@ class RefusalRuleEvaluation(BaseModel):
 
 class EngineeringEvidenceRecord(BaseModel):
     """
-    Versioned, machine-checkable Engineering Evidence Record (schema v1.0.0).
+    Versioned, machine-checkable Engineering Evidence Record (schema v1.1.0).
     """
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     schema_version: str = Field(default=EVIDENCE_SCHEMA_VERSION)
     record_id: str = Field(..., min_length=1)
+    problem_ir_hash: str = Field(..., min_length=64, max_length=64)
     canonical_eir_hash: str = Field(..., min_length=64, max_length=64)
+    execution_plan_hash: str = Field(..., min_length=64, max_length=64)
+    source_revision: str = Field(..., min_length=1)
     mesh_identity: str = Field(..., min_length=1)
     mesh_hash: str = Field(..., min_length=64, max_length=64)
     material_identity: str = Field(..., min_length=1)
     boundary_conditions_identity: str = Field(..., min_length=1)
     solver_identity: str = Field(..., min_length=1)
     solver_version: str = Field(..., min_length=1)
+    linear_solver_type: str = Field(..., min_length=1)
+    compute_device: str = Field(..., min_length=1)
     solver_config: Dict[str, Any] = Field(default_factory=dict)
     backend: str = Field(..., min_length=1)
     numerical_precision: str = Field(..., min_length=1)
     dependency_versions: Dict[str, str] = Field(default_factory=dict)
-    dof_count: int = Field(..., ge=0)
+    dof_count: StrictInt = Field(..., ge=0)
     mesh_metadata: Dict[str, Any] = Field(default_factory=dict)
     qoi_id: str = Field(..., min_length=1)
     qoi_name: str = Field(..., min_length=1)
     qoi_units: str = Field(..., min_length=1)
-    qoi_value: Optional[float] = Field(default=None)
+    qoi_value: Optional[float] = Field(default=None, allow_inf_nan=False)
+    qoi_epistemic_role: QoIEpistemicRole
     estimator_identity: str = Field(..., min_length=1)
     estimator_classification: EstimatorClassification
-    error_estimate: Optional[float] = Field(default=None)
+    error_estimate: Optional[float] = Field(default=None, allow_inf_nan=False)
+    error_estimate_units: str = Field(..., min_length=1)
+    error_estimate_quantity: str = Field(..., min_length=1)
     error_estimate_interpretation: str = Field(..., min_length=1)
-    effectivity_evidence: Any = Field(default="NONE")
+    effectivity_evidence: Union[Literal["NONE"], ReferenceEffectivityEvidence, BoundCertificateEvidence] = Field(default="NONE")
     model_applicability_status: Literal["established", "unestablished", "invalidated"]
-    verification_validation_status: str = Field(..., min_length=1)
+    model_applicability_reasons: List[str] = Field(default_factory=list)
+    numerical_convergence_status: Literal["converged", "not_converged", "aborted_pre_solve", "solver_failed"]
+    verification_status: ValidationStatus
+    validation_status: ValidationStatus
+    verification_validation_status: ValidationStatus
+    qualification_status: QualificationStatus
     problem_features: CompactProblemFeatureVector
     outcome_metrics: OutcomeMetrics
     refusal_evaluations: List[RefusalRuleEvaluation] = Field(default_factory=list)
@@ -130,15 +192,49 @@ class EngineeringEvidenceRecord(BaseModel):
     @classmethod
     def _check_schema_version(cls, v: str) -> str:
         if v != EVIDENCE_SCHEMA_VERSION:
-            raise ValueError(f"Unsupported evidence schema_version: '{v}'")
+            raise ValueError(f"Unsupported evidence schema_version: '{v}'. Expected '{EVIDENCE_SCHEMA_VERSION}'.")
         return v
 
-    @field_validator("qoi_value", "error_estimate")
-    @classmethod
-    def _check_finite_if_present(cls, v: Optional[float]) -> Optional[float]:
-        if v is not None and not math.isfinite(v):
-            raise ValueError(f"Non-finite numeric value is not permitted in evidence record: {v}")
-        return v
+    @model_validator(mode="after")
+    def _validate_epistemic_invariants(self) -> "EngineeringEvidenceRecord":
+        if self.qualification_status == QualificationStatus.QUALIFIED:
+            if self.refused:
+                raise ValueError("Refused record cannot have qualification_status='QUALIFIED'.")
+            if self.numerical_convergence_status != "converged":
+                raise ValueError("Non-converged record cannot have qualification_status='QUALIFIED'.")
+            if self.model_applicability_status != "established":
+                raise ValueError("Record without established model applicability cannot be 'QUALIFIED'.")
+            if self.verification_status not in (
+                ValidationStatus.VERIFIED,
+                ValidationStatus.VALIDATED,
+                ValidationStatus.INDEPENDENTLY_VALIDATED,
+            ):
+                raise ValueError(f"Record with verification_status={self.verification_status.value} cannot be 'QUALIFIED'.")
+            if self.validation_status not in (
+                ValidationStatus.VALIDATED,
+                ValidationStatus.INDEPENDENTLY_VALIDATED,
+            ):
+                raise ValueError(f"Record with validation_status={self.validation_status.value} cannot be 'QUALIFIED'.")
+            if self.evidence_stale or self.evidence_invalidated:
+                raise ValueError("Stale or invalidated record cannot be 'QUALIFIED'.")
+            if self.qoi_value is None:
+                raise ValueError("Record without QoI value cannot be 'QUALIFIED'.")
+            if not bool(self.resource_consumption.get("target_tolerance_met", False)):
+                raise ValueError("Record without target_tolerance_met=True cannot be 'QUALIFIED'.")
+            if self.verification_validation_status not in (
+                ValidationStatus.VALIDATED,
+                ValidationStatus.INDEPENDENTLY_VALIDATED,
+            ):
+                raise ValueError(
+                    f"Record with verification_validation_status={self.verification_validation_status.value} cannot be 'QUALIFIED'."
+                )
+        if self.estimator_classification == EstimatorClassification.MATHEMATICALLY_ESTABLISHED_BOUND:
+            if not isinstance(self.effectivity_evidence, BoundCertificateEvidence):
+                raise ValueError("mathematically_established_bound requires a BoundCertificateEvidence object.")
+        if self.estimator_classification == EstimatorClassification.REFERENCE_BASED_ESTIMATE:
+            if not isinstance(self.effectivity_evidence, ReferenceEffectivityEvidence):
+                raise ValueError("reference_based_estimate requires a ReferenceEffectivityEvidence object.")
+        return self
 
     def to_canonical_json(self) -> str:
         return canonical_json_dumps(self.model_dump(mode="json"))

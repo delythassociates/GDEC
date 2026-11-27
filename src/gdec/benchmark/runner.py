@@ -49,6 +49,11 @@ class StrategyBenchmarkResult:
     target_achieved: bool
     total_execution_time_sec: float
     final_dofs: int
+    refused: Optional[bool] = None
+    refusal_reasons: List[str] = field(default_factory=list)
+    qualification_status: Optional[str] = None
+    estimator_classification: Optional[str] = None
+    canonical_result_hash: Optional[str] = None
 
 
 @dataclass
@@ -129,6 +134,7 @@ class BenchmarkRunner:
             final_err = annotated_iters[-1].reference_error_pct if annotated_iters else 100.0
             target_achieved = trace.converged
 
+            rec = getattr(trace, "evidence_record", None)
             results[strat] = StrategyBenchmarkResult(
                 strategy=strat,
                 trace=trace,
@@ -137,6 +143,11 @@ class BenchmarkRunner:
                 target_achieved=target_achieved,
                 total_execution_time_sec=trace.total_wall_time_sec,
                 final_dofs=trace.final_dofs,
+                refused=rec.refused if rec is not None else None,
+                refusal_reasons=list(rec.refusal_reasons) if rec is not None else [],
+                qualification_status=rec.qualification_status.value if rec is not None else None,
+                estimator_classification=rec.estimator_classification.value if rec is not None else None,
+                canonical_result_hash=rec.canonical_result_hash if rec is not None else None,
             )
 
         # Build intermediate suite result for equal accuracy evaluation

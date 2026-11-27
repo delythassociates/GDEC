@@ -1,8 +1,8 @@
 # GDEC Orchestration State
 
-Last updated: 2026-11-27 | Session #: 5  
+Last updated: 2026-11-27 | Session #: 6  
 Branch tip at last WP2 implementation verification: `research/wp2-residual-gate-closure` @ `20baa84cbb4ec305450e715a6a2b000a35ca0d3e`  
-Test baseline: 452 passed / 14 skipped / 0 failed in the recorded Windows/Python 3.13 locked CI gate job.
+Test baseline: 488 passed / 14 skipped / 0 failed in local post-final-edit full suite (64.48% branch coverage; 20/20 targeted mutants killed; CI pending on WP3 hardening commit).
 
 ## Work package board
 

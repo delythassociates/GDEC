@@ -48,10 +48,12 @@ class BenchmarkMetrics:
                 "Strategy": strat.replace("_", " ").title(),
                 "Target Achieved": "YES" if s_res.target_achieved else "NO",
                 "Final DOFs": s_res.final_dofs,
-                "Final QoI (mm)": last_it.qoi_mm if last_it else 0.0,
+                "Final QoI (mm)": last_it.qoi_mm if last_it else None,
                 "Ref Error (%)": s_res.final_reference_error_pct,
                 "Total Wall Time (s)": s_res.total_execution_time_sec,
                 "Iterations": len(s_res.iterations),
+                "Refused": "YES" if s_res.refused else ("NO" if s_res.refused is False else "UNKNOWN"),
+                "Qualification": s_res.qualification_status or "UNKNOWN",
             })
         df = pd.DataFrame(rows)
         return df
