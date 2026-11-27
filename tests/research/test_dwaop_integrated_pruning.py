@@ -294,6 +294,19 @@ def test_exact_resource_conversion_preserves_action_contracts_and_transitions() 
                 f"capabilities={sorted(transition.state.capabilities)}"
             )
 
+    # Exercise the planner search separately from action-contract construction.
+    unpruned = plan_policies(oracle, budget, max_horizon=4, prune=False)
+    exhaustive = enumerate_exact_pareto_frontier(oracle, budget, max_horizon=4)
+    assert unpruned.pareto_frontier, (
+        "Unpruned planner produced no policy after valid action transitions; "
+        f"metrics={unpruned.metrics}"
+    )
+    assert unpruned.pareto_frontier == exhaustive, (
+        "Unpruned planner/exhaustive oracle mismatch on heat fixture; "
+        f"planner={unpruned.pareto_frontier}; oracle={exhaustive}; "
+        f"metrics={unpruned.metrics}"
+    )
+
 
 def build_multi_resource_tradeoff_fixture() -> Tuple[WorldOracle, ResourceBudget]:
     """Multi-action fan-out and reconvergence with incomparable 4D resource trade-offs."""
