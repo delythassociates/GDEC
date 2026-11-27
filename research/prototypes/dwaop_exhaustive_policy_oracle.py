@@ -8,6 +8,7 @@ or call any pruning, refinement, or dominance-cover logic from
 from __future__ import annotations
 
 from dataclasses import dataclass
+from fractions import Fraction
 from itertools import product
 from typing import Dict, FrozenSet, List, Mapping, Optional, Tuple, Union
 
@@ -190,11 +191,13 @@ def _evaluate_tree_on_world(
     evidence_stale = False
     last_kind: Optional[OutcomeKind] = None
 
-    ru = 0.0
-    cpu = 0.0
-    energy = 0.0
-    resident = 0.0
-    peak = 0.0
+    # Decimal resource inputs are converted at the boundary; all oracle
+    # accumulation and comparisons remain exact rational arithmetic.
+    ru = Fraction(0)
+    cpu = Fraction(0)
+    energy = Fraction(0)
+    resident = Fraction(0)
+    peak = Fraction(0)
     actions_taken = 0
 
     node = tree
@@ -220,15 +223,21 @@ def _evaluate_tree_on_world(
         else:
             remaining_actions = remaining_actions - {node.action_id}
 
-        during_peak = resident + spec.workspace_gb_upper + spec.overlap_gb_upper
+        during_peak = (
+            resident
+            + Fraction(str(spec.workspace_gb_upper))
+            + Fraction(str(spec.overlap_gb_upper))
+        )
         resident = max(
-            0.0,
-            resident + spec.retained_output_gb_by_label[label] - spec.released_memory_gb_by_label[label],
+            Fraction(0),
+            resident
+            + Fraction(str(spec.retained_output_gb_by_label[label]))
+            - Fraction(str(spec.released_memory_gb_by_label[label])),
         )
         peak = max(peak, during_peak, resident)
-        ru += spec.ru_upper
-        cpu += spec.cpu_ticks
-        energy += spec.energy_ticks
+        ru += Fraction(str(spec.ru_upper))
+        cpu += Fraction(str(spec.cpu_ticks))
+        energy += Fraction(str(spec.energy_ticks))
 
         vec = ResourceVector(ru, cpu, energy, peak)
         if not budget.allows(vec):
@@ -270,7 +279,7 @@ def _oracle_verdict_no_worse(left: str, right: str) -> bool:
     return left in {"ACCEPT", "REJECT"} and right == "REFUSE"
 
 
-def _oracle_resource_tuple(vec: ResourceVector) -> Tuple[float, float, float, float]:
+def _oracle_resource_tuple(vec: ResourceVector) -> Tuple[Fraction, Fraction, Fraction, Fraction]:
     return (vec.ru_upper, vec.cpu_ticks, vec.energy_ticks, vec.peak_memory_gb)
 
 
