@@ -11,7 +11,7 @@ DSES v0.6 compares a correlated unit-disk uncertainty set against its conservati
 
 The certificate verifier recomputes each leaf's interval, support bound and classification; checks that split children exactly cover their parents; verifies total domain area; and recomputes the digest. A tamper test modifies certificate structure and recomputes the digest, demonstrating that semantic checks—not just the digest—detect the inconsistency.
 
-**Focused test result:** 10 passed, 0 failed (local Python 3.13 container, \`PYTHONPATH=src python -m pytest -q tests/test_dses_v06.py\`). This is not repository CI.
+**Focused test result:** 10 passed, 0 failed (local Python 3.13 container, \`PYTHONPATH=src python -m pytest -q tests/research/test_dses_v06.py tests/research/test_dses_v06_certificate_hardening.py\`). This is not repository CI.
 
 ## 2. Mathematical contract
 
