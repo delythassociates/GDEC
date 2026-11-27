@@ -532,15 +532,15 @@ def verify_action_contract(oracle: WorldOracle, contract: ActionContract) -> Non
     _nonnegative(contract.energy_ticks, f"{contract.action_id}.contract.energy_ticks")
     _nonnegative(contract.workspace_gb_upper, f"{contract.action_id}.contract.workspace_gb_upper")
     _nonnegative(contract.overlap_gb_upper, f"{contract.action_id}.contract.overlap_gb_upper")
-    if contract.ru_upper < spec.ru_upper:
+    if contract.ru_upper < _nonnegative(spec.ru_upper, "trusted.ru_upper"):
         raise ContractError("RU upper bound understates trusted action cost")
-    if contract.cpu_ticks < spec.cpu_ticks:
+    if contract.cpu_ticks < _nonnegative(spec.cpu_ticks, "trusted.cpu_ticks"):
         raise ContractError("CPU ticks upper bound understates trusted action cost")
-    if contract.energy_ticks < spec.energy_ticks:
+    if contract.energy_ticks < _nonnegative(spec.energy_ticks, "trusted.energy_ticks"):
         raise ContractError("Energy ticks upper bound understates trusted action cost")
-    if contract.workspace_gb_upper < spec.workspace_gb_upper:
+    if contract.workspace_gb_upper < _nonnegative(spec.workspace_gb_upper, "trusted.workspace_gb_upper"):
         raise ContractError("Workspace upper bound understates trusted action cost")
-    if contract.overlap_gb_upper < spec.overlap_gb_upper:
+    if contract.overlap_gb_upper < _nonnegative(spec.overlap_gb_upper, "trusted.overlap_gb_upper"):
         raise ContractError("Overlap upper bound understates trusted action cost")
 
     labels = [cell.label for cell in contract.outcomes]
