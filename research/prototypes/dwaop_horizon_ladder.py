@@ -79,6 +79,16 @@ def build_refinement_ladder(n_stages: int):
     return oracle, budget
 
 
+def _frontier_comparisons_are_equal(*comparisons: Mapping[str, object]) -> bool:
+    """Require exact set equality, including entries unique to either side."""
+    return all(
+        comparison["left_only_count"] == 0
+        and comparison["right_only_count"] == 0
+        and comparison["left_size"] == comparison["right_size"]
+        for comparison in comparisons
+    )
+
+
 def run_ladder_benchmark(n_stages: int) -> Dict[str, object]:
     oracle, budget = build_refinement_ladder(n_stages)
     horizon = n_stages + 1
@@ -110,11 +120,8 @@ def run_ladder_benchmark(n_stages: int) -> Dict[str, object]:
     pruned_vs_oracle = compare_frontiers(pruned.pareto_frontier, exact)
     # Equality requires set equality in BOTH directions. Checking only
     # left_only_count can silently miss policies present only on the right.
-    equal = all(
-        comparison["left_only_count"] == 0
-        and comparison["right_only_count"] == 0
-        and comparison["left_size"] == comparison["right_size"]
-        for comparison in (pruned_vs_unpruned, unpruned_vs_oracle, pruned_vs_oracle)
+    equal = _frontier_comparisons_are_equal(
+        pruned_vs_unpruned, unpruned_vs_oracle, pruned_vs_oracle
     )
     debug = {
         "pruned_vs_unpruned": pruned_vs_unpruned,
