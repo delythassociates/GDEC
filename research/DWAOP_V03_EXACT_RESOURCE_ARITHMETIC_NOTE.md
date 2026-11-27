@@ -33,6 +33,9 @@ The exhaustive evaluator does not call the planner's pruning or Pareto-reduction
 - IMPLEMENTED: exact resource arithmetic and symmetric frontier equality.
 - TESTS ADDED: the cases listed above, alongside existing v0.2 regression and H6/H8 gates.
 - CI: the branch-scoped workflow is configured to run the full four-version Python matrix and H6/H8 campaign.
-- EXECUTED / TESTED: pending an accessible workflow result; no passing result is claimed here.
+- EXECUTED / TESTED: workflow [45966135205](https://github.com/delythassociates/GDEC/actions/runs/45966135205) completed the full regression, adversarial, mutation and H6/H8 oracle-test command on Python 3.10, 3.11, 3.12 and 3.13; each environment reported `86 passed, 0 failed`.
+- ARTIFACT GENERATION: that workflow then failed at the separate H6/H8 metrics-generation command because direct script invocation could not import the repository `research` package. This was an invocation-path defect before the benchmark executed, not an H6/H8 frontier mismatch.
+- CORRECTION: commit `494b26646215e55b68be036397a5838a9271a8e8` adds the repository root to `sys.path` for direct invocation. Replacement four-version workflow [45966924603](https://github.com/delythassociates/GDEC/actions/runs/45966924603) is the required confirmation; its metrics-generation result is pending.
+- FORMAL STATUS: finite-horizon theorem remains a proof sketch, not machine-checked.
 - FORMAL STATUS: finite-horizon theorem remains a proof sketch, not machine-checked.
 - DOMAIN STATUS: no cyclic, stochastic, continuous, PDE/FEM, or physical certificate soundness is established.
