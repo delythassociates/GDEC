@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install test dependency
+        run: python -m pip install --upgrade pip pytest
       - name: Compile analytical prototype
         run: python -m compileall -q research/prototypes/dses_v06.py
       - name: Run certificate and adversarial tests
