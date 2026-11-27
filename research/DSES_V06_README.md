@@ -11,7 +11,7 @@ Whole-cell decisions are SELECT_A, SELECT_B, REFUSE_HIGH_REGRET or UNRESOLVED.
 
 Reproduce:
 \`\`\`bash
-PYTHONPATH=src python -m pytest -q tests/test_dses_v06.py
+python -m pytest -q tests/research/test_dses_v06.py tests/research/test_dses_v06_certificate_hardening.py
 PYTHONPATH=src python src/run_benchmarks.py
 \`\`\`
 
