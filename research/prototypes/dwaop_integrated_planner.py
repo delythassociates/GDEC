@@ -33,13 +33,12 @@ def _nonnegative(value: float, field_name: str) -> Fraction:
         raise ContractError(f"{field_name} must be numeric, not bool")
     if not isinstance(value, (int, float, Fraction)):
         raise ContractError(f"{field_name} must be numeric")
-    try:
-        finite = isfinite(value)
-    except (TypeError, OverflowError) as exc:
-        raise ContractError(f"{field_name} must be a finite numeric value") from exc
-    if not finite or value < 0:
+    if isinstance(value, float) and not isfinite(value):
         raise ContractError(f"{field_name} must be finite and non-negative")
-    exact = value if isinstance(value, Fraction) else Fraction(str(value))
+    try:
+        exact = value if isinstance(value, Fraction) else Fraction(str(value))
+    except (ValueError, TypeError, OverflowError, ZeroDivisionError) as exc:
+        raise ContractError(f"{field_name} must be a finite numeric value") from exc
     if exact < 0:
         raise ContractError(f"{field_name} must be finite and non-negative")
     return exact
@@ -146,7 +145,7 @@ class ResourceVector:
             or self.peak_memory_gb < other.peak_memory_gb - tol
         )
 
-    def exact_key(self) -> Tuple[float, float, float, float]:
+    def exact_key(self) -> Tuple[Fraction, Fraction, Fraction, Fraction]:
         """Exact resource tuple for proof-relevant identity and deduplication."""
         return (self.ru_upper, self.cpu_ticks, self.energy_ticks, self.peak_memory_gb)
 
