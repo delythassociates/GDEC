@@ -2,7 +2,12 @@ from __future__ import annotations
 from fractions import Fraction
 import pytest
 import research.prototypes.dwaop_integrated_planner as planner_module
-from research.prototypes.dwaop_integrated_planner import ResourceBudget, ResourceVector
+from research.prototypes.dwaop_integrated_planner import (
+    ResourceBudget,
+    ResourceVector,
+    build_action_contract,
+    verify_action_contract,
+)
 from research.prototypes.dwaop_exhaustive_policy_oracle import enumerate_exact_pareto_frontier
 from research.prototypes.dwaop_horizon_ladder import (
     _frontier_comparisons_are_equal,
@@ -30,6 +35,12 @@ def test_decimal_resource_accumulation_uses_exact_rational_values():
     assert total.cpu_ticks == Fraction(3, 10)
     assert total.energy_ticks == Fraction(1, 2)
     assert isinstance(total.ru_upper, Fraction)
+
+def test_decimal_action_costs_verify_after_exact_boundary_conversion():
+    oracle, _ = build_refinement_ladder(3)
+    for action_id in oracle.actions:
+        contract = build_action_contract(oracle, action_id)
+        verify_action_contract(oracle, contract)
 
 
 def test_resource_budget_boundary_is_exact_for_decimal_inputs():
