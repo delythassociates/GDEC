@@ -24,7 +24,11 @@ from research.prototypes.dwaop_integrated_planner import (
     ResourceVector,
     SearchMetrics,
     WorldOracle,
+    apply_action_outcome,
+    build_action_contract,
+    make_initial_state,
     plan_policies,
+    verify_action_contract,
 )
 
 
@@ -255,6 +259,32 @@ def build_heat_qoi_screening_fixture() -> Tuple[WorldOracle, ResourceBudget]:
     )
     budget = ResourceBudget(ru_upper=10.0, cpu_ticks=100.0, energy_ticks=50.0, peak_memory_gb=8.0)
     return oracle, budget
+
+
+def test_exact_resource_conversion_preserves_action_contracts_and_transitions() -> None:
+    """Diagnose the planner/oracle mismatch at the fail-closed contract boundary."""
+    oracle, budget = build_heat_qoi_screening_fixture()
+    contracts = {
+        action_id: build_action_contract(oracle, action_id)
+        for action_id in oracle.actions
+    }
+    for action_id, contract in contracts.items():
+        verify_action_contract(oracle, contract)
+
+    root = make_initial_state(oracle)
+    for action_id in ("screen_fine", "screen_coarse"):
+        transitions = apply_action_outcome(root, contracts[action_id], oracle)
+        assert transitions, f"{action_id}: valid root action unexpectedly has no transitions"
+        for transition in transitions:
+            assert budget.allows(transition.state.resource_spent)
+            follow_up = apply_action_outcome(
+                transition.state, contracts["hot_resolve"], oracle
+            )
+            assert follow_up, (
+                f"hot_resolve: valid screened child has no transitions; "
+                f"worlds={sorted(transition.state.worlds)}; "
+                f"capabilities={sorted(transition.state.capabilities)}"
+            )
 
 
 def build_multi_resource_tradeoff_fixture() -> Tuple[WorldOracle, ResourceBudget]:
