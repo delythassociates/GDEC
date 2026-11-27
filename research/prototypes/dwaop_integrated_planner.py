@@ -136,6 +136,7 @@ class ResourceVector:
 
     def strictly_dominates(self, other: "ResourceVector", tol: float = 0.0) -> bool:
         """True if dominates_or_equal and strictly smaller in at least one component."""
+        tol = _nonnegative(tol, "dominance tolerance")
         if not self.dominates_or_equal(other, tol=tol):
             return False
         return (
