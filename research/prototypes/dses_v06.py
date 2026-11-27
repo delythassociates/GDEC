@@ -171,7 +171,7 @@ def verify_certificate(cert: Dict[str,Any]) -> Dict[str,Any]:
     if cert.get("model_id")!=MODEL_ID: errors.append("CERT-MODEL-MISMATCH")
     if cert.get("assurance_class")!=ASSURANCE_CLASS: errors.append("CERT-ASSURANCE-CLASS-UNSUPPORTED")
     if cert.get("proof_rule_version")!=PROOF_RULE_VERSION: errors.append("CERT-PROOF-RULE-UNSUPPORTED")
-    if cert.get("sqrt_upper_scale")!=SQRT_SCALE or isinstance(cert.get("sqrt_upper_scale"),bool):
+    if type(cert.get("sqrt_upper_scale")) is not int or cert.get("sqrt_upper_scale")!=SQRT_SCALE:
         errors.append("CERT-SQRT-SCALE-UNSUPPORTED")
     uncertainty=cert.get("uncertainty_set")
     if uncertainty not in {"correlated_disk","independent_box_outer"}:
@@ -197,7 +197,7 @@ def verify_certificate(cert: Dict[str,Any]) -> Dict[str,Any]:
         def check_node(n,expected,expected_depth):
             if not isinstance(n,dict):
                 errors.append("CERT-TREE-NODE-INVALID"); return
-            if n.get("depth")!=expected_depth or isinstance(n.get("depth"),bool):
+            if type(n.get("depth")) is not int or n.get("depth")!=expected_depth:
                 errors.append("CERT-NODE-DEPTH-MISMATCH")
             if expected_depth>depth:
                 errors.append("CERT-TREE-DEPTH-EXCEEDED")
