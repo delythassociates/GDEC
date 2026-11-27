@@ -1,8 +1,13 @@
 """Structured finite-horizon refinement-ladder benchmark for DWAOP v0.3."""
 from __future__ import annotations
-import argparse, json
+import argparse, json, sys
 from pathlib import Path
 from typing import Dict, FrozenSet, Mapping, Optional
+
+# Support the documented direct-script invocation from the repository root.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from research.prototypes.dwaop_integrated_planner import ActionSemantics, OutcomeKind, ResourceBudget, WorldOracle, plan_policies
 from research.prototypes.dwaop_exhaustive_policy_oracle import enumerate_exact_pareto_frontier
