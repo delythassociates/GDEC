@@ -21,4 +21,4 @@ jobs:
       - name: Compile analytical prototype
         run: python -m compileall -q research/prototypes/dses_v06.py
       - name: Run certificate and adversarial tests
-        run: python -m pytest -q tests/research/test_dses_v06_certificate_hardening.py
+        run: python -m pytest -q tests/research/test_dses_v06.py tests/research/test_dses_v06_certificate_hardening.py
