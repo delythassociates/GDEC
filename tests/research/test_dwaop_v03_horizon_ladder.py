@@ -4,7 +4,11 @@ import pytest
 import research.prototypes.dwaop_integrated_planner as planner_module
 from research.prototypes.dwaop_integrated_planner import ResourceBudget, ResourceVector
 from research.prototypes.dwaop_exhaustive_policy_oracle import enumerate_exact_pareto_frontier
-from research.prototypes.dwaop_horizon_ladder import build_refinement_ladder, run_ladder_benchmark
+from research.prototypes.dwaop_horizon_ladder import (
+    _frontier_comparisons_are_equal,
+    build_refinement_ladder,
+    run_ladder_benchmark,
+)
 
 
 def test_hard_resource_budget_uses_exact_not_epsilon_slack():
@@ -36,14 +40,24 @@ def test_resource_budget_boundary_is_exact_for_decimal_inputs():
     assert budget.allows(over) is False
 
 
-def test_frontier_comparison_detects_right_only_entries():
-    def signature(value):
-        return value
-    left = {signature(("policy-a",))}
-    right = {signature(("policy-a",)), signature(("policy-b",))}
-    left_only = left - right
-    right_only = right - left
-    assert not (len(left_only) == 0 and len(right_only) == 0 and len(left) == len(right))
+def test_frontier_comparison_rejects_right_only_entries():
+    comparison = {
+        "left_size": 1,
+        "right_size": 2,
+        "left_only_count": 0,
+        "right_only_count": 1,
+    }
+    assert _frontier_comparisons_are_equal(comparison) is False
+
+
+def test_frontier_comparison_accepts_exact_symmetric_match():
+    comparison = {
+        "left_size": 2,
+        "right_size": 2,
+        "left_only_count": 0,
+        "right_only_count": 0,
+    }
+    assert _frontier_comparisons_are_equal(comparison) is True
 
 
 @pytest.mark.parametrize("n_stages,expected_horizon", [(5, 6), (7, 8)])
