@@ -80,6 +80,12 @@ def _independent_terminal_verdict(state: _SimState, oracle: WorldOracle) -> Opti
 
 
 def _independent_enabled(state: _SimState, action_id: str, oracle: WorldOracle) -> bool:
+    if (
+        not state.model_valid
+        or state.evidence_stale
+        or state.last_outcome_kind == OutcomeKind.UNRECOVERABLE_REFUSAL
+    ):
+        return False
     spec = oracle.actions.get(action_id)
     if spec is None or action_id not in state.remaining_actions:
         return False
@@ -202,6 +208,12 @@ def _evaluate_tree_on_world(
 
     node = tree
     while isinstance(node, ActionBranch):
+        if (
+            not model_valid
+            or evidence_stale
+            or last_kind == OutcomeKind.UNRECOVERABLE_REFUSAL
+        ):
+            return None
         spec = oracle.actions.get(node.action_id)
         if spec is None or node.action_id not in remaining_actions:
             return None

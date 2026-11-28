@@ -16,7 +16,7 @@ from itertools import product
 from math import isfinite
 import time
 import tracemalloc
-from typing import Dict, FrozenSet, List, Mapping, Optional, Sequence, Tuple
+from typing import Callable, Dict, FrozenSet, List, Mapping, Optional, Sequence, Tuple
 
 
 WorldSet = FrozenSet[str]
@@ -639,7 +639,17 @@ def verify_action_contract(oracle: WorldOracle, contract: ActionContract) -> Non
         raise ContractError("Outcome cells do not exhaustively cover action applicability")
 
 
+def _is_sticky_refusal(state: EvidenceState) -> bool:
+    return (
+        not state.model_valid
+        or state.evidence_stale
+        or state.last_outcome_kind == OutcomeKind.UNRECOVERABLE_REFUSAL
+    )
+
+
 def _enabled(state: EvidenceState, contract: ActionContract, oracle: WorldOracle) -> bool:
+    if _is_sticky_refusal(state):
+        return False
     try:
         verify_action_contract(oracle, contract)
     except ContractError:
@@ -864,11 +874,7 @@ def is_local_refinement(
         if fine_term != "REFUSE":
             return False
         # Sticky refusal states stop expanding immediately, so leaf simulation suffices.
-        coarse_sticky = (
-            not coarse_state.model_valid
-            or coarse_state.evidence_stale
-            or coarse_state.last_outcome_kind == OutcomeKind.UNRECOVERABLE_REFUSAL
-        )
+        coarse_sticky = _is_sticky_refusal(coarse_state)
         if coarse_sticky:
             return True
         if depth_left == 0:
@@ -882,6 +888,8 @@ def is_local_refinement(
         ]
         if not coarse_enabled_check:
             return True
+        if _is_sticky_refusal(fine_state):
+            return False
     elif fine_term == "REFUSE":
         return False
     if depth_left == 0:
@@ -1084,6 +1092,14 @@ def _verdict_no_worse(left: str, right: str) -> bool:
     return left in {"ACCEPT", "REJECT"} and right == "REFUSE"
 
 
+def _policy_sort_key(policy: NormalizedPolicy) -> tuple:
+    return (
+        policy.world_verdict_map,
+        policy.resource_vector.exact_key(),
+        policy.max_actions_on_path,
+    )
+
+
 def _policy_dominates(left: NormalizedPolicy, right: NormalizedPolicy) -> bool:
     if len(left.world_verdict_map) != len(right.world_verdict_map):
         return False
@@ -1098,6 +1114,18 @@ def _policy_dominates(left: NormalizedPolicy, right: NormalizedPolicy) -> bool:
     )
 
 
+def _internal_policy_dominates(left: NormalizedPolicy, right: NormalizedPolicy) -> bool:
+    if left.max_actions_on_path > right.max_actions_on_path:
+        return False
+    if _policy_dominates(left, right):
+        return True
+    return (
+        left.max_actions_on_path < right.max_actions_on_path
+        and left.world_verdict_map == right.world_verdict_map
+        and left.resource_vector.exact_key() == right.resource_vector.exact_key()
+    )
+
+
 def _canonical_dedup(policies: Sequence[NormalizedPolicy]) -> Tuple[NormalizedPolicy, ...]:
     by_key: Dict[tuple, NormalizedPolicy] = {}
     for p in policies:
@@ -1109,29 +1137,43 @@ def _canonical_dedup(policies: Sequence[NormalizedPolicy]) -> Tuple[NormalizedPo
         existing = by_key.get(key)
         if existing is None or p.max_actions_on_path < existing.max_actions_on_path:
             by_key[key] = p
-    return tuple(
-        sorted(
-            by_key.values(),
-            key=lambda p: (
-                p.world_verdict_map,
-                p.resource_vector.exact_key(),
-                p.max_actions_on_path,
-            ),
-        )
-    )
+    return tuple(sorted(by_key.values(), key=_policy_sort_key))
+
+
+def _pareto_filter(
+    unique: Sequence[NormalizedPolicy],
+    dominates_fn: Callable[[NormalizedPolicy, NormalizedPolicy], bool],
+) -> Tuple[NormalizedPolicy, ...]:
+    frontier: List[NormalizedPolicy] = []
+    for candidate in unique:
+        if not any(
+            other is not candidate and dominates_fn(other, candidate)
+            for other in unique
+        ):
+            frontier.append(candidate)
+    return tuple(frontier)
 
 
 def pareto_reduce(policies: Sequence[NormalizedPolicy]) -> Tuple[NormalizedPolicy, ...]:
     """Normalize, deduplicate, and return the non-dominated Pareto frontier."""
     unique = _canonical_dedup(policies)
-    frontier: List[NormalizedPolicy] = []
-    for candidate in unique:
-        if not any(
-            other is not candidate and _policy_dominates(other, candidate)
-            for other in unique
-        ):
-            frontier.append(candidate)
-    return tuple(frontier)
+    return _pareto_filter(unique, _policy_dominates)
+
+
+def _internal_pareto_reduce(policies: Sequence[NormalizedPolicy]) -> Tuple[NormalizedPolicy, ...]:
+    """Reduce internal OR-node witnesses under product dominance on (verdicts, resources, max_actions)."""
+    by_key: Dict[tuple, NormalizedPolicy] = {}
+    for p in policies:
+        key = (
+            p.world_verdict_map,
+            p.terminal_verdicts,
+            p.resource_vector.exact_key(),
+            p.max_actions_on_path,
+        )
+        if key not in by_key:
+            by_key[key] = p
+    unique = tuple(sorted(by_key.values(), key=_policy_sort_key))
+    return _pareto_filter(unique, _internal_policy_dominates)
 
 
 def make_initial_state(oracle: WorldOracle) -> EvidenceState:
@@ -1224,16 +1266,12 @@ def plan_policies(
                 max_actions_on_path=0,
             )
             stats["complete_policies_enumerated"] += 1
-            if (
-                not state.model_valid
-                or state.evidence_stale
-                or state.last_outcome_kind == OutcomeKind.UNRECOVERABLE_REFUSAL
-            ):
+            if _is_sticky_refusal(state):
                 return (leaf,)
             complete_here.append(leaf)
 
         if depth_left == 0:
-            return pareto_reduce(complete_here)
+            return _internal_pareto_reduce(complete_here)
 
         candidate_groups: List[Tuple[ActionContract, Tuple[StateTransition, ...]]] = []
         for action_id in sorted(state.remaining_actions):
@@ -1335,7 +1373,7 @@ def plan_policies(
                 if prune:
                     expanded_covers.append((contract, tuple(t.state for t in transitions)))
 
-        return pareto_reduce(complete_here)
+        return _internal_pareto_reduce(complete_here)
 
     all_policies = _search(root, max_horizon)
     frontier = pareto_reduce(all_policies)
